@@ -24,6 +24,8 @@
 Caddy сам выпускает и продлевает сертификаты Let's Encrypt. Конфиг `/etc/caddy/Caddyfile`, исходник в `deploy/Caddyfile`.
 - `cubalibre.su`, `www.cubalibre.su` → `127.0.0.1:3000` (prod)
 - `dev.cubalibre.su` → `127.0.0.1:3001` (dev)
+- Запасные адреса через sslip.io, работают без настройки DNS: `199-189-250-169.sslip.io` (prod) и `dev.199-189-250-169.sslip.io` (dev).
+  Добавлены, пока `cubalibre.su` недоступен. Если сменится IP сервера, сменятся и эти адреса.
 - `flush_interval -1` отключает буферизацию, без этого не работает SSE.
 
 ## Окружения

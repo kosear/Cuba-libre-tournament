@@ -1,15 +1,16 @@
 # Installed to /etc/caddy/Caddyfile by deploy/setup.sh.
 # Caddy obtains and renews Let's Encrypt certificates automatically.
 # flush_interval -1: do not buffer responses, required for SSE.
+# *.sslip.io names resolve to the server IP without any DNS setup; spare addresses while cubalibre.su is unavailable.
 
-cubalibre.su, www.cubalibre.su {
+cubalibre.su, www.cubalibre.su, 199-189-250-169.sslip.io {
 	encode gzip
 	reverse_proxy 127.0.0.1:3000 {
 		flush_interval -1
 	}
 }
 
-dev.cubalibre.su {
+dev.cubalibre.su, dev.199-189-250-169.sslip.io {
 	encode gzip
 	reverse_proxy 127.0.0.1:3001 {
 		flush_interval -1

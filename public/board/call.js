@@ -92,10 +92,13 @@ const CSS = `
 .fight .label { position: absolute; left: 0; right: 0; top: 262px; text-align: center; font-size: 38px; font-weight: 800; font-style: italic; color: #ffd400;
   text-transform: uppercase; letter-spacing: 6px; z-index: 4; }
 /* name boxes: up to 2 lines, wrapped at spaces; 380-600 and 640-860, they cross without touching; 120 px from the screen edges */
-.fight .name { position: absolute; z-index: 2; width: 670px; height: 220px; display: flex; align-items: center; justify-content: center; text-align: center;
+.fight .name { position: absolute; z-index: 2; width: 670px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   font-size: 150px; line-height: 1; font-weight: 900; font-style: italic; text-transform: uppercase; will-change: transform;
   text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
 .fight .name span { display: block; max-width: 100%; }
+/* the mascot's name right under the player's name, like a boxer's nickname: same font, small, flies in with the name */
+.fight .name .nick { font-size: 34px; line-height: 1.1; letter-spacing: 3px; color: #ffd400; margin-top: 6px; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fight .n1 { left: 180px; top: 380px; }
 .fight .n2 { right: 180px; top: 640px; }
 .fight .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
@@ -107,10 +110,6 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-.fight .mname { position: absolute; z-index: 1; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); }
-.fight .mname { width: 600px; margin-left: -300px; text-align: center; }
-.fight .mname.m1 { left: 515px; top: 925px; }
-.fight .mname.m2 { left: 1525px; top: 288px; }
 /* fire for important matches: a still glow plus 7 big flame tongues that only sway and stretch, and a few embers */
 .fight .fire { position: absolute; left: 0; right: 0; bottom: 60px; height: 420px; z-index: 1; pointer-events: none; display: none; }
 .fight.important .fire { display: block; }
@@ -168,7 +167,7 @@ export function createCall(root) {
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
       ${fireMarkup()}
-      <div class="mascot m1"></div><div class="mascot m2"></div><div class="mname m1"></div><div class="mname m2"></div>
+      <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
@@ -181,26 +180,29 @@ export function createCall(root) {
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-  function setName(el, text) {
+  function setName(el, text, nickname) {
     el.innerHTML = '';
     const span = document.createElement('span');
     span.textContent = text;
-    el.append(span);
-    // Shrink until it fits: at most 2 lines in the box, and no single word wider than the box.
+    const nick = document.createElement('div');
+    nick.className = 'nick';
+    nick.textContent = nickname;
+    el.append(span, nick);
+    // Shrink until it fits: at most 2 lines, no single word wider than the box, room left for the nickname.
     let size = 150;
     el.style.fontSize = `${size}px`;
+    const room = () => el.clientHeight - nick.offsetHeight - 6;
     const lines = () => Math.round(span.offsetHeight / size);
-    while (size > 40 && (span.scrollWidth > el.clientWidth + 1 || lines() > 2 || span.offsetHeight > el.clientHeight)) {
+    while (size > 40 && (span.scrollWidth > el.clientWidth + 1 || lines() > 2 || span.offsetHeight > room())) {
       el.style.fontSize = `${(size -= 4)}px`;
     }
   }
 
-  function setMascot(n, [body, hat, item, title]) {
+  function setMascot(n, [body, hat, item]) {
     const box = q(`.mascot.m${n}`);
     box.textContent = body;
     if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
     if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);
-    q(`.mname.m${n}`).textContent = title;
   }
 
   // The whole ring jolts, a white flash.
@@ -255,8 +257,7 @@ export function createCall(root) {
       running.forEach((a) => a.cancel());
       running = [];
       q('.label').textContent = m.label || '';
-      setName(q('.n1'), m.p1?.name ?? '');
-      setName(q('.n2'), m.p2?.name ?? '');
+
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!important);
       const m1 = pick(MASCOTS);
@@ -264,6 +265,8 @@ export function createCall(root) {
       do m2 = pick(MASCOTS); while (m2 === m1);
       setMascot(1, m1);
       setMascot(2, m2);
+      setName(q('.n1'), m.p1?.name ?? '', m1[3]);
+      setName(q('.n2'), m.p2?.name ?? '', m2[3]);
 
       const T1 = 120; // player 1 punches in
       const T2 = 420; // player 2 answers
@@ -291,7 +294,6 @@ export function createCall(root) {
         const box = q(`.mascot.m${n}`);
         anim(box, [{ transform: `translateX(${from}px) rotate(${from > 0 ? 14 : -14}deg)` }, { transform: 'translateX(0) rotate(0)' }],
           { duration: 500, delay, easing: 'cubic-bezier(.2,.8,.3,1.4)', fill: 'backwards' });
-        anim(q(`.mname.m${n}`), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: delay + 400, fill: 'backwards' });
         loop(box, [{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(-16px) rotate(${n === 1 ? 4 : -4}deg)` }, { transform: 'translateY(0) rotate(0)' }],
           900 + n * 120, delay + 500);
       }

@@ -159,6 +159,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .call { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 6; overflow: hidden; background: #0b0d14; }
 .call[hidden] { display: none; }
 .splash-bg { position: absolute; inset: 0; background: #fff; will-change: opacity; } /* colour layers, faded by splash.js */
+.splash-felt { position: absolute; inset: 0; background-repeat: repeat; pointer-events: none; } /* billiard cloth texture over the colour (splash.js) */
 .splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: 531px; will-change: transform; } /* moved/turned/squashed */
 /* the two pictures (as drawn, white lettering): own layers, switched by opacity; shadow from the top left like the balls' */
 .splash-logo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: opacity;

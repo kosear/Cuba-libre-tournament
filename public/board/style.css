@@ -29,7 +29,7 @@ table.std { width: 100%; table-layout: fixed; border-collapse: collapse; font-va
 table.std th { font-size: .63em; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 6px; text-align: center; border-bottom: 2px solid var(--line); }
 table.std td { padding: .4em 6px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.std tr:last-child td { border-bottom: none; }
-table.std .name { text-align: left; width: 31%; /* Frames, Win, Balls get 23% each so the headers fit */ overflow: hidden; text-overflow: ellipsis; }
+table.std .name { text-align: left; width: 43%; /* Frames, Win, Balls get 19% each */ overflow: hidden; text-overflow: ellipsis; }
 table.std tr.leader td { font-weight: 800; }
 table.std tr.out td { color: #a8b2c4; }
 table.std tr.out td.name { text-decoration: line-through; }

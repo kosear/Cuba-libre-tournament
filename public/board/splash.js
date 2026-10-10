@@ -41,6 +41,8 @@ function dayOffset() {
   return DAY_OFFSETS[day] ?? [0, 0];
 }
 
+const DAY_DEMO_MS = 20000; // TEMPORARY dev presentation: every 20 s the logo moves to the next day's place. Remove after.
+
 const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
 const SPLASH_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
@@ -660,6 +662,29 @@ export function startSplash(root) {
     logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
+  // ---------- TEMPORARY: presentation of the daily places ----------
+  const DAYS = Object.keys(DAY_OFFSETS);
+  const DAY_NAMES = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+  const dayTag = document.createElement('div');
+  dayTag.style.cssText = 'position:absolute;left:40px;top:32px;z-index:20;font:800 40px/1.2 Inter,system-ui,sans-serif';
+  root.appendChild(dayTag);
+  let demoDay = 0;
+  function showDay() {
+    const day = DAYS[demoDay];
+    demoDay = (demoDay + 1) % DAYS.length;
+    dayTag.textContent = `Logo place: ${DAY_NAMES[day]}`;
+    dayTag.style.color = isDark(SPLASH_COLORS[colorIndex][1]) ? '#fff' : '#111';
+    if (!logoBox) return;
+    const [dx, dy] = DAY_OFFSETS[day];
+    logoBox.x = (W - LOGO_W) / 2 + dx; // the collision mask is relative to logoBox: it moves along
+    logoBox.y = H * TEXT_SCREEN_Y - logoBox.h * LOGO_TEXT_Y + dy;
+    logo.style.transition = 'left .8s ease-in-out, top .8s ease-in-out';
+    logo.style.left = `${logoBox.x}px`;
+    logo.style.top = `${logoBox.y}px`;
+  }
+  setTimeout(showDay, 1500);
+  const dayDemoTimer = setInterval(showDay, DAY_DEMO_MS);
+
   // ---------- colour changes on hits ----------
   let colorIndex = 0; // white
   let lastColorChange = 0;
@@ -681,6 +706,7 @@ export function startSplash(root) {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
+      clearInterval(dayDemoTimer);
       root.style.backgroundColor = '';
       root.innerHTML = '';
     },

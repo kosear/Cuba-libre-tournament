@@ -132,9 +132,11 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 /* call screen: who goes to the table now, on top of everything for 20 s; the look is in public/board/call.js */
 .call { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 6; overflow: hidden; background: #0b0d14; }
 .call[hidden] { display: none; }
-.splash { transition: background-color .6s; }
-.splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: auto; will-change: transform;
-  filter: drop-shadow(24px 32px 14px rgba(10,18,36,.3)); } /* same light as the balls' shadows: from the top left */
+.splash-bg { position: absolute; inset: 0; background: #fff; will-change: opacity; } /* colour layers, faded by splash.js */
+.splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: 531px; will-change: transform; } /* moved/turned/squashed */
+/* the two pictures (as drawn, white lettering): own layers, switched by opacity; shadow from the top left like the balls' */
+.splash-logo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: opacity;
+  filter: drop-shadow(24px 32px 14px rgba(10,18,36,.3)); transition: opacity .6s ease-in-out; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); will-change: transform; } /* a canvas shaded by splash.js */
 /* Cast shadow of a ball lit from the top left: an ellipse stretched along the light (rotated in splash.js), dark core,
    soft edge; ::before is the small contact shadow where the ball touches the table (towards the ball's centre). */

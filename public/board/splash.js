@@ -55,11 +55,20 @@ const SPLASH_COLORS = [
   ['Hot pink', '#e83e8c'], ['Mustard', '#d9a81e'], ['Tobacco', '#6b4a2b'], ['Graphite', '#2b2f36'], ['Night', '#0b0d14'],
 ];
 
-/** Relative luminance (WCAG): below ~0.35 the background counts as dark. */
-function isDark(hex) {
+/** Relative luminance (WCAG), 0..1. */
+function luminance(hex) {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] < 0.35;
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 }
+/** Below ~0.35 the background counts as dark. */
+const isDark = (hex) => luminance(hex) < 0.35;
+/** Perceived lightness L*, 0..100: equal steps look equal to the eye. */
+const lightness = (hex) => { const y = luminance(hex); return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y; };
+
+// No harsh jumps (white straight to black): the next colour is picked at random only among those whose lightness is
+// within MAX_STEP_L of the current one; the bigger the change, the longer the fade.
+const MAX_STEP_L = 35;
+const fadeMs = (dl) => 600 + Math.min(900, Math.abs(dl) * 26); // 0.6 s .. 1.5 s
 
 // The logo for dark backgrounds: only the lettering turns white («CUBA», «LIBRE», «el sabor de havana», ®, the
 // «The Original» arc); the figure keeps her black outlines and hair. Paths are told apart by where they are in the
@@ -92,16 +101,31 @@ async function logoWithLettering(color) {
 export function startSplash(root) {
   root.innerHTML = '';
   root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
-  const logo = new Image();
+  // Performance on a TV: nothing big is ever repainted while the splash runs.
+  // - Background: two full-screen colour layers; a new colour fades in by opacity (the compositor's work) instead of
+  //   a background-color transition that repaints 1920×1080 every frame.
+  // - Logo: a box that moves, turns and squashes (transform only), holding two pictures on their own layers, as drawn
+  //   and with white lettering; switching is a change of opacity, so the 110-path SVG is drawn once per picture.
+  const bgBack = document.createElement('div');
+  const bgFront = document.createElement('div');
+  bgBack.className = bgFront.className = 'splash-bg';
+  bgFront.style.opacity = '0';
+  const logoEl = document.createElement('div');
+  logoEl.className = 'splash-logo';
+  const logo = new Image(); // as drawn: also the source of the collision mask
   logo.src = LOGO_SRC;
   logo.alt = 'Cuba Libre';
-  logo.className = 'splash-logo';
-  root.appendChild(logo);
+  const logoLight = new Image(); // white lettering, for dark backgrounds
+  logoLight.alt = '';
+  logoLight.style.opacity = '0';
+  logoWithLettering('#FFFFFF').then((url) => { logoLight.src = url; });
+  logoEl.append(logo, logoLight);
+  root.append(bgBack, bgFront, logoEl);
 
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
   let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)
   let logoHome = null; // where it stands at rest
-  const drift = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0 }; // offset from home, angle (rad), and their speeds
+  const drift = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, cos: 1, sin: 0 }; // offset from home, angle (rad), their speeds
   let balls = [];
   let wobbles = [];
   let nextSpawn = performance.now() + 1500;
@@ -115,9 +139,10 @@ export function startSplash(root) {
     // Centre the screen on the bar name, not on the whole drawing (the figure's legs hang far below it).
     logoBox = { x: (W - LOGO_W) / 2, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y, w: LOGO_W, h };
     logoHome = { x: logoBox.x, y: logoBox.y };
-    logo.style.width = `${LOGO_W}px`;
-    logo.style.left = `${logoBox.x}px`;
-    logo.style.top = `${logoBox.y}px`;
+    logoEl.style.width = `${LOGO_W}px`;
+    logoEl.style.height = `${h}px`; // a real box: it turns and squashes around its centre
+    logoEl.style.left = `${logoBox.x}px`;
+    logoEl.style.top = `${logoBox.y}px`;
     try {
       mask ??= buildMask(logo, logoBox); // the recoloured logo has the same shape: build once
     } catch {
@@ -150,8 +175,8 @@ export function startSplash(root) {
     if (drift.a) { // the logo is turned around its centre: turn the point back into the drawing's own frame
       const cx = logoBox.x + logoBox.w / 2;
       const cy = logoBox.y + logoBox.h / 2;
-      const c = Math.cos(-drift.a);
-      const s = Math.sin(-drift.a);
+      const c = drift.cos; // cos/sin of -angle, worked out once per frame in moveLogo()
+      const s = drift.sin;
       const dx = x - cx;
       const dy = y - cy;
       x = cx + dx * c - dy * s;
@@ -667,6 +692,8 @@ export function startSplash(root) {
     drift.a = (drift.a + drift.va * dt) * Math.exp(-LOGO_SPIN_RETURN * dt);
     if (Math.abs(drift.a) > LOGO_MAX_ANGLE) { drift.a = Math.sign(drift.a) * LOGO_MAX_ANGLE; drift.va = 0; }
     if (Math.abs(drift.a) < 0.0005 && Math.abs(drift.va) < 0.0005) drift.a = drift.va = 0;
+    drift.cos = Math.cos(-drift.a);
+    drift.sin = Math.sin(-drift.a);
     for (const [axis, v, max] of [['x', 'vx', LOGO_MAX[0]], ['y', 'vy', LOGO_MAX[1]]]) {
       if (Math.abs(drift[axis]) > max) { drift[axis] = Math.sign(drift[axis]) * max; drift[v] = 0; }
     }
@@ -685,10 +712,10 @@ export function startSplash(root) {
 
   let logoStill = true;
   function drawLogo(now) {
-    wobbles = wobbles.filter((w) => now - w.t0 < 900);
+    if (wobbles.length) wobbles = wobbles.filter((w) => now - w.t0 < 900);
     const still = !wobbles.length && !drift.x && !drift.y && !drift.a;
     if (still) {
-      if (!logoStill) logo.style.transform = '';
+      if (!logoStill) logoEl.style.transform = '';
       logoStill = true;
       return;
     }
@@ -712,7 +739,7 @@ export function startSplash(root) {
       tx -= nx * s * 120;
       ty -= ny * s * 120;
     }
-    logo.style.transform = `translate(${drift.x}px, ${drift.y}px) rotate(${drift.a}rad) matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
+    logoEl.style.transform = `translate(${drift.x}px, ${drift.y}px) rotate(${drift.a}rad) matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
   // ---------- colour changes on hits ----------
@@ -722,21 +749,30 @@ export function startSplash(root) {
     const now = performance.now();
     if (now - lastColorChange < HIT_COLOR_GAP_MS) return;
     lastColorChange = now;
-    let k;
-    do k = Math.floor(Math.random() * SPLASH_COLORS.length); while (k === colorIndex);
+    const fromL = lightness(SPLASH_COLORS[colorIndex][1]);
+    const near = SPLASH_COLORS.map((_, i) => i).filter((i) => i !== colorIndex && Math.abs(lightness(SPLASH_COLORS[i][1]) - fromL) <= MAX_STEP_L);
+    const k = near[Math.floor(Math.random() * near.length)];
+    if (k === undefined) return;
     colorIndex = k;
     const hex = SPLASH_COLORS[k][1];
-    root.style.backgroundColor = hex;
-    logoWithLettering(isDark(hex) ? '#FFFFFF' : null).then((url) => {
-      if (!stopped && colorIndex === k && logo.getAttribute('src') !== url) logo.src = url;
-    });
+    const ms = fadeMs(lightness(hex) - fromL);
+    // fade the new colour in on the front layer, then make it the back one
+    fade?.finish();
+    bgFront.style.backgroundColor = hex;
+    fade = bgFront.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: 'ease-in-out' });
+    fade.onfinish = () => { bgBack.style.backgroundColor = hex; bgFront.style.opacity = '0'; fade = null; };
+    bgFront.style.opacity = '1';
+    const dark = isDark(hex); // the lettering cross-fades together with the background
+    logo.style.transitionDuration = logoLight.style.transitionDuration = `${ms}ms`;
+    logo.style.opacity = dark ? '0' : '1';
+    logoLight.style.opacity = dark ? '1' : '0';
   }
+  let fade = null;
 
   return {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
-      root.style.backgroundColor = '';
       root.innerHTML = '';
     },
   };

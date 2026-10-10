@@ -37,19 +37,15 @@ const CSS = `
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
-/* anime speed lines: thin rays from the centre, empty middle; two layers grow from small to large and fade in to 90%,
-   half a cycle apart, so the rush never stops */
-.fight .rays { position: absolute; inset: -20%; z-index: 1; pointer-events: none; opacity: 0; will-change: transform, opacity;
-  background:
-    repeating-conic-gradient(from 3deg at 50% 50%, rgba(255,255,255,.9) 0 .35deg, transparent .35deg 4.1deg),
-    repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.7) 0 .2deg, transparent .2deg 2.9deg);
-  -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 55%); mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 55%);
-  animation: rush 1.2s linear infinite; }
-.fight .rays.r2 { animation-delay: -.6s; transform: rotate(2deg); }
+/* anime speed lines: a few big wedges from the centre (one SVG drawn once, see rays()); the layer grows and fades in.
+   Only transform and opacity change, nothing is repainted. Two layers half a cycle apart. */
+.fight .rays { position: absolute; left: 60px; top: 60px; width: 1920px; height: 1080px; z-index: 1; pointer-events: none; opacity: 0;
+  will-change: transform, opacity; animation: rush 1.4s linear infinite; }
+.fight .rays.r2 { animation-delay: -.7s; }
 @keyframes rush {
-  0% { transform: scale(.55) rotate(0deg); opacity: 0; }
+  0% { transform: scale(.6); opacity: 0; }
   70% { opacity: .9; }
-  100% { transform: scale(1.5) rotate(1deg); opacity: .9; }
+  100% { transform: scale(1.35); opacity: .9; }
 }
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
@@ -116,13 +112,29 @@ const CSS = `
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
+/** 16 big white wedges pointing at the centre, starting away from it so the middle stays clear. */
+function rays(n) {
+  const cx = 960;
+  const cy = 540;
+  let d = '';
+  for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2 + (Math.random() - 0.5) * 0.25 + n * 0.2;
+    const w = 0.025 + Math.random() * 0.03; // half-width of the wedge, radians
+    const r1 = 330 + Math.random() * 160;
+    const r2 = 1300;
+    const p = (r, t) => `${(cx + r * Math.cos(t)).toFixed(0)},${(cy + r * Math.sin(t)).toFixed(0)}`;
+    d += `<polygon points="${p(r1, a)} ${p(r2, a - w)} ${p(r2, a + w)}"/>`;
+  }
+  return `<svg class="rays${n === 2 ? ' r2' : ''}" viewBox="0 0 1920 1080" aria-hidden="true"><g fill="#fff" fill-opacity=".75">${d}</g></svg>`;
+}
+
 export function createCall(root) {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div><div class="rays"></div><div class="rays r2"></div>
+      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays(1)}${rays(2)}
       <canvas class="fire" width="170" height="64"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div><div class="mname m1"></div><div class="mname m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>

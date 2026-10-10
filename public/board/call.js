@@ -39,8 +39,8 @@ const CSS = `
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
 /* anime speed lines: bold spikes (SVG drawn once, see rays()); the whole fan turns slowly and jitters in small jerks.
    Outer box: slow rotation; inner svg: the jitter. Only transforms change, nothing is repainted. */
-.fight .rays { position: absolute; left: -300px; top: -360px; width: 2520px; height: 1800px; z-index: 1; pointer-events: none;
-  will-change: transform; animation: rays-turn 60s linear infinite; } /* bigger than the stage: corners stay covered while it turns */
+.fight .rays { position: absolute; left: -240px; top: -300px; width: 2520px; height: 1800px; z-index: 1; pointer-events: none;
+  will-change: transform; animation: rays-turn 60s linear infinite; } /* bigger than the stage, centred on it (the ring overhangs by 60 px): corners stay covered while it turns */
 .fight .rays.r2 { animation-duration: 90s; animation-direction: reverse; opacity: .45; }
 .fight .rays svg { width: 100%; height: 100%; display: block; will-change: transform; animation: rays-jitter .32s infinite; }
 .fight .rays.r2 svg { animation-duration: .4s; animation-delay: -.15s; }

@@ -117,7 +117,7 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
   -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);
   mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent); }
 .qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
-.qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 28px; }
+.qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 30px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }
 .qm { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; min-width: 0; line-height: 1.2; }
 /* name1 left, vs in the middle, name2 right; a long name wraps to 2 lines at most, then an ellipsis */

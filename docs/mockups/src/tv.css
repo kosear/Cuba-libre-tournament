@@ -98,8 +98,8 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; }
 .bm .p { display: flex; justify-content: space-between; align-items: center; font-size: 32px; font-weight: 700; padding: 14px 22px; color: #a8b2c4; font-style: italic; border-top: 1px solid var(--line); }
 .bm .p span.s { font-style: normal; font-size: 18px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 10px; }
-.bm.final { border-color: var(--red); border-width: 3px; }
-.bm.final .t { color: var(--red); }
+.bm.final { border-color: var(--blue); border-width: 3px; box-shadow: 0 6px 20px rgba(47,111,207,.15); }
+.bm.final .t { color: #fff; background: var(--blue); padding-bottom: 12px; }
 .bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
 

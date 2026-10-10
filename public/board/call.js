@@ -33,9 +33,10 @@ const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
 .fight .ring { position: absolute; inset: -60px; will-change: transform; } /* bigger than the stage: shaking never shows the edges */
 .fight .corner { position: absolute; inset: 0; }
-.fight .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 48.5%, transparent 48.6%); }
-.fight .blue { background: linear-gradient(115deg, transparent 51.4%, #1d4fbf 51.5%, #0a1f5c 100%); }
-.fight .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 48.5%, #0b0d14 48.6%, #0b0d14 51.4%, transparent 51.5%); }
+.fight .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 49%, transparent 49.1%); }
+.fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
+/* the band between the corners: solid black, above the background pattern */
+.fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #000 49.1%, #000 50.9%, transparent 51%); }
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
 .p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;

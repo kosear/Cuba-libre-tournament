@@ -33,6 +33,12 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Every time a ball hits the logo the background turns a random other colour (it starts white). The logo's lettering
 // follows only when the colour needs it: black on light backgrounds, white on dark ones. The figure never changes.
+// Hits push the logo: it floats off in the direction of the blow, slows down, and a weak spring brings it back.
+const LOGO_PUSH = 0.12; // logo speed per ball speed into it
+const LOGO_DAMP = 1.2; // 1/s, like floating on water
+const LOGO_SPRING = 0.8; // 1/s², pull back to the centre
+const LOGO_MAX = [220, 120]; // never further than this from the centre, px
+
 const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
 const SPLASH_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
@@ -87,7 +93,9 @@ export function startSplash(root) {
   root.appendChild(logo);
 
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
-  let logoBox = null; // { x, y, w, h } on the stage
+  let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)
+  let logoHome = null; // where it stands at rest
+  const drift = { x: 0, y: 0, vx: 0, vy: 0 }; // offset from home and its speed
   let balls = [];
   let wobbles = [];
   let nextSpawn = performance.now() + 1500;
@@ -100,6 +108,7 @@ export function startSplash(root) {
     const h = LOGO_W * (logo.naturalHeight / logo.naturalWidth || 1147 / 2720);
     // Centre the screen on the bar name, not on the whole drawing (the figure's legs hang far below it).
     logoBox = { x: (W - LOGO_W) / 2, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y, w: LOGO_W, h };
+    logoHome = { x: logoBox.x, y: logoBox.y };
     logo.style.width = `${LOGO_W}px`;
     logo.style.left = `${logoBox.x}px`;
     logo.style.top = `${logoBox.y}px`;
@@ -520,6 +529,8 @@ export function startSplash(root) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
         wobble(n[0], n[1], -vn);
+        drift.vx -= n[0] * -vn * LOGO_PUSH; // n points out of the logo, the push goes the other way
+        drift.vy -= n[1] * -vn * LOGO_PUSH;
         onLogoHit();
       }
       // Push out of the logo.
@@ -600,6 +611,7 @@ export function startSplash(root) {
     }
 
     schedule(now);
+    moveLogo(dt);
     drawLogo(now);
     raf = requestAnimationFrame(frame);
   }
@@ -622,13 +634,39 @@ export function startSplash(root) {
   }
 
   // Elastic squash of the logo: squeezed along the hit direction, stretched across, damped spring back.
+  function moveLogo(dt) {
+    if (!logoHome) return;
+    const k = Math.exp(-LOGO_DAMP * dt);
+    drift.vx = (drift.vx - drift.x * LOGO_SPRING * dt) * k;
+    drift.vy = (drift.vy - drift.y * LOGO_SPRING * dt) * k;
+    drift.x += drift.vx * dt;
+    drift.y += drift.vy * dt;
+    for (const [axis, v, max] of [['x', 'vx', LOGO_MAX[0]], ['y', 'vy', LOGO_MAX[1]]]) {
+      if (Math.abs(drift[axis]) > max) { drift[axis] = Math.sign(drift[axis]) * max; drift[v] = 0; }
+    }
+    if (Math.abs(drift.vx) < 0.5 && Math.abs(drift.vy) < 0.5 && Math.abs(drift.x) < 0.5 && Math.abs(drift.y) < 0.5) {
+      drift.x = drift.y = drift.vx = drift.vy = 0;
+    }
+    logoBox.x = logoHome.x + drift.x; // the collision mask is relative to logoBox: it moves along
+    logoBox.y = logoHome.y + drift.y;
+    // A resting ball the logo floats into gets nudged away instead of ending up inside the drawing.
+    for (const b of balls) {
+      if (!b.resting) continue;
+      const n = logoContact(b.x, b.y);
+      if (n) { b.resting = false; b.friction = FRICTION_FAST; b.vx = n[0] * 160; b.vy = n[1] * 160; }
+    }
+  }
+
+  let logoStill = true;
   function drawLogo(now) {
-    if (!wobbles.length) return;
     wobbles = wobbles.filter((w) => now - w.t0 < 900);
-    if (!wobbles.length) {
-      logo.style.transform = '';
+    const still = !wobbles.length && !drift.x && !drift.y;
+    if (still) {
+      if (!logoStill) logo.style.transform = '';
+      logoStill = true;
       return;
     }
+    logoStill = false;
     let a = 1;
     let b = 0;
     let c = 0;
@@ -648,7 +686,7 @@ export function startSplash(root) {
       tx -= nx * s * 120;
       ty -= ny * s * 120;
     }
-    logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
+    logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx + drift.x}, ${ty + drift.y})`;
   }
 
   // ---------- colour changes on hits ----------

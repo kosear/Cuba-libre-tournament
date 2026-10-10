@@ -16,7 +16,7 @@ main { display: flex; flex-direction: column; min-width: 0; position: relative; 
 /* header */
 header.top { height: 120px; flex: none; display: flex; align-items: center; gap: 22px; padding: 0 28px; background: var(--card); border-bottom: 1px solid var(--line); position: relative; }
 header.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 6px; background: repeating-linear-gradient(90deg, var(--blue) 0 120px, transparent 120px 150px); opacity: .9; }
-.bar-logo { height: 112px; width: auto; display: block; }
+.bar-logo { height: 112px; width: auto; display: block; position: relative; z-index: 2; transform: translateY(13px); } /* centred on the «CUBA LIBRE» letters (38% of its height), the legs hang over the header line */
 .brand-sub { font-size: 20px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; padding-left: 18px; border-left: 2px solid var(--line); }
 .slide-title { margin-left: auto; font-size: 30px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 3px; white-space: nowrap; }
 .content { flex: 1; padding: 40px 28px 32px; min-height: 0; overflow: hidden; }

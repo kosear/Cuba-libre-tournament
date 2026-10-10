@@ -1,6 +1,7 @@
 // TV scoreboard: no interaction. Slides rotate in a loop (see docs/requirements.md, «Дизайн табло»),
 // data comes live over SSE, the page reloads itself after a deploy (shared/live.js).
 import { live } from '/shared/live.js';
+import { startSplash } from '/board/splash.js';
 
 const stage = document.getElementById('stage');
 const W = 1920;
@@ -13,6 +14,7 @@ let slides = [];
 let index = 0;
 let timer = null;
 let shownKey = null;
+let splash = null; // running splash animation
 
 // ---------- scale the 1920×1080 stage to the screen ----------
 
@@ -204,10 +206,18 @@ function renderSlide() {
   const s = slides[index];
   if (!s) return;
   if (s.kind === 'splash') {
-    stage.className = 'full';
-    stage.innerHTML = '<div class="splash"><img src="/assets/cuba-libre-logo.svg" alt="Cuba Libre"></div>';
+    // Keep the animation running across state updates before the start.
+    if (!splash) {
+      stage.className = 'full';
+      stage.innerHTML = '<div class="splash"></div>';
+      splash = startSplash(stage.querySelector('.splash'));
+    }
     shownKey = s.key;
     return;
+  }
+  if (splash) {
+    splash.stop();
+    splash = null;
   }
   const make = { groups: slideGroups, group: slideGroup, now: slideNow, next: slideNext, playoff: slidePlayoff, podium: slidePodium }[s.kind];
   const view = make(s);

@@ -119,6 +119,11 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .qfade { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(transparent, #fff); }
 .qempty { font-size: 24px; color: var(--muted); }
 
-/* splash before the start (animation in plan stage 4) */
-.splash { position: relative; width: 100%; height: 100%; background: #fff; display: grid; place-items: center; overflow: hidden; }
-.splash img { width: 900px; height: auto; }
+/* splash before the start: logo and rolling balls (splash.js) */
+.splash { position: relative; width: 100%; height: 100%; background: #fff; overflow: hidden; }
+.splash-logo { position: absolute; left: 510px; top: 350px; width: 900px; height: auto; will-change: transform; }
+.ball { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; box-shadow: 0 6px 14px rgba(19,33,58,.14); }
+.ball span { width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #111; font-size: 25px; font-weight: 800; display: grid; place-items: center; line-height: 1; }
+.ball.stripe { background: linear-gradient(#fff 0 23%, var(--c) 23% 77%, #fff 77%); box-shadow: inset 0 0 0 2px rgba(19,33,58,.10), 0 6px 14px rgba(19,33,58,.14); }
+.ball.cue { background: #fff; box-shadow: inset 0 0 0 3px #d9dee7, 0 6px 14px rgba(19,33,58,.14); }
+.ball.cue .dot { position: absolute; left: 24px; top: 24px; width: 12px; height: 12px; border-radius: 50%; background: #D21034; }

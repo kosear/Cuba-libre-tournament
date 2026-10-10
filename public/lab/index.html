@@ -15,10 +15,11 @@
   .sub { position: absolute; left: 0; right: 0; top: 170px; text-align: center; font-size: 110px; line-height: 1; font-weight: 900; color: var(--blue); letter-spacing: 8px; text-transform: uppercase; }
   .label { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 40px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; }
   /* each name sits centred in its half; it is moved in with a transform from the other side of the screen */
-  .name { position: absolute; top: 520px; width: 840px; text-align: center; font-size: 140px; line-height: 1.1; font-weight: 800; text-transform: uppercase; white-space: nowrap; will-change: transform; }
-  .n1 { left: 60px; }
-  .n2 { right: 60px; }
-  .vs { position: absolute; left: 0; right: 0; top: 545px; text-align: center; font-size: 90px; font-weight: 900; color: var(--red); will-change: transform; }
+  .name { position: absolute; width: 840px; height: 154px; text-align: center; font-size: 140px; line-height: 1.1; font-weight: 800; text-transform: uppercase; white-space: nowrap; will-change: transform; }
+  /* different heights: the names never overlap, even when they cross in the middle (154 px lines, 46 px apart) */
+  .n1 { left: 60px; top: 440px; }
+  .n2 { right: 60px; top: 640px; }
+  .vs { position: absolute; left: 0; right: 0; top: 563px; text-align: center; font-size: 90px; font-weight: 900; color: var(--red); will-change: transform; }
 </style>
 </head>
 <body>

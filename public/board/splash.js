@@ -21,6 +21,8 @@ const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
+const HEAVY_CHANCE = 0.05; // one ball in 20 hits the logo 3 times harder (push, spin, squash)
+const HEAVY_POWER = 3;
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
@@ -377,6 +379,7 @@ export function startSplash(root) {
     const q = unit(cross(n, randomDir()));
     const t = num > 8 ? q : unit(cross(n, randomDir()));
     const b = {
+      power: num && Math.random() < HEAVY_CHANCE ? HEAVY_POWER : 1,
       num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
       x, y, vx, vy, friction, resting: false, restAt: 0, entered: false,
@@ -583,13 +586,14 @@ export function startSplash(root) {
       if (vn < 0) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
-        wobble(n[0], n[1], -vn);
-        drift.vx -= n[0] * -vn * LOGO_PUSH; // n points out of the logo, the push goes the other way
-        drift.vy -= n[1] * -vn * LOGO_PUSH;
+        const hit = -vn * b.power; // a heavy ball hits harder
+        wobble(n[0], n[1], hit);
+        drift.vx -= n[0] * hit * LOGO_PUSH; // n points out of the logo, the push goes the other way
+        drift.vy -= n[1] * hit * LOGO_PUSH;
         // spin: lever from the logo centre to the contact point × the push
         const rx = b.x - n[0] * R - (logoBox.x + logoBox.w / 2);
         const ry = b.y - n[1] * R - (logoBox.y + logoBox.h / 2);
-        drift.va += (rx * (-n[1] * -vn) - ry * (-n[0] * -vn)) * LOGO_SPIN;
+        drift.va += (rx * (-n[1] * hit) - ry * (-n[0] * hit)) * LOGO_SPIN;
         onLogoHit();
       }
       // Push out of the logo.

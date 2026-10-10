@@ -131,23 +131,31 @@ export function startSplash(root) {
 
   // ---------- balls ----------
 
-  // ---------- 3D look: the ball really rolls ----------
-  // Every ball has an orientation: n = where its number (or the cue's red dot) is, q = the stripe's axis.
-  // Rolling by d turns both around the axis perpendicular to the motion by d / R, like a real ball on a table
-  // (screen x right, y down, z towards the viewer). Marks on the sphere are spherical caps; a cap around p with
-  // angular radius a projects to an ellipse: centre p·cos a·R, radius R·sin a, squashed by p.z along p's direction.
-  // On the back side (p.z <= 0) it is hidden. The ball clips its marks at the edge (overflow: hidden).
-  const DISC_A = 0.5; // white number circle, ~29°
-  const CAP_A = 0.95; // white caps of a striped ball, ~54°: the band between them is the stripe
-  const DOT_A = 0.17; // red dot of the cue ball
+  // ---------- 3D look: every ball is a tiny canvas, shaded pixel by pixel ----------
+  // Orientation: n = the number (or the cue's red dot), t = the number's «up» on the surface, q = the stripe's axis.
+  // Rolling by d turns them around the axis perpendicular to the motion by d / R, like a real ball on a table
+  // (screen x right, y down, z towards the viewer). Each pixel of the visible half gets its surface normal; what is
+  // there (number circle with the digit, white cap or the stripe, plain colour) comes from the angle to n and q,
+  // then diffuse light from the top left, a specular highlight and an anti-aliased edge. Marks slide over the edge
+  // without any jumps. Redrawn only while the ball moves.
+  const RES = 80; // canvas pixels across the ball, stretched to 118 px by CSS
+  const DISC = Math.cos(0.42); // number circle, ~24° around n
+  const DOT = Math.cos(0.17); // cue ball red dot
+  const BAND = Math.sin(0.56); // stripe: |N·q| below this (~32° to each side of the equator) is coloured, above is white
+  const DISC_R = Math.sin(0.42);
+  const LIGHT = (() => { const l = [-0.45, -0.6, 0.66]; const k = Math.hypot(...l); return l.map((v) => v / k); })();
+  const HALF = [(LIGHT[0]) / 2, (LIGHT[1]) / 2, (LIGHT[2] + 1) / 2]; // light + view, for the highlight
+  const HALF_N = (() => { const k = Math.hypot(...HALF); return HALF.map((v) => v / k); })();
 
   const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const randomDir = () => unit([rand(-1, 1), rand(-1, 1), rand(-1, 1)]);
+  const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
   function rotate(p, k, c, s) { // Rodrigues: p turned around unit axis k by an angle with cos c, sin s
     const kp = cross(k, p);
-    const d = (k[0] * p[0] + k[1] * p[1] + k[2] * p[2]) * (1 - c);
+    const d = dot(k, p) * (1 - c);
     return [p[0] * c + kp[0] * s + k[0] * d, p[1] * c + kp[1] * s + k[1] * d, p[2] * c + kp[2] * s + k[2] * d];
   }
 
@@ -158,65 +166,133 @@ export function startSplash(root) {
     const c = Math.cos(d / R);
     const s = Math.sin(d / R);
     b.n = unit(rotate(b.n, k, c, s));
+    b.t = unit(rotate(b.t, k, c, s));
     b.q = unit(rotate(b.q, k, c, s));
+    b.dirty = true;
   }
 
-  function mark(el, p, a) {
-    if (p[2] <= 0) { el.style.opacity = '0'; return; }
-    const f = R * Math.cos(a);
-    const phi = Math.atan2(p[1], p[0]);
-    el.style.opacity = '1';
-    el.style.transform = `translate(${(p[0] * f).toFixed(1)}px, ${(p[1] * f).toFixed(1)}px) rotate(${phi.toFixed(3)}rad) scale(${p[2].toFixed(3)}, 1) rotate(${(-phi).toFixed(3)}rad)`;
-  }
-
-  function drawMarks(b) {
-    if (b.num === 0) { mark(b.marks[0], b.n, DOT_A); return; }
-    if (b.num > 8) {
-      mark(b.marks[1], b.q, CAP_A);
-      mark(b.marks[2], [-b.q[0], -b.q[1], -b.q[2]], CAP_A);
+  // Per pixel: the surface normal of the front half (same for every ball), computed once.
+  const NORMALS = (() => {
+    const out = [];
+    for (let py = 0; py < RES; py++) {
+      for (let px = 0; px < RES; px++) {
+        const x = ((px + 0.5) / RES) * 2 - 1;
+        const y = ((py + 0.5) / RES) * 2 - 1;
+        const r2 = x * x + y * y;
+        if (r2 >= 1) continue;
+        const z = Math.sqrt(1 - r2);
+        const edge = Math.min(1, (1 - Math.sqrt(r2)) * RES * 0.5); // anti-aliased rim
+        const diffuse = 0.32 + 0.78 * Math.max(0, x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]);
+        const spec = Math.pow(Math.max(0, x * HALF_N[0] + y * HALF_N[1] + z * HALF_N[2]), 60) * 0.85;
+        out.push({ i: (py * RES + px) * 4, x, y, z, edge, diffuse, spec });
+      }
     }
-    mark(b.marks[0], b.n, DISC_A);
+    return out;
+  })();
+
+  // The digit as a small black-on-white picture, sampled through the number circle's own coordinates.
+  const digits = new Map();
+  function digitTexture(num) {
+    if (digits.has(num)) return digits.get(num);
+    const S = 48;
+    const c = document.createElement('canvas');
+    c.width = S;
+    c.height = S;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, S, S);
+    g.fillStyle = '#111';
+    g.font = `800 ${num > 9 ? 25 : 30}px Inter, system-ui, sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(String(num), S / 2, S / 2 + 2);
+    const tex = { S, data: g.getImageData(0, 0, S, S).data };
+    digits.set(num, tex);
+    return tex;
+  }
+
+  // Hot loop: plain numbers only, no arrays per pixel (garbage collection pauses look like glitches on a TV).
+  function drawBall(b) {
+    if (!b.dirty) return;
+    b.dirty = false;
+    const out = b.img.data;
+    const [nx, ny, nz] = b.n;
+    const [tx, ty, tz] = b.t;
+    const [qx, qy, qz] = b.q;
+    const sx = ny * tz - nz * ty; // the number's «right» = n × t
+    const sy = nz * tx - nx * tz;
+    const sz = nx * ty - ny * tx;
+    const [cr, cg, cb] = b.color;
+    const tex = b.tex;
+    const S = tex ? tex.S : 0;
+    const td = tex ? tex.data : null;
+    const cue = b.num === 0;
+    const striped = b.num > 8;
+    for (let j = 0; j < NORMALS.length; j++) {
+      const p = NORMALS[j];
+      const dn = p.x * nx + p.y * ny + p.z * nz;
+      let r = cr;
+      let g = cg;
+      let bl = cb;
+      if (cue) {
+        if (dn > DOT) { r = 210; g = 16; bl = 52; }
+      } else if (dn > DISC) {
+        // inside the number circle: local coordinates on the surface -> the digit picture
+        const u = (p.x * sx + p.y * sy + p.z * sz) / DISC_R;
+        const v = (p.x * tx + p.y * ty + p.z * tz) / DISC_R;
+        let ix = ((u * 0.5 + 0.5) * S) | 0;
+        let iy = ((0.5 - v * 0.5) * S) | 0;
+        ix = ix < 0 ? 0 : ix >= S ? S - 1 : ix;
+        iy = iy < 0 ? 0 : iy >= S ? S - 1 : iy;
+        const k = (iy * S + ix) * 4;
+        r = td[k]; g = td[k + 1]; bl = td[k + 2];
+      } else if (striped) {
+        const dq = p.x * qx + p.y * qy + p.z * qz;
+        if (dq > BAND || dq < -BAND) { r = 246; g = 246; bl = 240; } // white caps
+      }
+      const lit = p.diffuse;
+      const sp = p.spec * 255;
+      const o = p.i;
+      out[o] = r * lit + sp;
+      out[o + 1] = g * lit + sp;
+      out[o + 2] = bl * lit + sp;
+      out[o + 3] = p.edge * 255;
+    }
+    b.ctx.putImageData(b.img, 0, 0);
   }
 
   function makeBall(num, x, y, vx, vy, friction) {
-    const el = document.createElement('div');
-    const sp = (cls, a, inner = '') => `<i class="sp ${cls}" style="--s:${(2 * R * Math.sin(a)).toFixed(1)}px">${inner}</i>`;
-    if (num === 0) {
-      el.className = 'ball cue';
-      el.innerHTML = sp('dot', DOT_A);
-    } else {
-      const color = COLORS[(num - 1) % 8];
-      el.className = num > 8 ? 'ball stripe' : 'ball';
-      el.style.setProperty('--c', color);
-      // the number circle last: on top of the caps
-      el.innerHTML = num > 8 ? `${sp('cap', CAP_A)}${sp('cap', CAP_A)}${sp('disc', DISC_A, `<span>${num}</span>`)}` : sp('disc', DISC_A, `<span>${num}</span>`);
-    }
+    const el = document.createElement('canvas');
+    el.className = 'ball';
+    el.width = RES;
+    el.height = RES;
     const shadow = document.createElement('div');
     shadow.className = 'ball-shadow';
-    const shine = document.createElement('div');
-    shine.className = 'ball-shine';
-    root.append(shadow, el, shine);
+    root.append(shadow, el);
+    const ctx = el.getContext('2d');
+    // The number sits on the stripe: q ⟂ n, and the digit reads along the stripe (t = q).
     const n = randomDir();
-    const q = unit(cross(n, randomDir())); // the number sits on the stripe: n ⟂ q
-    const marks = [...el.querySelectorAll('.sp')];
-    if (num > 8) marks.unshift(marks.pop()); // marks[0] is always the number circle
-    const b = { num, el, shadow, shine, x, y, vx, vy, friction, n, q, marks, resting: false, restAt: 0, entered: false };
+    const q = unit(cross(n, randomDir()));
+    const t = num > 8 ? q : unit(cross(n, randomDir()));
+    const b = {
+      num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
+      tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
+      x, y, vx, vy, friction, resting: false, restAt: 0, entered: false,
+    };
     balls.push(b);
     place(b);
     return b;
   }
 
   function place(b) {
-    b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`; // no 2D spin: the marks roll on the sphere
-    drawMarks(b);
+    b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
     b.shadow.style.transform = `translate(${b.x - R + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px)`;
-    b.shine.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
+    drawBall(b);
   }
 
   function removeBall(b) {
     b.el.remove();
     b.shadow.remove();
-    b.shine.remove();
     balls = balls.filter((x) => x !== b);
   }
 

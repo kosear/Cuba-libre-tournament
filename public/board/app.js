@@ -199,7 +199,7 @@ function renderQueue() {
     ? `<div class="qbig ${cls}"><div class="qlabel">${title} · ${esc(label(m))}</div><div class="qp">${name(m.p1)}</div><div class="qvs">vs</div><div class="qp">${name(m.p2)}</div></div>`
     : '');
   const rest = q.slice(3);
-  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 4}</span><span class="qm"><span>${name(m.p1)}</span><span><i>vs</i>${name(m.p2)}</span></span><span class="qg">${esc(shortLabel(m))}</span></div>`).join('');
+  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 4}</span><span class="qm"><span class="a">${name(m.p1)}</span><i>vs</i><span class="b">${name(m.p2)}</span></span><span class="qg">${esc(shortLabel(m))}</span></div>`).join('');
   const top = q.length ? `${big(q[0], 'Now playing', 'now')}${big(q[1], 'Next', 'next')}${big(q[2], 'After next', 'after')}` : '<div class="qempty">No matches in the queue</div>';
   const key = top + rows;
   if (key === queueKey) return; // nothing changed: do not touch the DOM, the scroll goes on

@@ -70,6 +70,18 @@ fit();
 // ---------- transitions: (oldEl, newEl, dir = 1 forward / -1 back, opts) -> Animation[] ----------
 const W = 1920 - 540 - 56; // content width
 const T = {
+  // Cartoon: wind up a little the other way (anticipation), whoosh, small overshoot and settle.
+  'Cartoon': (o, n, d) => {
+    const back = 70 * d; // wind-up distance
+    const x = (v) => ({ transform: `translateX(${v}px)` });
+    const o1 = { ...x(back), offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }; // slow start of the whoosh
+    const n1 = { ...x(d * W + back), offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' };
+    const opt = { duration: DURATION, fill: 'forwards' };
+    return [
+      o.animate([{ ...x(0), easing: 'cubic-bezier(.3,0,.4,1)' }, o1, x(-d * W)], opt),
+      n.animate([{ ...x(d * W), easing: 'cubic-bezier(.3,0,.4,1)' }, n1, { ...x(-d * 24), offset: 0.85, easing: 'ease-in-out' }, x(0)], opt),
+    ];
+  },
   'Push (both move)': (o, n, d) => [
     o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W}px)` }], opts()),
     n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
@@ -108,8 +120,8 @@ const T = {
 };
 
 // One transition at a time, no controls: change these to try another.
-const KIND = 'Push (both move)';
-const DURATION = 700;
+const KIND = 'Cartoon';
+const DURATION = 900;
 const EASING = 'cubic-bezier(.22,.8,.24,1)';
 const AUTO_MS = 4000;
 const $ = (id) => document.getElementById(id);

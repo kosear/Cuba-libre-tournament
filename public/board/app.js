@@ -2,6 +2,7 @@
 // data comes live over SSE, the page reloads itself after a deploy (shared/live.js).
 import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
+import { createCall } from '/board/call.js';
 
 const stage = document.getElementById('stage');
 const W = 1920;
@@ -344,23 +345,34 @@ let loaded = false;
 let prevCurrentId = null;
 let call = null; // { id, timer }
 
+let callScreen = null; // fight-night screen, public/board/call.js; built on first use
+
+/**
+ * Important matches get the fire: the play-off, tie-breaks, the two group leaders against each other,
+ * and the last match of a group (it settles the group).
+ */
+function isImportant(m) {
+  if (m.stage === 'playoff' || m.stage === 'tiebreak') return true;
+  const g = T.groups.find((x) => x.id === m.groupId);
+  if (!g) return false;
+  if (g.total - g.played === 1) return true;
+  const top = g.rows.filter((r) => !r.out).slice(0, 2).map((r) => r.id);
+  return g.played > 0 && top.includes(m.p1?.id) && top.includes(m.p2?.id);
+}
+
 function showCall(m) {
   clearTimeout(call?.timer);
   const box = el('call');
-  box.innerHTML = `<div class="call-sub">Now playing</div><div class="call-label">${esc(label(m))}</div>
-    <div class="call-name">${name(m.p1)}</div><div class="call-vs">VS</div><div class="call-name">${name(m.p2)}</div>
-    <div class="call-bar" style="animation-duration:${CALL_MS}ms"></div>`;
-  box.hidden = false;
-  box.querySelectorAll('.call-name').forEach((n) => {
-    let size = 150;
-    while (size > 40 && n.scrollWidth > n.clientWidth + 1) n.style.fontSize = `${(size -= 4)}px`;
-  });
+  box.hidden = false; // visible before show(): it measures the names
+  callScreen ??= createCall(box);
+  callScreen.show(m, isImportant(m), CALL_MS);
   call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
 }
 
 function hideCall() {
   clearTimeout(call?.timer);
   call = null;
+  callScreen?.hide();
   el('call').hidden = true;
 }
 

@@ -91,6 +91,6 @@ function queueHtml() {
 
 function headerHtml(title) {
   return `<header class="top"><div class="flag"><svg viewBox="0 0 100 100"><polygon points="0,0 100,50 0,100" fill="#D21034"/><polygon points="30.0,35.0 33.5,45.1 44.3,45.4 35.7,51.9 38.8,62.1 30.0,56.0 21.2,62.1 24.3,51.9 15.7,45.4 26.5,45.1" fill="#fff"/></svg></div>
-    <div class="logo">LOGO</div><div class="brand">Cuba Libre<br><span>Pool Tournament</span></div>
+    <img class="bar-logo" src="../../assets/cuba-libre-logo.svg" alt="Cuba Libre"><div class="brand-sub">Pool<br>Tournament</div>
     <div class="slide-title">${title}</div></header>`;
 }

@@ -36,6 +36,8 @@ header.top::after { /* полосы флага */
 }
 .brand { font-size: 34px; font-weight: 800; line-height: 1.05; }
 .brand span { font-size: 20px; font-weight: 500; color: var(--muted); letter-spacing: .5px; }
+.bar-logo { height: 112px; width: auto; display: block; }
+.brand-sub { font-size: 20px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; padding-left: 18px; border-left: 2px solid var(--line); }
 .slide-title {
   margin-left: auto; font-size: 30px; font-weight: 800; color: var(--blue);
   text-transform: uppercase; letter-spacing: 3px;

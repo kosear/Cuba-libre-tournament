@@ -14,11 +14,6 @@
   .lab-q { padding: 42px 30px 24px; }
   .lab-row { font-size: 28px; padding: 12px 4px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
   .lab-row i { color: var(--red); font-style: normal; font-weight: 700; font-size: .75em; }
-  #panel { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-    background: rgba(19,33,58,.88); color: #fff; padding: 10px 14px; border-radius: 12px; font: 14px system-ui, sans-serif; max-width: calc(100vw - 24px); }
-  #panel select, #panel button, #panel input { font: inherit; }
-  #panel button { background: #fff; color: #13213a; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
-  #panel label { display: flex; gap: 6px; align-items: center; }
   .bk { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
   .bk .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; }
   .bk .p { font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); }
@@ -31,19 +26,6 @@
     <div class="content" id="content"></div>
   </main>
   <aside class="queue lab-q"><div class="qhead">Queue</div><div id="lab-queue"></div></aside>
-</div>
-
-<div id="panel">
-  <label>Transition <select id="kind"></select></label>
-  <label>Speed <input id="speed" type="range" min="250" max="2000" step="50" value="700"> <span id="speedv"></span></label>
-  <label>Easing <select id="ease">
-    <option value="cubic-bezier(.22,.8,.24,1)">smooth out</option>
-    <option value="cubic-bezier(.65,0,.35,1)">in-out</option>
-    <option value="linear">linear</option>
-    <option value="cubic-bezier(.34,1.4,.5,1)">overshoot</option>
-  </select></label>
-  <button id="prev">←</button><button id="next">→</button>
-  <label><input id="auto" type="checkbox"> auto every 4 s</label>
 </div>
 
 <script>
@@ -125,11 +107,13 @@ const T = {
   },
 };
 
+// One transition at a time, no controls: change these to try another.
+const KIND = 'Push (both move)';
+const DURATION = 700;
+const EASING = 'cubic-bezier(.22,.8,.24,1)';
+const AUTO_MS = 4000;
 const $ = (id) => document.getElementById(id);
-for (const k of Object.keys(T)) $('kind').add(new Option(k, k));
-const opts = (f = 1) => ({ duration: +$('speed').value * f, easing: $('ease').value, fill: 'forwards' });
-$('speedv').textContent = `${$('speed').value} ms`;
-$('speed').oninput = () => { $('speedv').textContent = `${$('speed').value} ms`; };
+const opts = (f = 1) => ({ duration: DURATION * f, easing: EASING, fill: 'forwards' });
 
 // ---------- slide switching ----------
 const content = $('content');
@@ -155,7 +139,7 @@ function show(i, dir) {
   const old = current;
   current = next;
   content.style.perspective = '';
-  const anims = T[$('kind').value](old, next, dir);
+  const anims = T[KIND](old, next, dir);
   Promise.all(anims.map((a) => a.finished)).then(() => {
     old.remove();
     anims.forEach((a) => a.cancel()); // drop fill: forwards, the layer stays in its final (natural) place
@@ -164,11 +148,8 @@ function show(i, dir) {
 }
 
 const go = (dir) => { if (busy) return; index = (index + dir + SLIDES.length) % SLIDES.length; show(index, dir); };
-$('next').onclick = () => go(1);
-$('prev').onclick = () => go(-1);
 addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); });
-let autoTimer = null;
-$('auto').onchange = () => { clearInterval(autoTimer); if ($('auto').checked) autoTimer = setInterval(() => go(1), 4000); };
+setInterval(() => go(1), AUTO_MS);
 show(0, 1);
 </script>
 </body>

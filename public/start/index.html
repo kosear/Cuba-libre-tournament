@@ -8,6 +8,7 @@
   :root { --bg: #f3f6fb; --ink: #13213a; --muted: #6b7894; --line: #dde4ef; --blue: #2f6fcf; --red: #d21034; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
+  #page { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; transform-origin: 0 0; }
   body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); background: var(--bg); overflow: hidden; }
   .stripes { position: fixed; inset: 0; background: repeating-linear-gradient(180deg, transparent 0 16vh, rgba(47,111,207,.09) 16vh 20vh); }
   .flag { position: fixed; left: 0; top: 0; height: 100vh; width: 32vw; }
@@ -33,6 +34,7 @@
 </style>
 </head>
 <body>
+<div id="page">
 <div class="stripes"></div>
 <svg class="flag" viewBox="0 0 100 174" preserveAspectRatio="none"><polygon points="0,0 100,87 0,174" fill="#D21034"/></svg>
 <svg class="star" viewBox="0 0 100 100"><polygon points="50,5 61.8,38.2 97.6,38.2 68.5,58.8 79.4,92.6 50,71.8 20.6,92.6 31.5,58.8 2.4,38.2 38.2,38.2" fill="#fff"/></svg>
@@ -45,5 +47,23 @@
     </div>
   </div>
 </div>
+</div>
+<script>
+  // TV browsers may zoom the page so that only a part of it is visible: shrink it back into the visible area.
+  // Without zoom (phones, computers) the factor is 1 and nothing changes.
+  (function () {
+    var page = document.getElementById('page');
+    function fit() {
+      var vv = window.visualViewport;
+      if (!vv) return;
+      var k = Math.min(1, vv.width / window.innerWidth, vv.height / window.innerHeight);
+      page.style.transform = k < 0.99 ? 'translate(' + vv.pageLeft + 'px,' + vv.pageTop + 'px) scale(' + k + ')' : '';
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    if (window.visualViewport) { visualViewport.addEventListener('resize', fit); visualViewport.addEventListener('scroll', fit); }
+    setInterval(fit, 2000);
+  })();
+</script>
 </body>
 </html>

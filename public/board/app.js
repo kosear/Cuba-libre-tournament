@@ -19,11 +19,25 @@ let splash = null; // running splash animation
 
 // ---------- scale the 1920×1080 stage to the screen ----------
 
+// TV browsers often zoom pages: the layout viewport stays 1920×1080 while only a part of it is visible.
+// So fit the stage into the visual viewport (what is actually on screen), not into innerWidth/innerHeight.
+function visibleArea() {
+  const vv = window.visualViewport;
+  if (vv && vv.width > 0 && vv.height > 0) return { w: vv.width, h: vv.height, x: vv.pageLeft, y: vv.pageTop };
+  return { w: window.innerWidth, h: window.innerHeight, x: 0, y: 0 };
+}
+
+let fitted = '';
 function fitStage() {
-  const k = Math.min(window.innerWidth / W, window.innerHeight / H);
-  stage.style.transform = `translate(${(window.innerWidth - W * k) / 2}px, ${(window.innerHeight - H * k) / 2}px) scale(${k})`;
+  const a = visibleArea();
+  const k = Math.min(a.w / W, a.h / H);
+  const t = `translate(${a.x + (a.w - W * k) / 2}px, ${a.y + (a.h - H * k) / 2}px) scale(${k})`;
+  if (t !== fitted) stage.style.transform = fitted = t;
 }
 window.addEventListener('resize', fitStage);
+window.visualViewport?.addEventListener('resize', fitStage);
+window.visualViewport?.addEventListener('scroll', fitStage);
+setInterval(fitStage, 2000); // some TV browsers change zoom without firing events
 fitStage();
 
 // ---------- helpers ----------

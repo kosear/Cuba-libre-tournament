@@ -53,13 +53,13 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre">
   <div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
   <div class="content" id="content"></div></main>
-  <aside class="queue" id="queue"><div class="qhead"><span>Queue</span><span id="clock"></span></div><div id="qtop"></div>
+  <aside class="queue" id="queue"><div class="qhead"><span class="qtitle">Play Next</span><span id="clock"></span></div><div id="qtop"></div>
     <div class="qrest" id="qrest"><div class="qrest-inner" id="qinner"></div><div class="qfade" hidden></div></div></aside>
   <div class="splash" id="splash" hidden></div>
   <div class="call" id="call" hidden></div>`;
 const el = (id) => document.getElementById(id);
 
-// Clock next to «Queue»: Bali time (WITA, UTC+8) whatever the TV is set to, 24 h. The DOM is touched only when the minute changes.
+// Clock next to «Play Next»: Bali time (WITA, UTC+8) whatever the TV is set to, 24 h. The DOM is touched only when the minute changes.
 const BALI = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', hour12: false });
 function tickClock() {
   const t = BALI.format(new Date());

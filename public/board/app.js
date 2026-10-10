@@ -6,7 +6,7 @@ import { startSplash } from '/board/splash.js';
 const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
-const DURATION = { groups: 30000, group: 10000, now: 10000, next: 10000, playoff: 10000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 30000, group: 10000, next: 10000, playoff: 10000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 
@@ -82,7 +82,6 @@ function buildSlides(t) {
     for (let p = 0; p < pages; p++) out.push({ kind: 'groups', key: `groups:${p}`, page: p, pages });
     for (const g of t.groups) out.push({ kind: 'group', key: `group:${g.id}`, id: g.id });
   }
-  if (t.current) out.push({ kind: 'now', key: 'now' });
   if (t.next) out.push({ kind: 'next', key: 'next' });
   out.push({ kind: 'playoff', key: 'playoff' });
   return out;
@@ -129,22 +128,6 @@ function slideGroup(s) {
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
         <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>empty — not played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
-  };
-}
-
-function stats(st) {
-  if (!st) return '';
-  return `<div class="stats">Frames: <b>${st.frames}</b><br>Win: <b>${st.wins}</b><br>Balls: <b>${st.approx ? '≈' : ''}+${st.balls}</b></div>`;
-}
-
-function slideNow() {
-  const m = T.current;
-  if (!m) return null;
-  return {
-    title: label(m),
-    html: `<div class="duel"><div class="sub">Now playing</div>
-      <div class="side"><div class="pname">${name(m.p1)}</div>${stats(m.p1Stats)}</div><div class="vs">VS</div>
-      <div class="side"><div class="pname">${name(m.p2)}</div>${stats(m.p2Stats)}</div></div>`,
   };
 }
 
@@ -263,7 +246,7 @@ function renderSlide() {
     splash = null;
     el('splash').hidden = true;
   }
-  const make = { groups: slideGroups, group: slideGroup, now: slideNow, next: slideNext, playoff: slidePlayoff, podium: slidePodium }[s.kind];
+  const make = { groups: slideGroups, group: slideGroup, next: slideNext, playoff: slidePlayoff, podium: slidePodium }[s.kind];
   const view = make(s);
   if (!view) return;
   stage.classList.toggle('full', s.kind === 'podium'); // the podium uses the whole width, no queue

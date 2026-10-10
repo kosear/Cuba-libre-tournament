@@ -112,7 +112,10 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .qvs { font-size: 20px; font-weight: 700; margin: 2px 0; }
 .qbig.next .qvs { color: #ffd2da; }
 .qbig.after .qvs { color: #8a94a8; }
-.qrest { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+.qrest { flex: 1; position: relative; overflow: hidden; min-height: 0;
+  /* the list itself fades out at both edges (a mask, not white overlays: rows can never show above the fade) */
+  -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);
+  mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent); }
 .qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
 .qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 28px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -122,8 +125,6 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .qm > .b { text-align: right; }
 .qm i { font-style: normal; color: var(--red); font-weight: 700; font-size: .75em; }
 .qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
-.qfade { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(transparent, #fff); }
-.qrest::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 36px; z-index: 1; background: linear-gradient(#fff, transparent); }
 .qempty { font-size: 24px; color: var(--muted); }
 
 /* splash before the start: logo and rolling balls (splash.js) */

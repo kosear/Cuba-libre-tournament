@@ -265,6 +265,7 @@ function renderSlide() {
   el('content').innerHTML = view.html;
   fitText(el('content'));
   balanceDuel(el('content'));
+  alignGroupRows(el('content'));
   renderQueue();
   shownKey = s.key;
 }
@@ -277,6 +278,25 @@ function balanceDuel(root) {
   const [a, b] = [...d.querySelectorAll('.pname > span')].map((x) => x.offsetWidth); // layout px, stage scale ignored
   const shift = Math.max(-200, Math.min(200, (a - b) / 4));
   d.style.setProperty('--shift', `${Math.round(shift)}px`);
+}
+
+// Group slide: Standings and Results list the same players in the same order. Give every Standings row
+// the exact height and position of the matching Results row, so the names line up across the two cards.
+function alignGroupRows(root) {
+  const std = root.querySelector('.group-one table.std');
+  const cross = root.querySelector('.group-one table.cross');
+  if (!std || !cross) return;
+  const sr = [...std.rows];
+  const xr = [...cross.rows];
+  if (sr.length !== xr.length) return;
+  std.style.flex = 'none'; // stop stretching, heights come from the Results rows
+  xr.forEach((r, i) => {
+    const h = i < xr.length - 1 ? xr[i + 1].offsetTop - r.offsetTop : r.offsetHeight;
+    sr[i].style.height = `${h}px`;
+  });
+  const k = stage.getBoundingClientRect().width / W || 1; // screen px -> stage px
+  const dy = (cross.getBoundingClientRect().top - std.getBoundingClientRect().top) / k;
+  std.style.marginTop = `${Math.round(dy)}px`;
 }
 
 function schedule() {

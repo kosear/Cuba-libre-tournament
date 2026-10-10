@@ -70,6 +70,19 @@ Checklist:
 2. `npm run dev`, open http://localhost:3000 and http://localhost:3000/admin, click through what you changed.
 3. Check that the TV updates live: change something in admin with the TV page open in another tab.
 4. If you added a migration, delete your local `data/app.db` once and start again, so all migrations apply from zero.
+5. If the change is significant, add an entry to `docs/CHANGELOG.md` (see below).
+
+### `docs/CHANGELOG.md`: log of significant changes
+
+Write an entry, newest on top, when a change affects how the system behaves or stores data:
+tournament rules or the engine in `src/domain/`, action types or their payload, the state shape sent to the TV
+(`/api/state`, SSE), the DB schema, the API, or anything that changes how past tournaments replay.
+Small UI tweaks, texts and translations do not need an entry.
+
+Entry format: date, then in short — what changed, why, and whether old tournaments or old archived states
+read differently now. The commit hash is in git, no need to copy it.
+Why: the infra owner archives every tournament state from the SSE stream (`docs/infrastructure.md`, «Архив турниров»);
+this file explains the archive when its format changes.
 
 ## 6. Architecture and conventions
 

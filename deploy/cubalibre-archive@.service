@@ -1,0 +1,16 @@
+# Tournament archive for %i: every state from the SSE stream -> /var/lib/cubalibre-archive/%i/*.jsonl
+# setup.sh copies deploy/archive.py to /usr/local/lib/cubalibre/. Independent of the app's code and DB.
+[Unit]
+Description=Cuba Libre tournament archive (%i)
+After=cubalibre@%i.service
+
+[Service]
+User=cubalibre
+Group=cubalibre
+ExecStart=/usr/bin/python3 -u /usr/local/lib/cubalibre/archive.py %i
+StateDirectory=cubalibre-archive/%i
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

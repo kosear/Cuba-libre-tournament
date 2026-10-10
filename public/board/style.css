@@ -18,7 +18,7 @@ header.top { height: 120px; flex: none; display: flex; align-items: center; gap:
 header.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 6px; background: repeating-linear-gradient(90deg, var(--blue) 0 120px, transparent 120px 150px); opacity: .9; }
 .bar-logo { height: 112px; width: auto; display: block; position: relative; z-index: 2; transform: translateY(13px); } /* centred on the «CUBA LIBRE» letters (38% of its height), the legs hang over the header line */
 .brand-sub { font-size: 20px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; padding-left: 18px; border-left: 2px solid var(--line); }
-.slide-title { margin-left: auto; font-size: 30px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 3px; white-space: nowrap; }
+.slide-title { margin-left: auto; font-size: 30px; line-height: 36px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 3px; white-space: nowrap; }
 .content { flex: 1; padding: 40px 28px 32px; min-height: 0; overflow: hidden; }
 
 /* cards and tables */
@@ -106,8 +106,8 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .podium .medal { font-size: 72px; margin-bottom: 10px; }
 
 /* queue panel (always on the right) */
-aside.queue { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; padding: 181px 30px 24px; gap: 18px; height: 1080px; min-width: 0; }
-/* 181 px = header 120 + content padding 40 + card border 1 + card padding 20: «Queue» on the line of the card titles */
+aside.queue { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; padding: 42px 30px 24px; gap: 18px; height: 1080px; min-width: 0; }
+/* 42 px: the 36 px «Queue» line is centred at 60 px, like the slide title in the 120 px header */
 .qhead { font-size: 30px; line-height: 36px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--blue); }
 #qtop { display: flex; flex-direction: column; gap: 14px; } /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }

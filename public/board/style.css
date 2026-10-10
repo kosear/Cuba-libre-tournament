@@ -42,7 +42,7 @@ table.std tr.out td.name { text-decoration: line-through; }
 .groups.n2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .groups.n3, .groups.n4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 
-.group-one { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.3fr); gap: 18px; height: 100%; }
+.group-one { display: grid; grid-template-columns: minmax(0, 49fr) minmax(0, 51fr); gap: 18px; height: 100%; }
 .group-one .fit > table { flex: 1; }
 .group-one .fit { font-size: 50px; }
 .group-one table.std th { font-size: .48em; height: 3em; padding: 0 4px; letter-spacing: 0; } /* narrow card: no letter spacing in the headers */

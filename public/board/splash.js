@@ -20,7 +20,7 @@ const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
-const CUSHION_CHANCE = 0.4; // after the cue shot, each of the two balls may bounce off an edge once
+const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
 
 const COLORS = ['#F2C200', '#1F4FBF', '#D21034', '#5B2A86', '#F07A1A', '#11804A', '#7A1F1F', '#111111'];
@@ -223,7 +223,8 @@ export function startSplash(root) {
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
       const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
       const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760));
-      makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
+      const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
+      b.cushions = Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
     }
     return false;
@@ -350,7 +351,7 @@ export function startSplash(root) {
   }
 
   /**
-   * Screen edges are open, except once after the cue shot (b.cushions): the ball bounces off the edge it reaches,
+   * Screen edges are open, except once for a rolling ball or after the cue shot (b.cushions): the ball bounces off the edge it reaches,
    * but only when the bounced path still takes it off screen (fast enough, clear of the logo). Otherwise it leaves.
    */
   function bounceOffEdge(b) {

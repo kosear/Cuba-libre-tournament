@@ -8,7 +8,7 @@ const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
-const DURATION = { groups: 30000, group: 10000, playoff: 10000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 30000, group: 30000, playoff: 30000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 

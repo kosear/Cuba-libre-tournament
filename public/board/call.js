@@ -37,18 +37,19 @@ const CSS = `
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
-/* anime speed lines: 4 layers of sharp spikes (SVG drawn once, see rays()), each flashes in and shoots forward in 0.36 s,
-   out of step with the others, so the lines flicker and rush all the time. Only transform and opacity change. */
-.fight .rays { position: absolute; left: 60px; top: 60px; width: 1920px; height: 1080px; z-index: 1; pointer-events: none; opacity: 0;
-  will-change: transform, opacity; animation: rush .36s cubic-bezier(.2,.6,.4,1) infinite; }
-.fight .rays.r2 { animation-delay: -.09s; }
-.fight .rays.r3 { animation-delay: -.18s; }
-.fight .rays.r4 { animation-delay: -.27s; }
-@keyframes rush {
-  0% { transform: scale(.8); opacity: 0; }
-  15% { opacity: .95; }
-  60% { opacity: .7; }
-  100% { transform: scale(1.3); opacity: 0; }
+/* anime speed lines: bold spikes (SVG drawn once, see rays()); the whole fan turns slowly and jitters in small jerks.
+   Outer box: slow rotation; inner svg: the jitter. Only transforms change, nothing is repainted. */
+.fight .rays { position: absolute; left: -300px; top: -360px; width: 2520px; height: 1800px; z-index: 1; pointer-events: none;
+  will-change: transform; animation: rays-turn 60s linear infinite; } /* bigger than the stage: corners stay covered while it turns */
+.fight .rays.r2 { animation-duration: 90s; animation-direction: reverse; opacity: .45; }
+.fight .rays svg { width: 100%; height: 100%; display: block; will-change: transform; animation: rays-jitter .32s infinite; }
+.fight .rays.r2 svg { animation-duration: .4s; animation-delay: -.15s; }
+@keyframes rays-turn { to { transform: rotate(360deg); } }
+@keyframes rays-jitter {
+  0% { transform: translate(0, 0) scale(1); animation-timing-function: steps(1); }
+  25% { transform: translate(6px, -4px) scale(1.012); animation-timing-function: steps(1); }
+  50% { transform: translate(-5px, 3px) scale(.995); animation-timing-function: steps(1); }
+  75% { transform: translate(3px, 6px) scale(1.008); animation-timing-function: steps(1); }
 }
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
@@ -115,20 +116,21 @@ const CSS = `
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
-/** 28 sharp white spikes pointing at the centre, random lengths and widths, the middle stays clear. */
+/** Bold white spikes pointing at the centre of the stage, random lengths and widths; the middle stays clear. */
 function rays(n) {
-  const cx = 960;
-  const cy = 540;
+  const cx = 1260; // centre of the 2520×1800 box = centre of the stage
+  const cy = 900;
+  const count = n === 1 ? 36 : 28;
   let d = '';
-  for (let k = 0; k < 28; k++) {
-    const a = Math.random() * Math.PI * 2;
-    const w = 0.006 + Math.random() * 0.022; // half-width at the outer end, radians
-    const r1 = 300 + Math.random() * 300; // the sharp tip
-    const r2 = 1250;
+  for (let k = 0; k < count; k++) {
+    const a = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
+    const w = n === 1 ? 0.016 + Math.random() * 0.028 : 0.008 + Math.random() * 0.014; // half-width at the outer end, radians
+    const r1 = 280 + Math.random() * 260; // the sharp tip
+    const r2 = 1600;
     const p = (r, t) => `${(cx + r * Math.cos(t)).toFixed(0)},${(cy + r * Math.sin(t)).toFixed(0)}`;
     d += `<polygon points="${p(r1, a)} ${p(r2, a - w)} ${p(r2, a + w)}"/>`;
   }
-  return `<svg class="rays r${n}" viewBox="0 0 1920 1080" aria-hidden="true"><g fill="#fff" fill-opacity=".85">${d}</g></svg>`;
+  return `<div class="rays r${n}"><svg viewBox="0 0 2520 1800" aria-hidden="true"><g fill="#fff" fill-opacity=".9">${d}</g></svg></div>`;
 }
 
 export function createCall(root) {
@@ -137,7 +139,7 @@ export function createCall(root) {
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays(1)}${rays(2)}${rays(3)}${rays(4)}
+      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays(1)}${rays(2)}
       <canvas class="fire" width="170" height="64"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div><div class="mname m1"></div><div class="mname m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>

@@ -21,8 +21,10 @@
   .bolt { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
   #ring.bolted .bolt { display: block; }
   #ring.bolted .gap { display: none; }
-  #ring.bolted .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 50%, transparent 50.1%); }
-  #ring.bolted .blue { background: linear-gradient(115deg, transparent 49.9%, #1d4fbf 50%, #0a1f5c 100%); }
+  /* the red corner is cut along the left edge of the bolt, the blue one fills everything behind */
+  #ring.bolted .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 60%);
+    clip-path: polygon(0 0, 63.24% 0, 54.41% 33.33%, 59.56% 34.17%, 48.53% 65.83%, 53.68% 66.67%, 38.73% 100%, 0 100%); }
+  #ring.bolted .blue { background: linear-gradient(115deg, #1d4fbf 40%, #0a1f5c 100%); }
   /* background patterns over the corners, pure CSS; the scene cycles through them (PATTERNS in the script) */
   .pattern { position: absolute; inset: 0; pointer-events: none; }
   .p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;
@@ -102,7 +104,11 @@
   <div class="flash" id="flash"></div>
   <div class="pname" id="pname"></div>
 </div>
-<script>
+<script type="module">
+// Reload by itself after a deploy, like the board.
+import { live } from '/shared/live.js';
+live({ onState() {} });
+
 const PAIRS = [
   ['Andrei', 'Bobr', 'Group A'],
   ['Maxim Petrov', 'Igor', 'Group B'],

@@ -123,9 +123,9 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 
 /* splash before the start: logo and rolling balls (splash.js) */
 .splash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; background: #fff; overflow: hidden; }
-.splash-logo { position: absolute; left: 510px; top: 350px; width: 900px; height: auto; will-change: transform; }
-.ball { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; box-shadow: 0 6px 14px rgba(19,33,58,.14); }
-.ball span { width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #111; font-size: 25px; font-weight: 800; display: grid; place-items: center; line-height: 1; }
-.ball.stripe { background: linear-gradient(#fff 0 23%, var(--c) 23% 77%, #fff 77%); box-shadow: inset 0 0 0 2px rgba(19,33,58,.10), 0 6px 14px rgba(19,33,58,.14); }
-.ball.cue { background: #fff; box-shadow: inset 0 0 0 3px #d9dee7, 0 6px 14px rgba(19,33,58,.14); }
-.ball.cue .dot { position: absolute; left: 24px; top: 24px; width: 12px; height: 12px; border-radius: 50%; background: #D21034; }
+.splash-logo { position: absolute; left: 330px; top: 275px; width: 1260px; height: auto; will-change: transform; }
+.ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; box-shadow: 0 8px 18px rgba(19,33,58,.14); }
+.ball span { width: 52%; height: 52%; border-radius: 50%; background: #fff; color: #111; font-size: calc(var(--ball, 118px) * .3); font-weight: 800; display: grid; place-items: center; line-height: 1; }
+.ball.stripe { background: linear-gradient(#fff 0 23%, var(--c) 23% 77%, #fff 77%); box-shadow: inset 0 0 0 3px rgba(19,33,58,.10), 0 8px 18px rgba(19,33,58,.14); }
+.ball.cue { background: #fff; box-shadow: inset 0 0 0 4px #d9dee7, 0 8px 18px rgba(19,33,58,.14); }
+.ball.cue .dot { position: absolute; left: 28.5%; top: 28.5%; width: 14%; height: 14%; border-radius: 50%; background: #D21034; }

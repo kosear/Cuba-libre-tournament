@@ -8,8 +8,8 @@
 
 const W = 1920;
 const H = 1080;
-const R = 42; // ball radius
-const LOGO_W = 900;
+const R = 59; // ball radius (diameter 118 px on the 1920×1080 stage)
+const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
@@ -27,6 +27,7 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 export function startSplash(root) {
   root.innerHTML = '';
+  root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
   const logo = new Image();
   logo.src = LOGO_SRC;
   logo.alt = 'Cuba Libre';

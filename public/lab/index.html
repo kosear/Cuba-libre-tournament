@@ -14,9 +14,15 @@
   #ring { position: absolute; inset: -60px; will-change: transform; } /* shaken on impacts; bigger than the stage so the edges never show */
   /* red corner left, blue corner right, split on a diagonal */
   .corner { position: absolute; inset: 0; }
-  .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 45%, transparent 45.1%); }
-  .blue { background: linear-gradient(115deg, transparent 54.9%, #1d4fbf 55%, #0a1f5c 100%); }
-  .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 45%, #0b0d14 45.1%, #0b0d14 54.9%, transparent 55%); }
+  .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 48.5%, transparent 48.6%); }
+  .blue { background: linear-gradient(115deg, transparent 51.4%, #1d4fbf 51.5%, #0a1f5c 100%); }
+  .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 48.5%, #0b0d14 48.6%, #0b0d14 51.4%, transparent 51.5%); }
+  /* divider variant: a black lightning bolt along the seam instead of the straight band */
+  .bolt { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+  #ring.bolted .bolt { display: block; }
+  #ring.bolted .gap { display: none; }
+  #ring.bolted .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 50%, transparent 50.1%); }
+  #ring.bolted .blue { background: linear-gradient(115deg, transparent 49.9%, #1d4fbf 50%, #0a1f5c 100%); }
   /* background patterns over the corners, pure CSS; the scene cycles through them (PATTERNS in the script) */
   .pattern { position: absolute; inset: 0; pointer-events: none; }
   .p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;
@@ -38,8 +44,8 @@
     repeating-linear-gradient(45deg, rgba(0,0,0,.6) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,.25) 0 1px, transparent 1px 5px); }
   .pname { position: absolute; left: 24px; bottom: 18px; z-index: 5; font-size: 22px; color: rgba(255,255,255,.6); letter-spacing: 2px; text-transform: uppercase; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
-  .sub { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 104px; line-height: 1; font-weight: 900; font-style: italic;
-    letter-spacing: 6px; text-transform: uppercase; transform: skewX(-10deg); text-shadow: 0 6px 0 rgba(0,0,0,.45); }
+  .sub { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 104px; line-height: 1; font-weight: 900;
+    letter-spacing: 6px; text-transform: uppercase; text-shadow: 0 6px 0 rgba(0,0,0,.45); }
   .label { position: absolute; left: 0; right: 0; top: 262px; text-align: center; font-size: 38px; font-weight: 800; font-style: italic; color: #ffd400;
     text-transform: uppercase; letter-spacing: 6px; }
   /* names: different heights, they cross without touching */
@@ -61,6 +67,9 @@
 <div id="stage">
   <div id="ring">
     <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern" id="pattern"></div>
+    <svg class="bolt" viewBox="0 0 2040 1200" preserveAspectRatio="none" aria-hidden="true">
+      <polygon fill="#0b0d14" points="1290,0 1110,400 1215,410 990,790 1095,800 790,1200 850,1200 1150,830 1045,820 1270,440 1165,430 1350,0"/>
+    </svg>
     <div class="sub">Now playing</div>
     <div class="label" id="label"></div>
     <div class="name n1" id="n1"></div>
@@ -131,7 +140,9 @@ function play() {
   setName($('n2'), b);
   const pat = PATTERNS[(i - 1) % PATTERNS.length];
   $('pattern').className = `pattern p-${pat}`;
-  $('pname').textContent = `pattern: ${pat}`;
+  const bolt = (i - 1) % 2 === 1; // every other round: the lightning divider
+  $('ring').classList.toggle('bolted', bolt);
+  $('pname').textContent = `pattern: ${pat} · divider: ${bolt ? 'lightning' : 'band'}`;
   const T1 = 120; // player 1 punches in
   const T2 = 420; // player 2 answers
   const TV = 820; // VS slams down

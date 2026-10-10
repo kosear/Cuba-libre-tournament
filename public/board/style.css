@@ -12,6 +12,8 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-se
 #stage.full { grid-template-columns: 1fr; }
 #stage.full aside.queue { display: none; }
 main { display: flex; flex-direction: column; min-width: 0; position: relative; overflow: hidden; } /* clips the slide transition, it never covers the queue */
+/* soft shade of the queue panel, only over the grey slide area (below the header divider), above the moving slides */
+main::after { content: ''; position: absolute; top: 123px; bottom: 0; right: 0; width: 36px; background: linear-gradient(to left, rgba(19,33,58,.10), rgba(19,33,58,0)); pointer-events: none; z-index: 3; }
 
 /* header */
 header.top { height: 120px; flex: none; display: flex; align-items: center; gap: 22px; padding: 0 28px; background: var(--card); border-bottom: 1px solid var(--line); position: relative; }
@@ -106,7 +108,7 @@ aside.queue { position: relative; background: var(--card); display: flex; flex-d
    The line box stays 36 px, centred on the slide title line of the header. */
 .qhead .qtitle { font-size: 60px; line-height: 36px; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 1px; }
 /* divider between the slide and the queue: the same line as under the header, its shade falls on the slide */
-aside.queue::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: #c3d1e8; box-shadow: -4px 0 10px rgba(19,33,58,.07); z-index: 2; }
+aside.queue::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: #c3d1e8; z-index: 2; }
 /* separator under «PLAY NEXT»: the header divider's line (120-123 px), only as wide as the cards */
 aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; right: 30px; height: 3px; background: #c3d1e8; }
 #qtop { display: flex; flex-direction: column; gap: 14px; margin-top: 64.5px; } /* the Next card top at 41.5+36+18+64.5 = 160 px, level with the slide cards on the left */ /* the three cards stand apart */

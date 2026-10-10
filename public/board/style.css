@@ -85,6 +85,10 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
 .bm.live { box-shadow: 0 0 0 4px rgba(47,111,207,.35); }
+/* projected semi-finals before the groups are over */
+.bm.cand { border-style: dashed; border-color: #b9c3d4; }
+.bm .p.cand { color: #8a94a8; }
+.bracket .cand-note { left: 0; top: 370px; width: 500px; text-align: center; }
 
 /* podium */
 .podium { height: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 40px; padding: 0 120px; }

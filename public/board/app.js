@@ -83,7 +83,7 @@ function buildSlides(t) {
     for (const g of t.groups) out.push({ kind: 'group', key: `group:${g.id}`, id: g.id });
   }
   if (t.next) out.push({ kind: 'next', key: 'next' });
-  out.push({ kind: 'playoff', key: 'playoff' });
+  if (t.playoff || t.contenders) out.push({ kind: 'playoff', key: 'playoff' }); // hidden until the first group game
   return out;
 }
 
@@ -144,8 +144,15 @@ function slideNext() {
 function slidePlayoff() {
   const po = T.playoff;
   const fallback = { sf1: ['Seed 1', 'Seed 4'], sf2: ['Seed 2', 'Seed 3'], third: ['Loser SF1', 'Loser SF2'], final: ['Winner SF1', 'Winner SF2'] };
+  const cand = !po && T.contenders; // projected semi-finals: grey names, dashed boxes
   const box = (slot, title, style, extra = '') => {
     const m = po?.[slot];
+    if (cand && cand[slot]) {
+      const side = (e) => (e.names
+        ? `<div class="p cand"><span>${esc(e.names.join(' / '))}</span></div>`
+        : `<div class="p tbd"><span>${esc(e.label)}</span></div>`);
+      return `<div class="bm cand ${extra}" style="${style}"><div class="t"><span>${esc(title)}</span></div>${side(cand[slot][0])}${side(cand[slot][1])}</div>`;
+    }
     const live = T.current?.id === slot ? ' live' : '';
     const side = (n) => {
       const p = m?.[`p${n}`];
@@ -159,6 +166,7 @@ function slidePlayoff() {
     title: 'Play-off',
     html: `<div class="bracket">
       <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
+      ${cand ? '<div class="col-t cand-note">If the groups ended now</div>' : ''}
       <svg class="lines" viewBox="0 0 1284 888" preserveAspectRatio="none">
         <path d="M500 205 H610 V385 H720" fill="none" stroke="#9db8e3" stroke-width="4"/>
         <path d="M500 565 H610 V385" fill="none" stroke="#9db8e3" stroke-width="4"/>

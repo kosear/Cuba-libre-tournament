@@ -2,6 +2,8 @@
 import { PLAYOFF_SLOTS } from './engine.js';
 import { groupStats, groupTable, groupMatches, isGroupDone, matchBalls, qualification, rank, winnerOf, loserOf } from './standings.js';
 
+const MAX_TIED_NAMES = 2; // a contender slot shows at most this many tied names, more -> the placeholder
+
 const ROUND_LABEL = { sf1: 'Semi-final 1', sf2: 'Semi-final 2', third: '3rd place', final: 'Final' };
 
 function playerRef(s, id) {
@@ -64,6 +66,66 @@ function groupView(s, g) {
   };
 }
 
+// ---------- play-off contenders: the semi-finals as if the groups ended now ----------
+
+const byStats = (a, b) => b.wins - a.wins || b.balls - a.balls;
+
+/** Slot entry: { names } for a known or tied contender, { label } for a placeholder. */
+function entry(s, ids, label) {
+  if (!ids?.length || ids.length > MAX_TIED_NAMES) return { label };
+  return { names: ids.map((id) => s.players[id].name), ids };
+}
+
+/** Candidates for places 1..k of a group (tied, unresolved places give several ids); null if nothing played yet. */
+function groupPlaces(s, g, k) {
+  if (!groupMatches(s, g.id).some((m) => m.winner)) return null;
+  const active = groupStats(s, g.id).filter((r) => !r.out);
+  const cutoffs = Array.from({ length: k }, (_, i) => i + 1);
+  const places = [];
+  let pos = 0;
+  for (const seg of rank(s, active, cutoffs).segments) {
+    for (let i = 0; i < seg.ids.length; i++, pos++) if (pos < k) places.push(seg.ids.length > 1 ? seg.ids : [seg.ids[i]]);
+  }
+  return places;
+}
+
+function contenders(s) {
+  const groups = s.groups;
+  const n = groups.length;
+  const stats = new Map(groups.flatMap((g) => groupStats(s, g.id)).map((r) => [r.id, r]));
+  const best = (ids) => stats.get(ids[0]); // tied ids share the stats
+  const place = (gi, k) => groupPlaces(s, groups[gi], k);
+  const gName = (g) => g.name;
+  let semis;
+  if (n === 1) {
+    const p = place(0, 4) || [];
+    const e = (i) => entry(s, p[i], `Seed ${i + 1}`);
+    semis = [[e(0), e(3)], [e(1), e(2)]];
+  } else if (n === 2) {
+    const [a, b] = [place(0, 2), place(1, 2)];
+    const e = (p, i, g) => entry(s, p?.[i], i === 0 ? `Winner ${gName(g)}` : `2nd ${gName(g)}`);
+    semis = [[e(a, 0, groups[0]), e(b, 1, groups[1])], [e(b, 0, groups[1]), e(a, 1, groups[0])]];
+  } else {
+    // Group winners ranked against each other; groups with no games yet go last as placeholders.
+    const winners = groups.map((g, gi) => ({ g, ids: place(gi, n === 3 ? 2 : 1) }));
+    const known = winners.filter((w) => w.ids?.[0]).sort((x, y) => byStats(best(x.ids[0]), best(y.ids[0])));
+    const order = [...known, ...winners.filter((w) => !w.ids?.[0])];
+    const w = order.map((x) => entry(s, x.ids?.[0], `Winner ${gName(x.g)}`));
+    if (n === 3) {
+      // Best second place across the groups.
+      const seconds = known.filter((x) => x.ids[1]).map((x) => x.ids[1]).sort((x, y) => byStats(best(x), best(y)));
+      const top = seconds.length ? seconds.filter((x) => byStats(best(x), best(seconds[0])) === 0).flat() : [];
+      const wild = entry(s, top, 'Best 2nd place');
+      const own = (e) => e.ids && s.players[e.ids[0]].groupId;
+      semis = own(w[0]) && own(w[0]) === own(wild) ? [[w[1], wild], [w[0], w[2]]] : [[w[0], wild], [w[1], w[2]]];
+    } else {
+      semis = [[w[0], w[3]], [w[1], w[2]]];
+    }
+  }
+  const strip = (e) => (e.names ? { names: e.names } : { label: e.label });
+  return { sf1: semis[0].map(strip), sf2: semis[1].map(strip) };
+}
+
 function statsFor(s, pid) {
   const p = s.players[pid];
   if (!p?.groupId) return null;
@@ -95,6 +157,10 @@ export function snapshot(s) {
     ];
   }
 
+  // Before the real bracket exists, but after the first group game: who would play the semi-finals now.
+  const anyPlayed = Object.values(s.matches).some((m) => m.stage === 'group' && m.winner);
+  const projected = s.started && !s.matches.sf1 && s.groups.length && anyPlayed ? contenders(s) : null;
+
   let qual = null;
   if (s.started && !s.matches.sf1 && s.groups.every((g) => isGroupDone(s, g.id))) {
     const q = qualification(s);
@@ -111,6 +177,7 @@ export function snapshot(s) {
     next: queue[1] ?? null,
     results,
     playoff,
+    contenders: projected,
     podium,
     qualification: qual,
   };

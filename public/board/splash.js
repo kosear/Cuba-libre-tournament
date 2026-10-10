@@ -32,7 +32,7 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Background colour try-out (temporary, dev): the splash cycles through these, the number is shown top left.
-// On a dark colour every near-black part of the logo turns white. Pick one, then set SPLASH_DEMO = false.
+// On a dark colour the logo's lettering turns white. Pick one, then set SPLASH_DEMO = false.
 const SPLASH_DEMO = true;
 const DEMO_MS = 6000;
 const DEMO_COLORS = [
@@ -50,11 +50,27 @@ function isDark(hex) {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] < 0.35;
 }
 
-let lightLogoUrl = null; // the logo with its near-black fills white, made once
+// The logo for dark backgrounds: only the lettering turns white («CUBA», «LIBRE», «el sabor de havana», ®, the
+// «The Original» arc); the figure keeps her black outlines and hair. Paths are told apart by where they are in the
+// 4080×1720 drawing: lettering is left of x 1400, right of x 2500, or the arc above y 360 left of x 2050.
+function isLettering(attrs) {
+  const fill = /fill="#([0-9A-Fa-f]{6})"/.exec(attrs);
+  if (!fill || parseInt(fill[1].slice(0, 2), 16) >= 0x30) return false; // not black
+  const tr = /translate\(([-\d.]+),([-\d.]+)\)/.exec(attrs);
+  const [tx, ty] = tr ? [Number(tr[1]), Number(tr[2])] : [0, 0];
+  const nums = (/ d="([^"]*)"/.exec(attrs)?.[1].match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+  let x0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    x0 = Math.min(x0, tx + nums[i]); x1 = Math.max(x1, tx + nums[i]); y1 = Math.max(y1, ty + nums[i + 1]);
+  }
+  return x1 < 1400 || x0 > 2500 || (y1 < 360 && x1 < 2050);
+}
+
+let lightLogoUrl = null; // made once
 async function lightLogo() {
   if (!lightLogoUrl) {
     const svg = await (await fetch(LOGO_SRC)).text();
-    const light = svg.replace(/fill="#(1[0-9A-Fa-f]{5})"/g, (m, hex) => (parseInt(hex.slice(0, 2), 16) < 0x30 ? 'fill="#FFFFFF"' : m));
+    const light = svg.replace(/<path [^>]*>/g, (tag) => (isLettering(tag) ? tag.replace(/fill="#[0-9A-Fa-f]{6}"/, 'fill="#FFFFFF"') : tag));
     lightLogoUrl = URL.createObjectURL(new Blob([light], { type: 'image/svg+xml' }));
   }
   return lightLogoUrl;

@@ -59,10 +59,10 @@ stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/
   <div class="call" id="call" hidden></div>`;
 const el = (id) => document.getElementById(id);
 
-// Clock next to «Queue»: the TV's own local time, 24 h. The DOM is touched only when the minute changes.
+// Clock next to «Queue»: Bali time (WITA, UTC+8) whatever the TV is set to, 24 h. The DOM is touched only when the minute changes.
+const BALI = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', hour12: false });
 function tickClock() {
-  const d = new Date();
-  const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const t = BALI.format(new Date());
   if (el('clock').textContent !== t) el('clock').textContent = t;
 }
 tickClock();

@@ -44,14 +44,15 @@
     text-transform: uppercase; letter-spacing: 6px; }
   /* names: different heights, they cross without touching */
   /* a name box: up to 2 lines, wrapped at spaces only; one long word shrinks instead of breaking (setName) */
-  .name { position: absolute; z-index: 2; width: 760px; height: 220px; display: flex; align-items: center; justify-content: center; text-align: center;
+  .name { position: absolute; z-index: 2; width: 670px; height: 220px; display: flex; align-items: center; justify-content: center; text-align: center;
     font-size: 150px; line-height: 1; font-weight: 900; font-style: italic; text-transform: uppercase; will-change: transform;
     text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
   .name span { display: block; max-width: 100%; }
-  /* different heights: 380-600 and 640-860, they cross without touching */
-  .n1 { left: 70px; top: 380px; }
-  .n2 { right: 70px; top: 640px; }
-  /* VS: on top of the stripes and the names' paths, between the two names (760 px each, 160 px free in the middle) */
+  /* different heights: 380-600 and 640-860, they cross without touching.
+     #ring is 60 px wider than the stage on each side: 180 px here = 120 px from the screen edge. */
+  .n1 { left: 180px; top: 380px; }
+  .n2 { right: 180px; top: 640px; }
+  /* VS: on top of the patterns, between the two names (670 px each, 340 px free in the middle) */
   .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
     color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
 </style>

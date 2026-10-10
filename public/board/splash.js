@@ -182,8 +182,8 @@ export function startSplash(root) {
         if (r2 >= 1) continue;
         const z = Math.sqrt(1 - r2);
         const edge = Math.min(1, (1 - Math.sqrt(r2)) * RES * 0.5); // anti-aliased rim
-        const diffuse = 0.32 + 0.78 * Math.max(0, x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]);
-        const spec = Math.pow(Math.max(0, x * HALF_N[0] + y * HALF_N[1] + z * HALF_N[2]), 60) * 0.85;
+        const diffuse = 0.6 + 0.45 * Math.max(0, x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]); // soft: the dark side stays fairly light
+        const spec = Math.pow(Math.max(0, x * HALF_N[0] + y * HALF_N[1] + z * HALF_N[2]), 60) * 0.5;
         out.push({ i: (py * RES + px) * 4, x, y, z, edge, diffuse, spec });
       }
     }

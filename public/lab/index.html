@@ -25,12 +25,16 @@
   .label { position: absolute; left: 0; right: 0; top: 262px; text-align: center; font-size: 38px; font-weight: 800; font-style: italic; color: #ffd400;
     text-transform: uppercase; letter-spacing: 6px; }
   /* names: different heights, they cross without touching */
-  .name { position: absolute; z-index: 2; width: 760px; height: 170px; text-align: center; font-size: 150px; line-height: 170px; font-weight: 900; font-style: italic;
-    text-transform: uppercase; white-space: nowrap; will-change: transform; text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
-  .n1 { left: 70px; top: 420px; }
+  /* a name box: up to 2 lines, wrapped at spaces only; one long word shrinks instead of breaking (setName) */
+  .name { position: absolute; z-index: 2; width: 760px; height: 220px; display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 150px; line-height: 1; font-weight: 900; font-style: italic; text-transform: uppercase; will-change: transform;
+    text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
+  .name span { display: block; max-width: 100%; }
+  /* different heights: 380-600 and 640-860, they cross without touching */
+  .n1 { left: 70px; top: 380px; }
   .n2 { right: 70px; top: 640px; }
   /* VS: on top of the stripes and the names' paths, between the two names (760 px each, 160 px free in the middle) */
-  .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 505px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
+  .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
     color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
 </style>
 </head>
@@ -52,6 +56,9 @@ const PAIRS = [
   ['Maxim Petrov', 'Igor', 'Group B'],
   ['Alexander the Great', 'Lena', 'Group C'],
   ['Timur', 'Sergey', 'Semi-final 1'],
+  ['Konstantin Konstantinopolsky', 'Alexander the Great', 'Group D'],
+  ['Константин Константинопольский', 'Ян', 'Group A'],
+  ['Константинопольский', 'Alexander the Great', 'Final'],
 ];
 const HOLD_MS = 4500;
 const $ = (id) => document.getElementById(id);
@@ -70,10 +77,17 @@ setInterval(fit, 2000);
 fit();
 
 function setName(el, text) {
-  el.textContent = text;
-  el.style.fontSize = '';
+  el.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = text;
+  el.append(span);
+  // Shrink until it fits: at most 2 lines in the box, and no single word wider than the box.
   let size = 150;
-  while (size > 50 && el.scrollWidth > el.clientWidth + 1) el.style.fontSize = `${(size -= 4)}px`;
+  el.style.fontSize = `${size}px`;
+  const lines = () => Math.round(span.offsetHeight / size);
+  while (size > 40 && (span.scrollWidth > el.clientWidth + 1 || lines() > 2 || span.offsetHeight > el.clientHeight)) {
+    el.style.fontSize = `${(size -= 4)}px`;
+  }
 }
 
 // Impact: the whole ring jolts, a white flash.

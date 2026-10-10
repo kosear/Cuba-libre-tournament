@@ -108,7 +108,8 @@ function crossTable(g) {
     if (!x) return '<td></td>';
     return x.win ? `<td class="win">${x.approx ? '≈' : ''}${x.balls}</td>` : '<td class="loss">0</td>';
   }).join('')}</tr>`).join('');
-  return `<table class="cross">${head}${body}</table>`;
+  const cols = `<colgroup><col class="rowc">${g.rows.map(() => '<col>').join('')}</colgroup>`;
+  return `<table class="cross">${cols}${head}${body}</table>`;
 }
 
 function slideGroups(s) {

@@ -25,11 +25,11 @@ header.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 26px; box-shadow: 0 2px 10px rgba(19,33,58,.05); min-height: 0; overflow: hidden; }
 .card h3 { font-size: 30px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
 .card h3::before { content: ''; width: 10px; height: 28px; border-radius: 3px; background: var(--red); flex: none; }
-table.std { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.std { width: 100%; table-layout: fixed; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 table.std th { font-size: .63em; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 6px; text-align: center; border-bottom: 2px solid var(--line); }
 table.std td { padding: .4em 6px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.std tr:last-child td { border-bottom: none; }
-table.std .name { text-align: left; width: 60%; }
+table.std .name { text-align: left; width: 60%; overflow: hidden; text-overflow: ellipsis; }
 table.std tr.leader td { font-weight: 800; }
 table.std tr.out td { color: #a8b2c4; }
 table.std tr.out td.name { text-decoration: line-through; }
@@ -37,17 +37,19 @@ table.std tr.out td.name { text-decoration: line-through; }
 .fit { font-size: 36px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 
 .groups { display: grid; gap: 28px; height: 100%; grid-auto-rows: 1fr; }
-.groups.n1 { grid-template-columns: 1fr; }
-.groups.n2 { grid-template-columns: 1fr 1fr; }
-.groups.n3, .groups.n4 { grid-template-columns: 1fr 1fr; }
+/* minmax(0, …): column widths never depend on the names inside */
+.groups.n1 { grid-template-columns: minmax(0, 1fr); }
+.groups.n2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.groups.n3, .groups.n4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 
-.group-one { display: grid; grid-template-columns: 1fr 1.05fr; gap: 32px; height: 100%; }
+.group-one { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px; height: 100%; }
 .group-one .fit > table { flex: 1; }
 .group-one .fit { font-size: 50px; }
 .group-one table.std th { font-size: .48em; height: 3em; padding: 0 6px; }
 .group-one table.std td { padding: 0 8px; }
-table.cross { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); }
+table.cross { border-collapse: collapse; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
+table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+table.cross col.rowc { width: 30%; } /* row names; the result columns share the rest equally */
 table.cross th { font-size: .58em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }
 table.cross th.rowh { text-align: left; color: var(--ink); font-size: .75em; font-weight: 700; white-space: nowrap; padding: 0 16px; }
 table.cross td.diag { background: #d9dee7; }

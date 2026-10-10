@@ -105,59 +105,6 @@ async function logoWithLettering(color) {
   return logoUrls.get(color);
 }
 
-// Billiard cloth: a static grain-and-fibre layer over the background colour. Drawn once into a small tile
-// (dark and light specks, so it reads on light and dark colours alike) and repeated; it never repaints.
-let feltUrl = null;
-function feltTexture() {
-  if (feltUrl) return feltUrl;
-  const N = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = N;
-  const g = c.getContext('2d');
-  const img = g.createImageData(N, N);
-  for (let i = 0; i < N * N; i++) {
-    const v = Math.random();
-    const light = v > 0.5;
-    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = light ? 255 : 0;
-    img.data[i * 4 + 3] = Math.round(Math.abs(v - 0.5) * 2 * 26); // fine grain, up to 10% either way
-  }
-  g.putImageData(img, 0, 0);
-  // Soft mottling: the nap of real cloth is never even (faint light blotches, wrapped).
-  for (let i = 0; i < 140; i++) {
-    const x = Math.random() * N;
-    const y = Math.random() * N;
-    const r = 18 + Math.random() * 40;
-    const tone = '255,255,255'; // light sheen only: dark blotches look like dirt on a white background
-    for (const dx of [-N, 0, N]) for (const dy of [-N, 0, N]) {
-      const grad = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
-      grad.addColorStop(0, `rgba(${tone},.016)`);
-      grad.addColorStop(1, `rgba(${tone},0)`);
-      g.fillStyle = grad;
-      g.fillRect(x + dx - r, y + dy - r, 2 * r, 2 * r);
-    }
-  }
-  // Short curly fibres in every direction, drawn wrapped so the tile repeats without seams.
-  g.lineCap = 'round';
-  for (let i = 0; i < 2100; i++) {
-    const x = Math.random() * N;
-    const y = Math.random() * N;
-    const a = Math.random() * Math.PI * 2;
-    const len = 3 + Math.random() * 7;
-    const bend = (Math.random() - 0.5) * 4;
-    g.strokeStyle = Math.random() < 0.5 ? 'rgba(0,0,0,.09)' : 'rgba(255,255,255,.09)';
-    g.lineWidth = 0.6 + Math.random() * 0.6;
-    for (const dx of [-N, 0, N]) for (const dy of [-N, 0, N]) {
-      g.beginPath();
-      g.moveTo(x + dx, y + dy);
-      g.quadraticCurveTo(x + dx + Math.cos(a) * len / 2 - Math.sin(a) * bend, y + dy + Math.sin(a) * len / 2 + Math.cos(a) * bend,
-        x + dx + Math.cos(a) * len, y + dy + Math.sin(a) * len);
-      g.stroke();
-    }
-  }
-  feltUrl = c.toDataURL('image/png');
-  return feltUrl;
-}
-
 export function startSplash(root) {
   root.innerHTML = '';
   root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
@@ -170,9 +117,6 @@ export function startSplash(root) {
   const bgFront = document.createElement('div');
   bgBack.className = bgFront.className = 'splash-bg';
   bgFront.style.opacity = '0';
-  const felt = document.createElement('div');
-  felt.className = 'splash-felt';
-  try { felt.style.backgroundImage = `url(${feltTexture()})`; } catch { /* no canvas: plain colour */ }
   const logoEl = document.createElement('div');
   logoEl.className = 'splash-logo';
   const logo = new Image(); // as drawn: also the source of the collision mask
@@ -183,7 +127,7 @@ export function startSplash(root) {
   logoLight.style.opacity = '0';
   logoWithLettering('#FFFFFF').then((url) => { logoLight.src = url; });
   logoEl.append(logo, logoLight);
-  root.append(bgBack, bgFront, felt, logoEl);
+  root.append(bgBack, bgFront, logoEl);
 
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
   let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)

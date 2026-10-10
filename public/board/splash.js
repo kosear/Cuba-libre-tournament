@@ -131,30 +131,84 @@ export function startSplash(root) {
 
   // ---------- balls ----------
 
+  // ---------- 3D look: the ball really rolls ----------
+  // Every ball has an orientation: n = where its number (or the cue's red dot) is, q = the stripe's axis.
+  // Rolling by d turns both around the axis perpendicular to the motion by d / R, like a real ball on a table
+  // (screen x right, y down, z towards the viewer). Marks on the sphere are spherical caps; a cap around p with
+  // angular radius a projects to an ellipse: centre p·cos a·R, radius R·sin a, squashed by p.z along p's direction.
+  // On the back side (p.z <= 0) it is hidden. The ball clips its marks at the edge (overflow: hidden).
+  const DISC_A = 0.5; // white number circle, ~29°
+  const CAP_A = 0.95; // white caps of a striped ball, ~54°: the band between them is the stripe
+  const DOT_A = 0.17; // red dot of the cue ball
+
+  const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const randomDir = () => unit([rand(-1, 1), rand(-1, 1), rand(-1, 1)]);
+
+  function rotate(p, k, c, s) { // Rodrigues: p turned around unit axis k by an angle with cos c, sin s
+    const kp = cross(k, p);
+    const d = (k[0] * p[0] + k[1] * p[1] + k[2] * p[2]) * (1 - c);
+    return [p[0] * c + kp[0] * s + k[0] * d, p[1] * c + kp[1] * s + k[1] * d, p[2] * c + kp[2] * s + k[2] * d];
+  }
+
+  function roll(b, dx, dy) {
+    const d = Math.hypot(dx, dy);
+    if (!d) return;
+    const k = [-dy / d, dx / d, 0];
+    const c = Math.cos(d / R);
+    const s = Math.sin(d / R);
+    b.n = unit(rotate(b.n, k, c, s));
+    b.q = unit(rotate(b.q, k, c, s));
+  }
+
+  function mark(el, p, a) {
+    if (p[2] <= 0) { el.style.opacity = '0'; return; }
+    const f = R * Math.cos(a);
+    const phi = Math.atan2(p[1], p[0]);
+    el.style.opacity = '1';
+    el.style.transform = `translate(${(p[0] * f).toFixed(1)}px, ${(p[1] * f).toFixed(1)}px) rotate(${phi.toFixed(3)}rad) scale(${p[2].toFixed(3)}, 1) rotate(${(-phi).toFixed(3)}rad)`;
+  }
+
+  function drawMarks(b) {
+    if (b.num === 0) { mark(b.marks[0], b.n, DOT_A); return; }
+    if (b.num > 8) {
+      mark(b.marks[1], b.q, CAP_A);
+      mark(b.marks[2], [-b.q[0], -b.q[1], -b.q[2]], CAP_A);
+    }
+    mark(b.marks[0], b.n, DISC_A);
+  }
+
   function makeBall(num, x, y, vx, vy, friction) {
     const el = document.createElement('div');
+    const sp = (cls, a, inner = '') => `<i class="sp ${cls}" style="--s:${(2 * R * Math.sin(a)).toFixed(1)}px">${inner}</i>`;
     if (num === 0) {
       el.className = 'ball cue';
-      el.innerHTML = '<i class="dot"></i>';
+      el.innerHTML = sp('dot', DOT_A);
     } else {
       const color = COLORS[(num - 1) % 8];
       el.className = num > 8 ? 'ball stripe' : 'ball';
       el.style.setProperty('--c', color);
-      el.innerHTML = `<span>${num}</span>`;
+      // the number circle last: on top of the caps
+      el.innerHTML = num > 8 ? `${sp('cap', CAP_A)}${sp('cap', CAP_A)}${sp('disc', DISC_A, `<span>${num}</span>`)}` : sp('disc', DISC_A, `<span>${num}</span>`);
     }
     const shadow = document.createElement('div');
     shadow.className = 'ball-shadow';
     const shine = document.createElement('div');
     shine.className = 'ball-shine';
     root.append(shadow, el, shine);
-    const b = { num, el, shadow, shine, x, y, vx, vy, friction, angle: rand(0, Math.PI * 2), resting: false, restAt: 0, entered: false };
+    const n = randomDir();
+    const q = unit(cross(n, randomDir())); // the number sits on the stripe: n ⟂ q
+    const marks = [...el.querySelectorAll('.sp')];
+    if (num > 8) marks.unshift(marks.pop()); // marks[0] is always the number circle
+    const b = { num, el, shadow, shine, x, y, vx, vy, friction, n, q, marks, resting: false, restAt: 0, entered: false };
     balls.push(b);
     place(b);
     return b;
   }
 
   function place(b) {
-    b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px) rotate(${b.angle}rad)`;
+    b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`; // no 2D spin: the marks roll on the sphere
+    drawMarks(b);
     b.shadow.style.transform = `translate(${b.x - R + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px)`;
     b.shine.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
   }
@@ -331,7 +385,7 @@ export function startSplash(root) {
     }
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    b.angle += (len(b.vx, b.vy) * dt) / R * (b.vx >= 0 ? 1 : -1);
+    roll(b, b.vx * dt, b.vy * dt);
     if (b.cushions) bounceOffEdge(b);
 
     const n = logoContact(b.x, b.y);

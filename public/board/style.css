@@ -108,7 +108,7 @@ aside.queue::before { content: ''; position: absolute; top: 0; bottom: 0; left: 
 .qbig { border-radius: 18px; padding: 20px 24px; }
 /* Next stands out, After next is grey. The match being played is not shown. */
 .qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
-.qbig.next .qp { text-transform: uppercase; letter-spacing: .5px; } /* names in capitals only on the Next card */
+.qbig.next .qp { text-transform: uppercase; letter-spacing: 2px; } /* names in capitals only on the Next card */
 .qbig.after { background: #eef1f6; color: #5d6779; }
 .qbig.after .qp { font-size: 34px; }
 .qlabel { font-size: 18px; line-height: 22px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

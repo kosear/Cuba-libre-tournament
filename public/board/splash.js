@@ -33,6 +33,14 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Every time a ball hits the logo the background turns a random other colour (it starts white). The logo's lettering
 // follows only when the colour needs it: black on light backgrounds, white on dark ones. The figure never changes.
+// The logo moves to another place every day of the week (Bali time): offsets picked at random once, then fixed,
+// small enough to keep it on screen with room for the balls.
+const DAY_OFFSETS = { Mon: [-160, -60], Tue: [180, 45], Wed: [-90, 95], Thu: [140, -85], Fri: [40, 80], Sat: [-195, 20], Sun: [95, -30] };
+function dayOffset() {
+  const day = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', weekday: 'short' }).format(new Date());
+  return DAY_OFFSETS[day] ?? [0, 0];
+}
+
 const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
 const SPLASH_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
@@ -99,7 +107,8 @@ export function startSplash(root) {
     if (stopped) return;
     const h = LOGO_W * (logo.naturalHeight / logo.naturalWidth || 1147 / 2720);
     // Centre the screen on the bar name, not on the whole drawing (the figure's legs hang far below it).
-    logoBox = { x: (W - LOGO_W) / 2, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y, w: LOGO_W, h };
+    const [dx, dy] = dayOffset();
+    logoBox = { x: (W - LOGO_W) / 2 + dx, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y + dy, w: LOGO_W, h };
     logo.style.width = `${LOGO_W}px`;
     logo.style.left = `${logoBox.x}px`;
     logo.style.top = `${logoBox.y}px`;

@@ -103,13 +103,14 @@ table.cross td.loss { color: #111; font-weight: 600; }
 /* queue panel (always on the right) */
 aside.queue { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; padding: 32px 30px 24px; gap: 18px; height: 1080px; min-width: 0; }
 .qhead { font-size: 30px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--blue); }
+#qtop { display: flex; flex-direction: column; gap: 14px; } /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }
 /* Now playing is low-key (people at the table know it), Next stands out, After next is grey. */
 .qbig.now { background: #f3f5f8; color: #8a94a8; padding: 12px 20px; }
 .qbig.now .qlabel { font-size: 15px; margin-bottom: 4px; }
 .qbig.now .qp { font-size: 26px; }
 .qbig.now .qvs { font-size: 15px; margin: 0; }
-.qbig.next { background: var(--blue); color: #fff; }
+.qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
 .qbig.after { background: #eef1f6; color: #5d6779; }
 .qbig.after .qp { font-size: 34px; }
 .qlabel { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

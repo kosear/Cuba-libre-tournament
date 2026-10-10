@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Cuba Libre</title>
+<link rel="stylesheet" href="/admin/style.css">
+</head>
+<body>
+<main class="login">
+  <h1>Cuba Libre admin</h1>
+  <form id="login">
+    <label>Login
+      <input id="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    </label>
+    <label>Password
+      <input id="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button>Sign in</button>
+    <p id="error" class="error" hidden></p>
+  </form>
+</main>
+<script src="/admin/login.js"></script>
+</body>
+</html>

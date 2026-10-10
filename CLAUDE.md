@@ -1,66 +1,147 @@
 # Cuba Libre — billiards tournament: bar TV screen + admin panel
 
-Product requirements and mockups: `docs/requirements.md`, `docs/mockups/`. Open questions: `docs/open-questions.md`.
+You are picking up a vibe-coded project. Read this file fully, then the docs it points to, before touching code.
 
-Stack: Node 22 + Express + SQLite (better-sqlite3) + Server-Sent Events. Plain JS frontend, no build step.
+## 1. Read first
 
-## Environments and deploy
+| File | What it is |
+|---|---|
+| `docs/requirements.md` | Product requirements and tournament rules. **Source of truth for what to build.** |
+| `docs/open-questions.md` | Undecided questions. Do not implement around them, ask. |
+| `docs/mockups/` | Approved mockups: PNG screenshots + HTML/CSS sources in `src/` (`tv.css`, `admin.css`, `data.js`). Reuse the CSS when building real pages. |
+| `docs/assets/` | Bar logo, SVG and PNG. |
+| `docs/infrastructure.md` | Server, DNS, systemd, deploy internals. You rarely need it. |
 
-| Branch | URL | Server dir | Port |
-|---|---|---|---|
-| `dev`  | https://dev.cubalibre.su | /srv/cubalibre/dev  | 3001 |
-| `main` | https://cubalibre.su     | /srv/cubalibre/prod | 3000 |
+**Working rule from the customer** (section «Как мы работаем» in `docs/requirements.md`): discuss and agree on a plan first,
+write code only after the customer explicitly says to start. New features go into the requirements first.
 
-**Deploy = `git push`.** The server checks GitHub every 15 seconds; a new commit on a branch is pulled,
-`npm ci` runs if dependencies changed, and the app restarts. No ssh, no manual steps.
+## 2. Current state (2026-10-10)
 
-Workflow: commit to `dev` → check on dev.cubalibre.su → merge `dev` into `main` → live on cubalibre.su.
-Never push untested changes straight to `main`: the bar TV shows `main`.
+- Infrastructure is done: server, HTTPS setup, prod/dev environments, auto-deploy.
+- Admin login is done: two accounts with their own login and password, 30-day sessions. See section 6.
+- The live update channel is done: SSE from server to TV and admin pages.
+- The application is a **skeleton only**. The `messages` table, its routes and the TV/admin pages are a placeholder
+  that demonstrates the full cycle: admin form → API → DB → SSE → TV. Replace it with the real domain.
+  Drop the table with a new migration, do not edit `001_init.sql`.
+- No tournament logic exists yet.
 
-Each environment has its own `.env` and its own database (`data/app.db`), both outside git.
-Copy prod data to dev (as root on the VPS): `bash /srv/cubalibre/dev/deploy/copy-prod-to-dev.sh`.
+## 3. Stack
 
-Changes in `deploy/` (Caddyfile, systemd units) are NOT applied by auto-sync;
-re-run `deploy/setup.sh` as root on the server.
+Node 22, Express 4, SQLite via better-sqlite3 (synchronous API), Server-Sent Events, ES modules.
+Frontend: plain HTML/CSS/JS, **no build step, no framework**. Do not add a bundler.
+New npm dependencies are fine (installed automatically on deploy), but avoid native modules other than better-sqlite3.
 
-## Layout
-- `src/server.js` — Express app, routes mounting, static.
-- `src/db.js` — SQLite connection + migrations runner.
-- `src/events.js` — SSE hub: `sseHandler`, `broadcast(type, payload)`.
-- `src/auth.js` — Basic auth for `/admin` and `/api/admin/*` (user `admin`, password `ADMIN_PASSWORD` in `.env`).
-- `src/routes/public.js` — read-only API for the TV + `getState()` (full snapshot).
-- `src/routes/admin.js` — mutations. Pattern: write DB → `broadcast('state', getState())`.
-- `migrations/NNN_name.sql` — applied once in filename order at startup.
-- `public/tv/` — served at `/`. Fullscreen 16:9 TV page, no interaction, re-renders on SSE `state` event.
-- `public/admin/` — served at `/admin`. Mobile-first, calls `/api/admin/*`.
-- `deploy/` — Caddyfile, systemd units, setup and sync scripts.
+## 4. Environments and deploy
 
-The `messages` table and routes are a placeholder example of the full cycle; replace them with the real domain.
+| Branch | URL | Purpose |
+|---|---|---|
+| `dev`  | https://dev.cubalibre.su | testing, push here freely |
+| `main` | https://cubalibre.su     | **the TV in the bar shows this** |
 
-## How to add a feature
-1. New table/columns → new file `migrations/00N_*.sql`.
-2. Add fields to `getState()` in `src/routes/public.js`.
-3. Add mutation route in `src/routes/admin.js`, end with `broadcast('state', getState())`.
-4. Render in `public/tv/app.js` (`render(state)`), add controls in `public/admin/app.js`.
+**Deploy = `git push`.** The server polls GitHub every 15 s, pulls the branch, runs `npm ci` if
+`package.json` or `package-lock.json` changed, and restarts the app. New migrations apply on startup.
 
-## Migrations — rules (prod data depends on this)
-- A migration runs on dev first, then the same file runs on prod after merge.
-- **Never edit or delete a migration that is already merged into `dev`.** Fix mistakes with a new migration.
-- Never renumber files. Numbers only grow.
-- Prefer additive changes (new tables/columns). Destructive changes need an explicit decision.
+Flow: commit to `dev` → wait about 20 s → check dev.cubalibre.su → fast-forward `main` to `dev` → push `main`.
+Never push untested code straight to `main`.
 
-## Local run
+**Verify a deploy:** `curl -s https://dev.cubalibre.su/api/health` returns `{"ok":true,"commit":"<short sha>",...}`.
+If `commit` matches your last commit, it is live.
+
+**You have no access to the server.** Consequences:
+- If dev returns 502 after your push, the app crashed on startup: syntax error, bad migration, missing module.
+  Reproduce locally with `npm run dev`. Server logs are available only through the infra owner (section 9).
+- Each environment has its own `.env` and `data/app.db` on the server. You cannot read prod data.
+- Files in `deploy/` are NOT applied by auto-deploy. If you change them, ask the infra owner to re-run `deploy/setup.sh`.
+
+## 5. Before every push
+
+Local setup, once:
 ```
 npm install
 cp .env.example .env
-npm run dev   # http://localhost:3000, admin at /admin
+npm run admin -- add test test123
+npm run dev        # http://localhost:3000, admin at http://localhost:3000/admin
+```
+On Windows, `better-sqlite3` may fail to install if no prebuilt binary matches your Node version.
+Use Node 22 LTS, or WSL.
+
+Checklist:
+1. `node --check` on every changed `.js` file in `src/`.
+2. `npm run dev`, open http://localhost:3000 and http://localhost:3000/admin, click through what you changed.
+3. Check that the TV updates live: change something in admin with the TV page open in another tab.
+4. If you added a migration, delete your local `data/app.db` once and start again, so all migrations apply from zero.
+
+## 6. Architecture and conventions
+
+```
+src/server.js          app setup, mounts routes, static files
+src/db.js              SQLite connection + migration runner
+src/events.js          SSE hub: sseHandler, broadcast(type, payload)
+src/auth.js            admin login: password hashing, sessions, /api/auth/*, requireAdminApi, requireAdminPage
+src/routes/public.js   GET /api/state and getState(): everything the TV needs, one snapshot
+src/routes/admin.js    POST/PUT/DELETE under /api/admin/*, login required
+scripts/admin.js       CLI to add / remove admins and change passwords
+migrations/NNN_*.sql   schema, applied once in filename order at startup
+public/tv/             served at /        (TV page, public)
+public/admin/          served at /admin   (admin page, login required; login.html/login.js/style.css are public)
+deploy/                Caddyfile, systemd units, setup and sync scripts
 ```
 
-## Debug on the server
-- `journalctl -u cubalibre@dev -f` — app logs (syntax errors show up here).
-- `journalctl -u cubalibre-sync@dev -f` — deploy log.
-- `curl -s https://dev.cubalibre.su/api/health`
+**Real-time pattern (keep it):**
+- `getState()` builds the full state the TV needs.
+- Every mutation in `admin.js`: validate → write DB (use `db.transaction` for multi-step writes) → `broadcast('state', getState())`.
+- TV and admin subscribe to `/api/events`, fetch `/api/state` on every (re)connect, re-render on each `state` event.
+- One bar, a handful of screens: always send the full snapshot, no diffs.
 
-## Rules
-- Keep the TV page readable from 5 meters: large fonts, high contrast, no scrolling.
-- Secrets only in `.env`, never in code.
+If the app grows, split `admin.js` into one router per entity under `src/routes/` and keep the same pattern.
+
+**Auth:** each admin has their own login and password (table `admins`). Logging in at `/admin/login.html`
+creates a row in `sessions` and an HttpOnly cookie valid for 30 days, so admins on phones stay logged in.
+- New admin API routes go into `src/routes/admin.js` (or another router mounted behind `requireAdminApi`), never on the public router.
+  Inside a handler, `req.admin` is `{ id, username }`, useful for an action log.
+- New admin pages go into `public/admin/`; they are protected automatically. Only files listed in `PUBLIC_ADMIN_FILES` in `src/auth.js` are public.
+- In admin page JS use the `api()` helper from `public/admin/app.js`: on 401 it sends the user back to the login page.
+- No roles: all admins can do everything. No self-registration. Accounts are managed by the infra owner, see «Admins» below.
+
+### Admins
+
+Two admin accounts exist on each environment (prod and dev have separate databases, so separate accounts).
+Managed only from the command line on the server by the infra owner:
+```
+cd /srv/cubalibre/prod     # or /srv/cubalibre/dev
+runuser -u cubalibre -- node scripts/admin.js list
+runuser -u cubalibre -- node scripts/admin.js add <login> <password>
+runuser -u cubalibre -- node scripts/admin.js passwd <login> <new-password>   # also logs that admin out everywhere
+runuser -u cubalibre -- node scripts/admin.js remove <login>
+```
+Locally: `npm run admin -- add <login> <password>`.
+
+**TV page:** 16:9, viewed from several meters: big type, high contrast, no scrolling, no interaction.
+It runs unattended for hours: handle reconnects, never show raw errors.
+
+## 7. Database and migrations — rules (prod data depends on this)
+
+- Schema changes only via a new file `migrations/00N_short_name.sql`. Numbers only grow.
+- **Never edit or delete a migration that has been pushed to `dev`.** It may already be applied. Fix mistakes with a new migration.
+- Each migration runs in a transaction. A failing migration stops the app, which means 502. Test locally first.
+- Prefer additive changes. Dropping or rewriting tables that hold prod data needs an explicit decision from the customer.
+- `foreign_keys` is ON. Store timestamps in UTC (`datetime('now')`), format them for display in the browser.
+
+## 8. Known gaps (worth solving early)
+
+- **The TV keeps old frontend code after a deploy.** SSE reconnects and data refreshes, but the page's JS and CSS stay old
+  until someone reloads the TV. Suggested fix: send the server commit (as in `/api/health`) in the first SSE message,
+  and call `location.reload()` on the TV when it differs from the commit the page loaded with.
+- Static files have no cache-busting. The same fix covers it.
+- No automated prod DB backups yet. This is on the infra owner's side, see `docs/infrastructure.md`.
+
+## 9. People
+
+- **Customer / requirements:** owner of this GitHub repo. Requirements and decisions come from them, via `docs/`.
+- **Infra owner:** GitHub `tarefev`. Server, domain, deploy, server logs, admin accounts.
+  Ask them for anything from section 4 you cannot do yourself.
+
+## 10. Languages
+
+Per requirements: the TV is English only. The admin panel is multilingual with a switcher, see «Языки» in `docs/requirements.md`.
+Code, comments and identifiers in English.

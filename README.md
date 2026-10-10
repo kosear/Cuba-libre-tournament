@@ -12,5 +12,6 @@ Requirements and mockups: [docs/](docs/).
 ```
 npm install
 cp .env.example .env
+npm run admin -- add test test123
 npm run dev
 ```

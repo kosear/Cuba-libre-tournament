@@ -1,7 +1,17 @@
-// Admin page. Browser already sent Basic auth to get here; fetch() reuses it.
+// Admin page. The session cookie is sent automatically with every fetch.
+// Any 401 (session expired, or password changed) sends the admin back to the login page.
 const $form = document.getElementById('form');
 const $text = document.getElementById('text');
 const $list = document.getElementById('list');
+
+async function api(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    location.href = '/admin/login.html';
+    throw new Error('not authenticated');
+  }
+  return res;
+}
 
 function render(state) {
   $list.innerHTML = state.messages.map((m) =>
@@ -15,7 +25,7 @@ function escapeHtml(s) {
 
 $form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  await fetch('/api/admin/messages', {
+  await api('/api/admin/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: $text.value }),
@@ -25,7 +35,16 @@ $form.addEventListener('submit', async (e) => {
 
 $list.addEventListener('click', async (e) => {
   const id = e.target.dataset.id;
-  if (id) await fetch(`/api/admin/messages/${id}`, { method: 'DELETE' });
+  if (id) await api(`/api/admin/messages/${id}`, { method: 'DELETE' });
+});
+
+document.getElementById('logout').addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.href = '/admin/login.html';
+});
+
+api('/api/auth/me').then((r) => r.json()).then((me) => {
+  document.getElementById('me').textContent = me.username;
 });
 
 // Admin also listens to SSE so the list updates without reload.

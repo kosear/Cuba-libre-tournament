@@ -17,10 +17,9 @@ setup_env() {
     runuser -u cubalibre -- git clone -q -b "$branch" "$REPO" "$dir"
   fi
   if [ ! -f "$dir/.env" ]; then
-    local pw; pw=$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 12)
-    sed -e "s/^PORT=.*/PORT=$port/" -e "s/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=$pw/" "$dir/.env.example" > "$dir/.env"
+    sed -e "s/^PORT=.*/PORT=$port/" "$dir/.env.example" > "$dir/.env"
     chown cubalibre:cubalibre "$dir/.env"; chmod 600 "$dir/.env"
-    echo "[$env] created .env, admin password: $pw"
+    echo "[$env] created .env. Add admins: cd $dir && runuser -u cubalibre -- node scripts/admin.js add <login> <password>"
   fi
   (cd "$dir" && runuser -u cubalibre -- npm ci --omit=dev --no-audit --no-fund >/dev/null)
 }

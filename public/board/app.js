@@ -6,6 +6,7 @@ import { startSplash } from '/board/splash.js';
 const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
+const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
 const DURATION = { groups: 30000, group: 10000, next: 10000, playoff: 10000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
@@ -52,7 +53,8 @@ stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/
   <div class="content" id="content"></div></main>
   <aside class="queue" id="queue"><div class="qhead">Queue</div><div id="qtop"></div>
     <div class="qrest" id="qrest"><div class="qrest-inner" id="qinner"></div><div class="qfade" hidden></div></div></aside>
-  <div class="splash" id="splash" hidden></div>`;
+  <div class="splash" id="splash" hidden></div>
+  <div class="call" id="call" hidden></div>`;
 const el = (id) => document.getElementById(id);
 
 const label = (m) => (m ? m.label : '');
@@ -275,8 +277,44 @@ function schedule() {
   }, DURATION[s?.kind] ?? 5000);
 }
 
+// ---------- call screen ----------
+// When a result is entered and the next match starts, the whole screen shows who goes to the table, for CALL_MS.
+// Not on page load, undo or editing an old result: only when the previous current match has just got a winner.
+
+let prevCurrentId = null;
+let call = null; // { id, timer }
+
+function showCall(m) {
+  clearTimeout(call?.timer);
+  const box = el('call');
+  box.innerHTML = `<div class="call-sub">Now playing</div><div class="call-label">${esc(label(m))}</div>
+    <div class="call-name">${name(m.p1)}</div><div class="call-vs">VS</div><div class="call-name">${name(m.p2)}</div>
+    <div class="call-bar" style="animation-duration:${CALL_MS}ms"></div>`;
+  box.hidden = false;
+  box.querySelectorAll('.call-name').forEach((n) => {
+    let size = 150;
+    while (size > 40 && n.scrollWidth > n.clientWidth + 1) n.style.fontSize = `${(size -= 4)}px`;
+  });
+  call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
+}
+
+function hideCall() {
+  clearTimeout(call?.timer);
+  call = null;
+  el('call').hidden = true;
+}
+
+function updateCall() {
+  const cur = T.current;
+  const finished = prevCurrentId && cur?.id !== prevCurrentId && T.results.some((r) => r.id === prevCurrentId);
+  if (finished && cur?.p1 && cur?.p2) showCall(cur);
+  else if (call && call.id !== cur?.id) hideCall(); // undone, or the match left the queue
+  prevCurrentId = cur?.id ?? null;
+}
+
 function onState(state) {
   T = state.tournament;
+  updateCall();
   const keepKey = slides[index]?.key ?? shownKey;
   slides = buildSlides(T);
   const keep = slides.findIndex((s) => s.key === keepKey);

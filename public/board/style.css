@@ -129,6 +129,14 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 
 /* splash before the start: logo and rolling balls (splash.js) */
 .splash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; background: #fff; overflow: hidden; }
+/* call screen: who goes to the table now, on top of everything for 20 s after a result */
+.call { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 6; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 100px; overflow: hidden; }
+.call-sub { font-size: 110px; line-height: 1; font-weight: 900; color: var(--blue); letter-spacing: 8px; text-transform: uppercase; }
+.call-label { font-size: 40px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; margin: 24px 0 50px; min-height: 48px; }
+.call-name { width: 100%; font-size: 150px; line-height: 1.1; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.call-vs { font-size: 70px; font-weight: 900; color: var(--red); margin: 18px 0; }
+.call-bar { position: absolute; left: 0; bottom: 0; height: 14px; width: 100%; background: var(--blue); transform-origin: 0 50%; animation: call-countdown linear forwards; }
+@keyframes call-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: auto; will-change: transform; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; }
 /* Shadow is a sibling, not a box-shadow: the ball element rotates as it rolls, its shadow must not. */

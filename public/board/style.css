@@ -49,10 +49,9 @@ table.std tr.out td.name { text-decoration: line-through; }
 .group-one table.std td { padding: 0 8px; }
 table.cross { border-collapse: collapse; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
 table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-table.cross col.rowc { width: 30%; } /* row names; the result columns share the rest equally */
 table.cross th { font-size: .58em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }
-table.cross th.rowh { text-align: left; color: var(--ink); font-size: .75em; font-weight: 700; white-space: nowrap; padding: 0 16px; }
 table.cross td.diag { background: #d9dee7; }
+table.cross td.none { color: #c3cbd8; font-weight: 400; } /* not played yet */
 table.cross td.win { color: var(--green); font-weight: 800; }
 table.cross td.loss { color: #111; font-weight: 600; }
 .legend { margin-top: 16px; font-size: 19px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 28px; }

@@ -101,15 +101,15 @@ function shortNames(rows) {
 
 function crossTable(g) {
   const short = shortNames(g.rows);
-  const head = `<tr><th></th>${short.map((s) => `<th>${esc(s)}</th>`).join('')}</tr>`;
-  const body = g.rows.map((r, i) => `<tr><th class="rowh">${esc(short[i])}</th>${g.rows.map((c) => {
+  // No row names: the rows line up with the Standings table on the left (alignGroupRows), its names label them.
+  const head = `<tr>${short.map((s) => `<th>${esc(s)}</th>`).join('')}</tr>`;
+  const body = g.rows.map((r) => `<tr>${g.rows.map((c) => {
     if (c.id === r.id) return '<td class="diag"></td>';
     const x = g.cross[r.id]?.[c.id];
-    if (!x) return '<td></td>';
+    if (!x) return '<td class="none">—</td>';
     return x.win ? `<td class="win">${x.approx ? '≈' : ''}${x.balls}</td>` : '<td class="loss">0</td>';
   }).join('')}</tr>`).join('');
-  const cols = `<colgroup><col class="rowc">${g.rows.map(() => '<col>').join('')}</colgroup>`;
-  return `<table class="cross">${cols}${head}${body}</table>`;
+  return `<table class="cross">${head}${body}</table>`;
 }
 
 function slideGroups(s) {
@@ -128,7 +128,7 @@ function slideGroup(s) {
     html: `<div class="group-one">
       <div class="card"><h3>Standings</h3><div class="fit">${groupTable(g)}</div></div>
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
-        <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>empty — not played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
+        <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>— not played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
   };
 }

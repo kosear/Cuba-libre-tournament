@@ -109,13 +109,13 @@ table.cross td.loss { color: #111; font-weight: 600; }
 aside.queue { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; padding: 42px 30px 24px; gap: 18px; height: 1080px; min-width: 0; }
 /* 42 px: the 36 px «Queue» line is centred at 60 px, like the slide title in the 120 px header */
 .qhead { font-size: 30px; line-height: 36px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--blue); }
-#qtop { display: flex; flex-direction: column; gap: 14px; } /* the three cards stand apart */
+#qtop { display: flex; flex-direction: column; gap: 14px; margin-top: -3px; } /* the Next label (centre at 96-3+20+11 = 124 px) sits on the middle of the dashed header line */ /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }
 /* Next stands out, After next is grey. The match being played is not shown. */
 .qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
 .qbig.after { background: #eef1f6; color: #5d6779; }
 .qbig.after .qp { font-size: 34px; }
-.qlabel { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qlabel { font-size: 18px; line-height: 22px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qp { font-size: 42px; font-weight: 800; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qvs { font-size: 20px; font-weight: 700; margin: 2px 0; }
 .qbig.next .qvs { color: #ffd2da; }

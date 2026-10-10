@@ -438,18 +438,27 @@ test('replace a withdrawn player: their walkovers are annulled', () => {
   assert.equal(queued(t, 'x').length, 3);
 });
 
-test('replace with a player from another group: their old results are annulled there', () => {
+test('replace with a player from another group: they swap groups, results of both are annulled', () => {
   const t = tour().setup({ A: ['a1', 'a2', 'a3', 'a4'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
-  t.win('b1', 'b2', 3).win('a1', 'a2', 1);
+  t.win('b1', 'b2', 3).win('a1', 'a2', 1).win('a3', 'a4', 2);
   t.do('player.replace', { id: 'a1', withId: 'b1', seed: 6 });
-  assert.equal(t.s.players.a1, undefined);
   assert.equal(t.s.players.b1.groupId, 'A');
-  assert.deepEqual(groupTable(t.s, 'B').map((r) => r.id).sort(), ['b2', 'b3', 'b4']);
+  assert.equal(t.s.players.a1.groupId, 'B');
+  assert.deepEqual(groupTable(t.s, 'A').map((r) => r.id).sort(), ['a2', 'a3', 'a4', 'b1']);
+  assert.deepEqual(groupTable(t.s, 'B').map((r) => r.id).sort(), ['a1', 'b2', 'b3', 'b4']);
   assert.equal(row(t, 'B', 'b2').frames, 0);
   assert.equal(row(t, 'A', 'a2').frames, 0);
-  assert.equal(queued(t, 'b1').length, 3);
-  assert.ok(queued(t, 'b1').every((id) => t.s.matches[id].groupId === 'A'));
+  assert.equal(row(t, 'A', 'a3').wins, 1); // games without the two stay
+  for (const [pid, g] of [['b1', 'A'], ['a1', 'B']]) {
+    assert.equal(queued(t, pid).length, 3);
+    assert.ok(queued(t, pid).every((id) => t.s.matches[id].groupId === g));
+  }
+  assert.equal(Object.values(t.s.matches).filter((m) => m.stage === 'group').length, 12);
   t.fails('same_group', 'player.replace', { id: 'a2', withId: 'b1' });
+  t.do('player.withdraw', { id: 'b2' });
+  t.fails('player_withdrawn', 'player.replace', { id: 'a2', withId: 'b2' });
+  t.fails('player_withdrawn', 'player.replace', { id: 'b2', withId: 'a2' });
+  assert.deepEqual(buildState(t.log), t.s);
 });
 
 test('move to another group after the start: results annulled, plays everybody in the new group', () => {

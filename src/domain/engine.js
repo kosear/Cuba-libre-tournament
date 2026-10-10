@@ -194,18 +194,28 @@ const handlers = {
     moveStarted(s, pl, groupId, Number(p.seed) || 0);
   },
 
-  // Group stage: someone else takes the player's place. The replaced player's games are annulled
-  // and they disappear. The substitute is a new player, or a player from another group (moved by moveStarted).
+  // Group stage: someone else takes the player's place.
+  // - A new player (newId, name): the replaced player's games are annulled and they disappear.
+  // - A player from another group (withId): the two swap groups; both lose their old-group results
+  //   (for the opponents too) and join the new group like late players.
   'player.replace'(s, p) {
     requirePhase(s, 'groups');
     const old = getPlayer(s, p.id);
     const groupId = old.groupId;
     const seed = Number(p.seed) || 0;
     if (p.withId) {
-      const sub = getPlayer(s, p.withId);
-      if (sub.groupId === groupId) throw new DomainError('same_group');
-      removeStartedPlayer(s, old.id);
-      moveStarted(s, sub, groupId, seed);
+      const other = getPlayer(s, p.withId);
+      if (other.groupId === groupId) throw new DomainError('same_group');
+      if (old.withdrawn || other.withdrawn) throw new DomainError('player_withdrawn');
+      const otherGroup = other.groupId;
+      annulPlayerMatches(s, old.id);
+      annulPlayerMatches(s, other.id);
+      const intoA = groupPlayers(s, groupId).filter((x) => x.id !== old.id);
+      const intoB = groupPlayers(s, otherGroup).filter((x) => x.id !== other.id);
+      other.groupId = groupId;
+      old.groupId = otherGroup;
+      addLatePlayerMatches(s, other.id, groupId, intoA, seed);
+      addLatePlayerMatches(s, old.id, otherGroup, intoB, (seed + 1) >>> 0);
       return;
     }
     const id = requireId(p.newId);

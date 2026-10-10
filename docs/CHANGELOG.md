@@ -4,6 +4,9 @@ Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
 ## 2026-10-10
 
+- `player.replace` with `withId` now swaps the two players between their groups: the games of both in their old groups
+  are deleted (for the opponents too), each joins the other group like a late player. Refused if either has withdrawn.
+  Before this change `withId` removed the replaced player; only dev tournaments used that form.
 - New action `player.replace` `{ id, newId, name }` or `{ id, withId }` (group stage only): the replaced player and all
   their group and tie-break games are deleted, for the opponents too; the substitute (a new player, or `withId` moved
   from another group) gets matches with everyone, queued like a late player. The replaced player is gone from the state.

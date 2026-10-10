@@ -401,7 +401,9 @@ function describe(e) {
     case 'player.rename': return t('log.player.rename', { old: '', name: p.name }).trim();
     case 'player.move': return t('log.player.move', { player: playerName(p.id), group: p.groupId ? groupName(p.groupId) : '—' });
     case 'player.remove': case 'player.withdraw': case 'player.restore': return t(`log.${e.type}`, { player: playerName(p.id) });
-    case 'player.replace': return t('log.player.replace', { player: playerName(p.id), name: p.withId ? playerName(p.withId) : p.name });
+    case 'player.replace': return p.withId
+      ? t('log.player.swap', { player: playerName(p.id), name: playerName(p.withId) })
+      : t('log.player.replace', { player: playerName(p.id), name: p.name });
     case 'tournament.start': return t('log.tournament.start');
     case 'match.result': {
       if (!m) return t('log.unknown', { type: e.type });
@@ -496,7 +498,8 @@ function sheetPlayer(id) {
 function sheetReplace(id) {
   const p = T().players.find((x) => x.id === id);
   if (!p || T().phase !== 'groups') return null;
-  const others = T().players.filter((x) => x.groupId && x.groupId !== p.groupId && !x.withdrawn);
+  // Swapping with a player of another group: neither of the two may be withdrawn.
+  const others = p.withdrawn ? [] : T().players.filter((x) => x.groupId && x.groupId !== p.groupId && !x.withdrawn);
   const options = T().groups.filter((g) => g.id !== p.groupId).map((g) => {
     const list = others.filter((x) => x.groupId === g.id);
     return list.length ? `<optgroup label="${esc(g.name)}">${list.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>` : '';
@@ -613,7 +616,8 @@ document.addEventListener('click', async (e) => {
     const name = $('sh-new').value.trim();
     if (!withId && !name) { toast(t('err.name_required'), true); return; }
     const old = playerName(d.shReplace);
-    if (!confirm(t('replace.confirm', { old, name: withId ? playerName(withId) : name }))) return;
+    const ask = withId ? t('replace.swapConfirm', { old, name: playerName(withId) }) : t('replace.confirm', { old, name });
+    if (!confirm(ask)) return;
     const payload = withId ? { id: d.shReplace, withId } : { id: d.shReplace, newId: uuid(), name };
     if (await act('player.replace', payload)) closeSheet();
     return;

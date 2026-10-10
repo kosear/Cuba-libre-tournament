@@ -30,8 +30,19 @@ export function getTournamentState() {
   const tid = currentTournamentId();
   const v = version(tid);
   if (cache?.version === v) return cache.state;
-  const state = initialState();
-  for (const a of activeActions(tid)) applyInPlace(state, a);
+  let state = initialState();
+  for (const a of activeActions(tid)) {
+    // An action that the current rules no longer allow (the engine changed after it was stored) is skipped,
+    // so one old action cannot take the whole site down. It stays in the log.
+    const next = structuredClone(state);
+    try {
+      applyInPlace(next, a);
+      state = next;
+    } catch (err) {
+      if (!(err instanceof DomainError)) throw err;
+      console.warn(`[log] skipped ${a.type}: ${err.code}`);
+    }
+  }
   cache = { tournamentId: tid, version: v, state };
   return state;
 }

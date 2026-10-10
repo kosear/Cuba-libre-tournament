@@ -6,7 +6,8 @@ import { startSplash } from '/board/splash.js';
 const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
-const DURATION = { groups: 30000, group: 5000, now: 5000, next: 5000, playoff: 5000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 30000, group: 10000, now: 10000, next: 10000, playoff: 10000, podium: 60000, splash: 60000 };
+const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 
 let T = null; // tournament snapshot
@@ -29,7 +30,18 @@ fitStage();
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const FLAG = '<svg class="flag" viewBox="0 0 100 100"><polygon points="0,0 100,50 0,100" fill="#D21034"/><polygon points="30.0,35.0 33.5,45.1 44.3,45.4 35.7,51.9 38.8,62.1 30.0,56.0 21.2,62.1 24.3,51.9 15.7,45.4 26.5,45.1" fill="#fff"/></svg>';
-const header = (title) => `<header class="top">${FLAG}<img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre"><div class="brand-sub">Pool<br>Tournament</div><div class="slide-title">${esc(title)}</div></header>`;
+
+// ---------- layout: built once ----------
+// The header and the queue panel are not part of a slide: a slide change only swaps #content and the title,
+// so the header never blinks and the queue keeps scrolling. The splash is a layer on top of everything.
+stage.innerHTML = `<main><header class="top">${FLAG}<img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre">
+  <div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
+  <div class="content" id="content"></div></main>
+  <aside class="queue" id="queue"><div class="qhead">Queue</div><div id="qtop"></div>
+    <div class="qrest" id="qrest"><div class="qrest-inner" id="qinner"></div><div class="qfade" hidden></div></div></aside>
+  <div class="splash" id="splash" hidden></div>`;
+const el = (id) => document.getElementById(id);
+
 const label = (m) => (m ? m.label : '');
 const name = (p) => (p ? esc(p.name) : 'TBD');
 
@@ -100,7 +112,7 @@ function slideGroup(s) {
     title: g.name,
     html: `<div class="group-one">
       <div class="card"><h3>Standings</h3><div class="fit">${groupTable(g)}</div></div>
-      <div class="card"><h3>Results</h3><div class="fit" style="font-size:40px">${crossTable(g)}</div>
+      <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
         <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>empty — not played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
   };
@@ -149,16 +161,16 @@ function slidePlayoff() {
   return {
     title: 'Play-off',
     html: `<div class="bracket">
-      <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:760px">Final</div>
-      <svg class="lines" viewBox="0 0 1324 888" preserveAspectRatio="none">
-        <path d="M520 205 H640 V385 H760" fill="none" stroke="#9db8e3" stroke-width="4"/>
-        <path d="M520 565 H640 V385" fill="none" stroke="#9db8e3" stroke-width="4"/>
-        <path d="M640 475 V700 H760" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
+      <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
+      <svg class="lines" viewBox="0 0 1284 888" preserveAspectRatio="none">
+        <path d="M500 205 H610 V385 H720" fill="none" stroke="#9db8e3" stroke-width="4"/>
+        <path d="M500 565 H610 V385" fill="none" stroke="#9db8e3" stroke-width="4"/>
+        <path d="M610 475 V700 H720" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
       </svg>
-      ${box('sf1', 'Semi-final 1', 'left:0;top:105px;width:520px')}
-      ${box('sf2', 'Semi-final 2', 'left:0;top:465px;width:520px')}
-      ${box('final', 'Final', 'left:760px;top:285px;width:564px', 'final')}
-      ${box('third', '3rd place · played before the final', 'left:760px;top:610px;width:564px', 'third')}
+      ${box('sf1', 'Semi-final 1', 'left:0;top:105px;width:500px')}
+      ${box('sf2', 'Semi-final 2', 'left:0;top:465px;width:500px')}
+      ${box('final', 'Final', 'left:720px;top:285px;width:564px', 'final')}
+      ${box('third', '3rd place · played before the final', 'left:720px;top:610px;width:564px', 'third')}
     </div>`,
   };
 }
@@ -169,34 +181,52 @@ function slidePodium() {
   return { title: 'Champions', html: `<div class="podium">${col('p2', p2, 2, '🥈')}${col('p1', p1, 1, '🥇')}${col('p3', p3, 3, '🥉')}</div>` };
 }
 
-function queuePanel() {
+// ---------- queue panel (persistent) ----------
+
+let queueKey = '';
+let qpos = 0; // scroll offset of the rest of the queue, px
+let qloop = 0; // height of one copy of the rows; 0 = everything fits, no scrolling
+let qlast = 0;
+
+function renderQueue() {
   const q = T.queue;
-  if (!q.length) return '<aside class="queue"><div class="qhead">Queue</div><div class="qempty">No matches in the queue</div></aside>';
   const big = (m, title, cls) => (m
     ? `<div class="qbig ${cls}"><div class="qlabel">${title} · ${esc(label(m))}</div><div class="qp">${name(m.p1)}</div><div class="qvs">vs</div><div class="qp">${name(m.p2)}</div></div>`
     : '');
   const rest = q.slice(2);
-  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 3}</span><span class="qm">${name(m.p1)}<i>vs</i>${name(m.p2)}</span><span class="qg">${esc(shortLabel(m))}</span></div>`).join('');
-  return `<aside class="queue"><div class="qhead">Queue</div>${big(q[0], 'Now playing', 'now')}${big(q[1], 'Next', 'next')}
-    <div class="qrest"><div class="qrest-inner">${rows}</div>${rest.length ? '<div class="qfade"></div>' : ''}</div></aside>`;
+  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 3}</span><span class="qm"><span>${name(m.p1)}</span><span><i>vs</i>${name(m.p2)}</span></span><span class="qg">${esc(shortLabel(m))}</span></div>`).join('');
+  const top = q.length ? `${big(q[0], 'Now playing', 'now')}${big(q[1], 'Next', 'next')}` : '<div class="qempty">No matches in the queue</div>';
+  const key = top + rows;
+  if (key === queueKey) return; // nothing changed: do not touch the DOM, the scroll goes on
+  queueKey = key;
+  el('qtop').innerHTML = top;
+  const inner = el('qinner');
+  inner.innerHTML = rows;
+  qloop = 0;
+  if (rows && inner.scrollHeight > el('qrest').clientHeight) {
+    qloop = inner.scrollHeight;
+    inner.innerHTML = rows + rows; // seamless loop
+  }
+  el('qrest').querySelector('.qfade').hidden = !rows;
+  qpos = qloop ? qpos % qloop : 0; // keep the place in the list after an update
+  inner.style.transform = `translateY(${-qpos}px)`;
 }
+
+function scrollQueue(now) {
+  const dt = qlast ? Math.min(0.1, (now - qlast) / 1000) : 0;
+  qlast = now;
+  if (qloop && !stage.classList.contains('full')) {
+    qpos = (qpos + QUEUE_SPEED * dt) % qloop;
+    el('qinner').style.transform = `translateY(${-qpos}px)`;
+  }
+  requestAnimationFrame(scrollQueue);
+}
+requestAnimationFrame(scrollQueue);
 
 function shortLabel(m) {
   if (m.stage === 'group') return m.label.replace(/^group\s+/i, '');
   if (m.stage === 'tiebreak') return 'TB';
   return { sf1: 'SF1', sf2: 'SF2', third: '3rd', final: 'Final' }[m.round] ?? '';
-}
-
-/** Loop-scroll the rest of the queue when it does not fit. */
-function startQueueScroll() {
-  const box = stage.querySelector('.qrest');
-  const inner = stage.querySelector('.qrest-inner');
-  if (!box || !inner || inner.scrollHeight <= box.clientHeight) return;
-  const rowsHtml = inner.innerHTML;
-  inner.innerHTML = rowsHtml + rowsHtml; // seamless loop: scroll half the doubled list
-  const count = inner.children.length / 2;
-  inner.style.setProperty('--dur', `${Math.max(count * 3, 12)}s`);
-  inner.classList.add('scroll');
 }
 
 // ---------- render ----------
@@ -208,9 +238,8 @@ function renderSlide() {
   if (s.kind === 'splash') {
     // Keep the animation running across state updates before the start.
     if (!splash) {
-      stage.className = 'full';
-      stage.innerHTML = '<div class="splash"></div>';
-      splash = startSplash(stage.querySelector('.splash'));
+      el('splash').hidden = false;
+      splash = startSplash(el('splash'));
     }
     shownKey = s.key;
     return;
@@ -218,15 +247,16 @@ function renderSlide() {
   if (splash) {
     splash.stop();
     splash = null;
+    el('splash').hidden = true;
   }
   const make = { groups: slideGroups, group: slideGroup, now: slideNow, next: slideNext, playoff: slidePlayoff, podium: slidePodium }[s.kind];
   const view = make(s);
   if (!view) return;
-  const withQueue = s.kind !== 'podium';
-  stage.className = withQueue ? '' : 'full';
-  stage.innerHTML = `<main>${header(view.title)}<div class="content">${view.html}</div></main>${withQueue ? queuePanel() : ''}`;
-  fitText(stage);
-  if (withQueue) startQueueScroll();
+  stage.classList.toggle('full', s.kind === 'podium'); // the podium uses the whole width, no queue
+  if (el('title').textContent !== view.title) el('title').textContent = view.title;
+  el('content').innerHTML = view.html;
+  fitText(el('content'));
+  renderQueue();
   shownKey = s.key;
 }
 

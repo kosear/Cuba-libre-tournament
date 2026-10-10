@@ -55,10 +55,13 @@ function checkConflict(tid, base, adminId, type, payload) {
   }
 }
 
+// Actions whose outcome depends on chance (lottery, queue positions of a late player).
+const SEEDED = new Set(['tournament.start', 'player.add', 'player.replace', 'player.move']);
+
 /** Fill in server-side parts of a payload (random seeds). */
 function withSeeds(type, payload) {
   const p = { ...payload };
-  if ((type === 'tournament.start' || type === 'player.add') && p.seed === undefined) p.seed = crypto.randomInt(2 ** 31);
+  if (SEEDED.has(type) && p.seed === undefined) p.seed = crypto.randomInt(2 ** 31);
   return p;
 }
 
@@ -111,9 +114,10 @@ export function journal() {
     FROM actions a LEFT JOIN admins ad ON ad.id = a.admin_id
     WHERE a.tournament_id = ? ORDER BY a.id DESC LIMIT ?`).all(tid, JOURNAL_LIMIT);
   const names = {};
-  for (const r of db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND type IN ('player.add', 'player.rename', 'group.add', 'group.rename') ORDER BY id").all(tid)) {
+  for (const r of db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND type IN ('player.add', 'player.rename', 'player.replace', 'group.add', 'group.rename') ORDER BY id").all(tid)) {
     const p = JSON.parse(r.payload);
-    if (p.id && p.name) names[p.id] = p.name;
+    const id = p.newId ?? p.id; // player.replace names the new player newId
+    if (id && p.name) names[id] = p.name;
   }
   const entries = rows.map((r) => ({ ...r, payload: JSON.parse(r.payload) }));
   return {

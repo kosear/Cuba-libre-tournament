@@ -70,6 +70,8 @@ export function actionKeys(type, payload = {}) {
     case 'playoff.set':
     case 'playoff.auto':
       return [`match:${payload.slot}`];
+    case 'player.replace':
+      return payload.withId ? [`player:${payload.id}`, `player:${payload.withId}`] : [`player:${payload.id}`];
     default:
       return [`${entity}:${payload.id}`];
   }
@@ -184,8 +186,38 @@ const handlers = {
   },
 
   'player.move'(s, p) {
-    requirePhase(s, 'setup');
-    getPlayer(s, p.id).groupId = p.groupId ? getGroup(s, p.groupId).id : null;
+    requirePhase(s, 'setup', 'groups');
+    const pl = getPlayer(s, p.id);
+    const groupId = p.groupId ? getGroup(s, p.groupId).id : null;
+    if (s.phase === 'setup') { pl.groupId = groupId; return; }
+    if (!groupId) throw new DomainError('group_required');
+    moveStarted(s, pl, groupId, Number(p.seed) || 0);
+  },
+
+  // Group stage: someone else takes the player's place. The replaced player's games are annulled
+  // and they disappear. The substitute is a new player, or a player from another group (moved by moveStarted).
+  'player.replace'(s, p) {
+    requirePhase(s, 'groups');
+    const old = getPlayer(s, p.id);
+    const groupId = old.groupId;
+    const seed = Number(p.seed) || 0;
+    if (p.withId) {
+      const sub = getPlayer(s, p.withId);
+      if (sub.groupId === groupId) throw new DomainError('same_group');
+      removeStartedPlayer(s, old.id);
+      moveStarted(s, sub, groupId, seed);
+      return;
+    }
+    const id = requireId(p.newId);
+    if (s.players[id]) throw new DomainError('duplicate_id');
+    const name = cleanName(p.name);
+    uniquePlayerName(s, name, old.id);
+    const at = s.playerOrder.indexOf(old.id);
+    removeStartedPlayer(s, old.id);
+    const opponents = groupPlayers(s, groupId);
+    s.players[id] = { id, name, groupId, withdrawn: false };
+    s.playerOrder.splice(at, 0, id);
+    addLatePlayerMatches(s, id, groupId, opponents, seed);
   },
 
   'player.remove'(s, p) {
@@ -316,6 +348,40 @@ const handlers = {
     delete s.overrides[p.slot];
   },
 };
+
+/** Annul a player's group and tie-break games: they disappear for the opponents too. */
+function annulPlayerMatches(s, pid) {
+  for (const m of Object.values(s.matches)) {
+    if ((m.stage === 'group' || m.stage === 'tiebreak') && involves(m, pid)) {
+      delete s.matches[m.id];
+      removeFromQueue(s, m.id);
+    }
+  }
+}
+
+/** A replaced player leaves without a trace (the action log still has them). */
+function removeStartedPlayer(s, pid) {
+  annulPlayerMatches(s, pid);
+  for (const o of Object.values(s.overrides)) {
+    if (o.p1 === pid) o.p1 = null;
+    if (o.p2 === pid) o.p2 = null;
+  }
+  delete s.players[pid];
+  s.playerOrder = s.playerOrder.filter((x) => x !== pid);
+}
+
+/** Move to another group after the start: results in the old group are annulled, then they join like a late player. */
+function moveStarted(s, pl, groupId, seed) {
+  if (pl.groupId === groupId) throw new DomainError('same_group');
+  if (pl.withdrawn) throw new DomainError('player_withdrawn');
+  const from = getGroup(s, pl.groupId);
+  const left = groupPlayers(s, from.id).filter((x) => x.id !== pl.id && !x.withdrawn);
+  if (left.length < 2) throw new DomainError('group_too_small', { group: from.name });
+  annulPlayerMatches(s, pl.id);
+  const opponents = groupPlayers(s, groupId);
+  pl.groupId = groupId;
+  addLatePlayerMatches(s, pl.id, groupId, opponents, seed);
+}
 
 /** Matches of a player who joins after the start: placed in the queue by the agreed rules. */
 function addLatePlayerMatches(s, id, groupId, opponents, seed) {

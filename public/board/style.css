@@ -8,8 +8,9 @@
 html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
 body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); cursor: none; }
 #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: var(--bg);
-  display: grid; grid-template-columns: 1fr 500px; overflow: hidden; }
+  display: grid; grid-template-columns: 1fr 540px; overflow: hidden; }
 #stage.full { grid-template-columns: 1fr; }
+#stage.full aside.queue { display: none; }
 main { display: flex; flex-direction: column; min-width: 0; position: relative; }
 
 /* header */
@@ -34,7 +35,7 @@ table.std tr.leader td { font-weight: 800; }
 table.std tr.out td { color: #a8b2c4; }
 table.std tr.out td.name { text-decoration: line-through; }
 .card { display: flex; flex-direction: column; }
-.fit { font-size: 27px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.fit { font-size: 36px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 
 .groups { display: grid; gap: 28px; height: 100%; grid-auto-rows: 1fr; }
 .groups.n1 { grid-template-columns: 1fr; }
@@ -43,13 +44,13 @@ table.std tr.out td.name { text-decoration: line-through; }
 
 .group-one { display: grid; grid-template-columns: 1fr 1.05fr; gap: 32px; height: 100%; }
 .group-one .fit > table { flex: 1; }
-.group-one .fit { font-size: 42px; }
+.group-one .fit { font-size: 50px; }
 .group-one table.std th { font-size: .48em; height: 3em; padding: 0 6px; }
 .group-one table.std td { padding: 0 8px; }
 table.cross { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); }
-table.cross th { font-size: .55em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }
-table.cross th.rowh { text-align: left; color: var(--ink); font-size: .7em; font-weight: 700; white-space: nowrap; padding: 0 16px; }
+table.cross th { font-size: .58em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }
+table.cross th.rowh { text-align: left; color: var(--ink); font-size: .75em; font-weight: 700; white-space: nowrap; padding: 0 16px; }
 table.cross td.diag { background: #d9dee7; }
 table.cross td.win { color: var(--green); font-weight: 800; }
 table.cross td.loss { color: #111; font-weight: 600; }
@@ -62,8 +63,8 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .duel { height: 100%; display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto; align-content: center; align-items: center; gap: 70px 40px; }
 .duel .sub { grid-column: 1 / -1; text-align: center; font-size: 110px; line-height: 1; color: var(--blue); font-weight: 900; letter-spacing: 6px; text-transform: uppercase; }
 .duel .side { text-align: center; min-width: 0; }
-.duel .pname { font-size: 76px; font-weight: 800; line-height: 1.05; text-transform: uppercase; letter-spacing: 1px; overflow-wrap: anywhere; }
-.duel.next .pname { font-size: 84px; }
+.duel .pname { font-size: 100px; font-weight: 800; line-height: 1.05; text-transform: uppercase; letter-spacing: 1px; overflow-wrap: anywhere; }
+.duel.next .pname { font-size: 110px; }
 .duel .stats { margin-top: 30px; font-size: 34px; color: var(--muted); line-height: 1.6; font-variant-numeric: tabular-nums; }
 .duel .stats b { color: var(--ink); }
 .duel .vs { font-size: 64px; font-weight: 900; color: var(--red); }
@@ -74,7 +75,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bracket .col-t { position: absolute; top: 0; font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
 .bm { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
 .bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; display: flex; justify-content: space-between; }
-.bm .p { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 32px; font-weight: 700; padding: 14px 22px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+.bm .p { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
 .bm .p span { overflow: hidden; text-overflow: ellipsis; }
 .bm .p.tbd { color: #a8b2c4; font-style: italic; }
 .bm .p.win { color: var(--green); }
@@ -89,7 +90,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 /* podium */
 .podium { height: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 40px; padding: 0 120px; }
 .podium .col { text-align: center; }
-.podium .nm { font-size: 56px; font-weight: 900; text-transform: uppercase; margin-bottom: 24px; overflow-wrap: anywhere; line-height: 1.05; }
+.podium .nm { font-size: 76px; font-weight: 900; text-transform: uppercase; margin-bottom: 24px; overflow-wrap: anywhere; line-height: 1.05; }
 .podium .block { border-radius: 18px 18px 0 0; display: grid; place-items: center; font-size: 120px; font-weight: 900; color: #fff; }
 .podium .p1 .block { height: 520px; background: var(--blue); }
 .podium .p2 .block { height: 380px; background: #5b8ddb; }
@@ -104,23 +105,24 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .qbig.next { background: var(--blue-soft); }
 .qlabel { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qbig.next .qlabel { color: var(--blue); }
-.qp { font-size: 34px; font-weight: 800; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qp { font-size: 42px; font-weight: 800; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qvs { font-size: 20px; font-weight: 700; margin: 2px 0; }
 .qbig.now .qvs { color: #ffd2da; }
 .qbig.next .qvs { color: var(--red); }
 .qrest { flex: 1; position: relative; overflow: hidden; min-height: 0; }
-.qrest-inner.scroll { animation: qscroll var(--dur, 30s) linear infinite; }
-@keyframes qscroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
-.qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 14px 4px; border-bottom: 1px solid var(--line); font-size: 22px; }
+.qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
+.qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 28px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }
-.qm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.qm i { font-style: normal; color: var(--red); font-weight: 700; margin: 0 8px; font-size: .8em; }
+.qm { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; } /* two lines: names stay whole */
+.qm > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qm i { font-style: normal; color: var(--red); font-weight: 700; margin-right: 10px; font-size: .75em; }
 .qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .qfade { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(transparent, #fff); }
+.qrest::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 36px; z-index: 1; background: linear-gradient(#fff, transparent); }
 .qempty { font-size: 24px; color: var(--muted); }
 
 /* splash before the start: logo and rolling balls (splash.js) */
-.splash { position: relative; width: 100%; height: 100%; background: #fff; overflow: hidden; }
+.splash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; background: #fff; overflow: hidden; }
 .splash-logo { position: absolute; left: 510px; top: 350px; width: 900px; height: auto; will-change: transform; }
 .ball { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; box-shadow: 0 6px 14px rgba(19,33,58,.14); }
 .ball span { width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #111; font-size: 25px; font-weight: 800; display: grid; place-items: center; line-height: 1; }

@@ -57,11 +57,14 @@ async function post(url, body) {
   }
 }
 
+// Actions with a random part (same list as the server, src/tournament.js).
+const SEEDED = ['tournament.start', 'player.add', 'player.replace', 'player.move'];
+
 /** Make a change: check it locally, show it at once, send it when possible. */
 async function act(type, payload) {
   if (!S) return false;
   const p = { ...payload };
-  if ((type === 'tournament.start' || type === 'player.add') && p.seed === undefined) p.seed = Math.floor(Math.random() * 2 ** 31);
+  if (SEEDED.includes(type) && p.seed === undefined) p.seed = Math.floor(Math.random() * 2 ** 31);
   const a = { clientId: uuid(), type, payload: p, base: server.head, tournamentId: server.tournamentId, created_at: nowSql() };
   try {
     applyAction(S.raw, a);
@@ -126,7 +129,8 @@ function compose() {
   for (const a of outbox) {
     if (a.tournamentId !== server.tournamentId) continue; // will be rejected when sent
     try { raw = applyAction(raw, a); } catch { continue; } // will be reported when sent
-    if (a.payload.id && a.payload.name) names[a.payload.id] = a.payload.name;
+    const nid = a.payload.newId ?? a.payload.id;
+    if (nid && a.payload.name) names[nid] = a.payload.name;
     pending.unshift({ id: a.clientId, type: a.type, payload: a.payload, status: 'pending', created_at: a.created_at, admin: me?.username });
   }
   S = { ...server, raw, tournament: snapshot(raw), journal: { ...server.journal, names, entries: [...pending, ...server.journal.entries] } };
@@ -397,6 +401,7 @@ function describe(e) {
     case 'player.rename': return t('log.player.rename', { old: '', name: p.name }).trim();
     case 'player.move': return t('log.player.move', { player: playerName(p.id), group: p.groupId ? groupName(p.groupId) : '—' });
     case 'player.remove': case 'player.withdraw': case 'player.restore': return t(`log.${e.type}`, { player: playerName(p.id) });
+    case 'player.replace': return t('log.player.replace', { player: playerName(p.id), name: p.withId ? playerName(p.withId) : p.name });
     case 'tournament.start': return t('log.tournament.start');
     case 'match.result': {
       if (!m) return t('log.unknown', { type: e.type });
@@ -432,7 +437,7 @@ function viewJournal() {
 
 function openSheet(kind, id) {
   sheet = { kind, id };
-  const body = { match: sheetMatch, player: sheetPlayer, group: sheetGroup, slot: sheetSlot, settings: sheetSettings }[kind](id);
+  const body = { match: sheetMatch, player: sheetPlayer, replace: sheetReplace, move: sheetMove, group: sheetGroup, slot: sheetSlot, settings: sheetSettings }[kind](id);
   if (body === null) { sheet = null; return; }
   $('sheet-root').innerHTML = `<div class="dim" data-close></div><div class="sheet"><div class="handle"></div>${body}</div>`;
 }
@@ -476,12 +481,44 @@ function sheetPlayer(id) {
       <option value="">—</option>${tr.groups.map((g) => `<option value="${g.id}" ${g.id === p.groupId ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select></div>
       <button class="btn" data-sh-move="${id}">${esc(t('save'))}</button>
       <button class="btn danger" data-sh-remove-player="${id}">${esc(t('delete'))}</button>`;
-  } else if (p.withdrawn) {
-    html += `<button class="btn" data-sh-restore="${id}">${esc(t('player.restore'))}</button>`;
-  } else if (tr.phase !== 'finished') {
-    html += `<button class="btn danger" data-sh-withdraw="${id}">${esc(t('player.withdraw'))}</button>`;
+  } else {
+    // Group stage: replace the player, or send them to another group (their results are annulled).
+    if (tr.phase === 'groups') {
+      html += `<button class="btn" data-open="replace" data-id="${id}">${esc(t('player.replace'))}</button>`;
+      if (!p.withdrawn && tr.groups.length > 1) html += `<button class="btn" data-open="move" data-id="${id}">${esc(t('player.moveGroup'))}</button>`;
+    }
+    if (p.withdrawn) html += `<button class="btn" data-sh-restore="${id}">${esc(t('player.restore'))}</button>`;
+    else if (tr.phase !== 'finished') html += `<button class="btn danger" data-sh-withdraw="${id}">${esc(t('player.withdraw'))}</button>`;
   }
   return `${html}<button class="btn" data-close>${esc(t('cancel'))}</button>`;
+}
+
+function sheetReplace(id) {
+  const p = T().players.find((x) => x.id === id);
+  if (!p || T().phase !== 'groups') return null;
+  const others = T().players.filter((x) => x.groupId && x.groupId !== p.groupId && !x.withdrawn);
+  const options = T().groups.filter((g) => g.id !== p.groupId).map((g) => {
+    const list = others.filter((x) => x.groupId === g.id);
+    return list.length ? `<optgroup label="${esc(g.name)}">${list.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  return `<h3>${esc(t('replace.title', { name: p.name }))}</h3>
+    <div class="muted">${esc(t('replace.hint', { name: p.name, group: groupName(p.groupId) }))}</div>
+    <div class="field"><label>${esc(t('replace.new'))}</label><input class="text" id="sh-new" maxlength="40" placeholder="${esc(t('groups.playerName'))}"></div>
+    ${options ? `<div class="field"><label>${esc(t('replace.other'))}</label><select class="text" id="sh-with"><option value="">—</option>${options}</select>
+      <div class="muted">${esc(t('replace.otherHint'))}</div></div>` : ''}
+    <button class="btn primary" data-sh-replace="${id}">${esc(t('replace.do'))}</button>
+    <button class="btn" data-close>${esc(t('cancel'))}</button>`;
+}
+
+function sheetMove(id) {
+  const p = T().players.find((x) => x.id === id);
+  if (!p || T().phase !== 'groups') return null;
+  const groups = T().groups.filter((g) => g.id !== p.groupId);
+  return `<h3>${esc(t('move.title', { name: p.name }))}</h3>
+    <div class="muted">${esc(t('move.hint', { name: p.name, group: groupName(p.groupId) }))}</div>
+    <div class="field"><label>${esc(t('player.group'))}</label><select class="text" id="sh-to">${groups.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join('')}</select></div>
+    <button class="btn primary" data-sh-move-started="${id}">${esc(t('move.do'))}</button>
+    <button class="btn" data-close>${esc(t('cancel'))}</button>`;
 }
 
 function sheetGroup(id) {
@@ -571,6 +608,22 @@ document.addEventListener('click', async (e) => {
   if (d.shRemovePlayer) { if (confirm(t('player.deleteConfirm', { name: playerName(d.shRemovePlayer) })) && await act('player.remove', { id: d.shRemovePlayer })) closeSheet(); return; }
   if (d.shWithdraw) { if (confirm(t('player.withdrawConfirm', { name: playerName(d.shWithdraw) })) && await act('player.withdraw', { id: d.shWithdraw })) closeSheet(); return; }
   if (d.shRestore) { if (await act('player.restore', { id: d.shRestore })) closeSheet(); return; }
+  if (d.shReplace) {
+    const withId = $('sh-with')?.value || '';
+    const name = $('sh-new').value.trim();
+    if (!withId && !name) { toast(t('err.name_required'), true); return; }
+    const old = playerName(d.shReplace);
+    if (!confirm(t('replace.confirm', { old, name: withId ? playerName(withId) : name }))) return;
+    const payload = withId ? { id: d.shReplace, withId } : { id: d.shReplace, newId: uuid(), name };
+    if (await act('player.replace', payload)) closeSheet();
+    return;
+  }
+  if (d.shMoveStarted) {
+    const groupId = $('sh-to').value;
+    if (!confirm(t('move.confirm', { name: playerName(d.shMoveStarted), group: groupName(groupId) }))) return;
+    if (await act('player.move', { id: d.shMoveStarted, groupId })) closeSheet();
+    return;
+  }
   if (d.shRenameGroup) { if (await act('group.rename', { id: d.shRenameGroup, name: nameVal() })) closeSheet(); return; }
   if (d.shRemoveGroup) { if (confirm(t('group.deleteConfirm', { name: groupName(d.shRemoveGroup) })) && await act('group.remove', { id: d.shRemoveGroup })) closeSheet(); return; }
   if (d.shSlot) { if (await act('playoff.set', { slot: d.shSlot, p1: $('sh-p1').value || null, p2: $('sh-p2').value || null })) closeSheet(); return; }

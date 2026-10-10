@@ -3,6 +3,13 @@
 
 const DICT = {
   en: {
+    'player.replace': 'Replace player', 'player.moveGroup': 'Send to another group',
+    'replace.title': 'Replace {name}', 'replace.hint': 'All games of {name} are cancelled, for the opponents too. The new player plays everyone in {group}.',
+    'replace.new': 'New player', 'replace.other': 'Or a player from another group', 'replace.otherHint': 'Their results in their current group are cancelled.',
+    'replace.do': 'Replace', 'replace.confirm': 'Replace {old} with {name}? All games of {old} will be cancelled.',
+    'move.title': '{name} to another group', 'move.hint': 'Results of {name} in {group} are cancelled, for the opponents too. In the new group {name} plays everyone.',
+    'move.do': 'Move', 'move.confirm': 'Move {name} to {group}? Results in the current group will be cancelled.',
+    'log.player.replace': '{player} replaced by {name}', 'err.same_group': 'The player is already in this group',
     'tab.game': 'Game', 'tab.queue': 'Queue', 'tab.groups': 'Groups', 'tab.playoff': 'Play-off', 'tab.journal': 'Log',
     'title.game': 'Tournament', 'title.queue': 'Queue', 'title.groups': 'Groups', 'title.playoff': 'Play-off', 'title.journal': 'Log',
     undo: 'Undo', redo: 'Redo', settings: 'Settings', save: 'Save', cancel: 'Cancel', delete: 'Delete', close: 'Close',
@@ -69,6 +76,13 @@ const DICT = {
     'err.match_not_found': 'The match no longer exists', 'err.player_not_found': 'The player no longer exists', 'err.group_not_found': 'The group no longer exists',
   },
   ru: {
+    'player.replace': 'Заменить игрока', 'player.moveGroup': 'Отправить в другую группу',
+    'replace.title': 'Замена: {name}', 'replace.hint': 'Все игры {name} аннулируются, у соперников тоже. Новый игрок играет со всеми в {group}.',
+    'replace.new': 'Новый игрок', 'replace.other': 'Или игрок из другой группы', 'replace.otherHint': 'Его результаты в текущей группе аннулируются.',
+    'replace.do': 'Заменить', 'replace.confirm': 'Заменить {old} на {name}? Все игры {old} будут аннулированы.',
+    'move.title': '{name}: в другую группу', 'move.hint': 'Результаты {name} в {group} аннулируются, у соперников тоже. В новой группе {name} играет со всеми.',
+    'move.do': 'Перевести', 'move.confirm': 'Перевести {name} в {group}? Результаты в текущей группе будут аннулированы.',
+    'log.player.replace': '{player} заменён на {name}', 'err.same_group': 'Игрок уже в этой группе',
     'tab.game': 'Игра', 'tab.queue': 'Очередь', 'tab.groups': 'Группы', 'tab.playoff': 'Плей-офф', 'tab.journal': 'Журнал',
     'title.game': 'Турнир', 'title.queue': 'Очередь', 'title.groups': 'Группы', 'title.playoff': 'Плей-офф', 'title.journal': 'Журнал',
     undo: 'Отменить', redo: 'Вернуть', settings: 'Настройки', save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', close: 'Закрыть',
@@ -135,6 +149,13 @@ const DICT = {
     'err.match_not_found': 'Матча больше нет', 'err.player_not_found': 'Игрока больше нет', 'err.group_not_found': 'Группы больше нет',
   },
   id: {
+    'player.replace': 'Ganti pemain', 'player.moveGroup': 'Pindah ke grup lain',
+    'replace.title': 'Ganti {name}', 'replace.hint': 'Semua laga {name} dibatalkan, juga untuk lawannya. Pemain baru bermain melawan semua pemain di {group}.',
+    'replace.new': 'Pemain baru', 'replace.other': 'Atau pemain dari grup lain', 'replace.otherHint': 'Hasilnya di grup sekarang dibatalkan.',
+    'replace.do': 'Ganti', 'replace.confirm': 'Ganti {old} dengan {name}? Semua laga {old} akan dibatalkan.',
+    'move.title': '{name} ke grup lain', 'move.hint': 'Hasil {name} di {group} dibatalkan, juga untuk lawannya. Di grup baru {name} bermain melawan semua pemain.',
+    'move.do': 'Pindahkan', 'move.confirm': 'Pindahkan {name} ke {group}? Hasil di grup sekarang akan dibatalkan.',
+    'log.player.replace': '{player} diganti oleh {name}', 'err.same_group': 'Pemain sudah ada di grup ini',
     'tab.game': 'Laga', 'tab.queue': 'Antrean', 'tab.groups': 'Grup', 'tab.playoff': 'Play-off', 'tab.journal': 'Riwayat',
     'title.game': 'Turnamen', 'title.queue': 'Antrean', 'title.groups': 'Grup', 'title.playoff': 'Play-off', 'title.journal': 'Riwayat',
     undo: 'Batalkan', redo: 'Ulangi', settings: 'Pengaturan', save: 'Simpan', cancel: 'Batal', delete: 'Hapus', close: 'Tutup',

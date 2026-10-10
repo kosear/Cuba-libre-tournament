@@ -384,8 +384,95 @@ test('setup actions are locked after the start', () => {
   const t = tour().setup({ A: ['a', 'b', 'c', 'd'] }).start();
   t.fails('wrong_phase', 'group.add', { id: 'B', name: 'B' });
   t.fails('wrong_phase', 'player.remove', { id: 'a' });
-  t.fails('wrong_phase', 'player.move', { id: 'a', groupId: 'A' });
+  t.fails('same_group', 'player.move', { id: 'a', groupId: 'A' });
   t.do('player.rename', { id: 'a', name: 'Alice' });
   assert.equal(t.s.players.a.name, 'Alice');
   assert.equal(groupTable(t.s, 'A').length, 4);
+});
+
+// ---------- replacement and moving to another group (group stage) ----------
+
+const queued = (t, pid) => t.s.queue.filter((id) => involvesId(t.s.matches[id], pid));
+const involvesId = (m, pid) => m.p1 === pid || m.p2 === pid;
+const row = (t, g, id) => groupTable(t.s, g).find((r) => r.id === id);
+
+test('replace: the old player and all their games disappear, the new one plays everybody', () => {
+  const t = tour().setup({ A: ['ann', 'bob', 'cid', 'dan'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
+  t.win('ann', 'bob', 4).win('cid', 'ann', 2).win('bob', 'dan', 1);
+  t.do('player.replace', { id: 'ann', newId: 'eve', name: 'Eve', seed: 3 });
+  assert.equal(t.s.players.ann, undefined);
+  assert.deepEqual(groupTable(t.s, 'A').map((r) => r.id).sort(), ['bob', 'cid', 'dan', 'eve']);
+  // Results against Ann are annulled for the opponents too.
+  assert.deepEqual([row(t, 'A', 'bob').wins, row(t, 'A', 'bob').frames], [1, 1]);
+  assert.deepEqual([row(t, 'A', 'cid').wins, row(t, 'A', 'cid').balls], [0, 0]);
+  assert.equal(Object.values(t.s.matches).filter((m) => involvesId(m, 'ann')).length, 0);
+  assert.equal(queued(t, 'eve').length, 3);
+  assert.equal(Object.values(t.s.matches).filter((m) => m.stage === 'group' && m.groupId === 'A').length, 6);
+  assert.ok(!snapshot(t.s).players.some((p) => p.id === 'ann'));
+});
+
+test('replace: the player of the current match -> the next match starts', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3', 'a4'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
+  const cur = t.s.matches[t.s.queue[0]];
+  const next = t.s.queue[1];
+  t.do('player.replace', { id: cur.p1, newId: 'x', name: 'X', seed: 1 });
+  assert.ok(!t.s.matches[cur.id]);
+  assert.equal(t.s.queue[0], next);
+});
+
+test('replace: everybody else has finished -> the first match of the new player goes right after the current one', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
+  t.rank(['a1', 'a2']);
+  t.do('player.replace', { id: 'a3', newId: 'x', name: 'X', seed: 2 });
+  const idx = t.s.queue.map((id, i) => (involvesId(t.s.matches[id], 'x') ? i : -1)).filter((i) => i >= 0);
+  assert.equal(idx[0], 1);
+  assert.equal(idx.length, 2);
+});
+
+test('replace a withdrawn player: their walkovers are annulled', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3', 'a4'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
+  t.do('player.withdraw', { id: 'a4' });
+  assert.equal(row(t, 'A', 'a1').wins, 1);
+  t.do('player.replace', { id: 'a4', newId: 'x', name: 'X', seed: 4 });
+  assert.equal(row(t, 'A', 'a1').wins, 0);
+  assert.equal(queued(t, 'x').length, 3);
+});
+
+test('replace with a player from another group: their old results are annulled there', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3', 'a4'], B: ['b1', 'b2', 'b3', 'b4'] }).start();
+  t.win('b1', 'b2', 3).win('a1', 'a2', 1);
+  t.do('player.replace', { id: 'a1', withId: 'b1', seed: 6 });
+  assert.equal(t.s.players.a1, undefined);
+  assert.equal(t.s.players.b1.groupId, 'A');
+  assert.deepEqual(groupTable(t.s, 'B').map((r) => r.id).sort(), ['b2', 'b3', 'b4']);
+  assert.equal(row(t, 'B', 'b2').frames, 0);
+  assert.equal(row(t, 'A', 'a2').frames, 0);
+  assert.equal(queued(t, 'b1').length, 3);
+  assert.ok(queued(t, 'b1').every((id) => t.s.matches[id].groupId === 'A'));
+  t.fails('same_group', 'player.replace', { id: 'a2', withId: 'b1' });
+});
+
+test('move to another group after the start: results annulled, plays everybody in the new group', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3'], B: ['b1', 'b2', 'b3'] }).start();
+  t.win('a1', 'a2', 5);
+  t.do('player.move', { id: 'a1', groupId: 'B', seed: 7 });
+  assert.equal(row(t, 'A', 'a2').frames, 0);
+  assert.equal(row(t, 'B', 'a1').frames, 0);
+  assert.equal(queued(t, 'a1').length, 3);
+  // Group A would be left with one player.
+  t.fails('group_too_small', 'player.move', { id: 'a2', groupId: 'B' });
+  t.do('player.withdraw', { id: 'b1' });
+  t.fails('player_withdrawn', 'player.move', { id: 'b1', groupId: 'A' });
+});
+
+test('replace and move only during the group stage; replay gives the same state', () => {
+  const t = tour().setup({ A: ['a1', 'a2', 'a3', 'a4'] });
+  t.fails('wrong_phase', 'player.replace', { id: 'a1', newId: 'x', name: 'X' });
+  t.start();
+  t.do('player.replace', { id: 'a2', newId: 'x', name: 'X', seed: 8 });
+  t.rank(['a1', 'x', 'a3', 'a4']);
+  assert.equal(t.s.phase, 'playoff');
+  t.fails('wrong_phase', 'player.replace', { id: 'a1', newId: 'y', name: 'Y' });
+  t.fails('wrong_phase', 'player.move', { id: 'a1', groupId: 'A' });
+  assert.deepEqual(buildState(t.log), t.s);
 });

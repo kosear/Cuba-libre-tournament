@@ -31,6 +31,35 @@ const len = (x, y) => Math.hypot(x, y);
 const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
+// Background colour try-out (temporary, dev): the splash cycles through these, the number is shown top left.
+// On a dark colour every near-black part of the logo turns white. Pick one, then set SPLASH_DEMO = false.
+const SPLASH_DEMO = true;
+const DEMO_MS = 6000;
+const DEMO_COLORS = [
+  ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
+  ['Sky', '#d9ecfb'], ['Lavender', '#e7e0f6'], ['Blush', '#f8dfe2'], ['Peach', '#fbd9bf'], ['Lemon', '#fbf0a6'],
+  ['Honda Monkey orange', '#f47b20'], ['Coral', '#ff6f5e'], ['Cuba red', '#c8102e'], ['Brick', '#9c3b2b'], ['Burgundy', '#5e1224'],
+  ['Pool felt green', '#0f6b3a'], ['Emerald', '#1a8f5a'], ['Lime', '#b5d33d'], ['Olive', '#5f6b2a'], ['Deep teal', '#0e4d4a'],
+  ['Turquoise', '#1fb5ac'], ['Cuba blue', '#1d4fbf'], ['Navy', '#0f2147'], ['Royal purple', '#4b2a86'], ['Plum', '#6d2d5c'],
+  ['Hot pink', '#e83e8c'], ['Mustard', '#d9a81e'], ['Tobacco', '#6b4a2b'], ['Graphite', '#2b2f36'], ['Night', '#0b0d14'],
+];
+
+/** Relative luminance (WCAG): below ~0.35 the background counts as dark. */
+function isDark(hex) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] < 0.35;
+}
+
+let lightLogoUrl = null; // the logo with its near-black fills white, made once
+async function lightLogo() {
+  if (!lightLogoUrl) {
+    const svg = await (await fetch(LOGO_SRC)).text();
+    const light = svg.replace(/fill="#(1[0-9A-Fa-f]{5})"/g, (m, hex) => (parseInt(hex.slice(0, 2), 16) < 0x30 ? 'fill="#FFFFFF"' : m));
+    lightLogoUrl = URL.createObjectURL(new Blob([light], { type: 'image/svg+xml' }));
+  }
+  return lightLogoUrl;
+}
+
 export function startSplash(root) {
   root.innerHTML = '';
   root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
@@ -604,10 +633,32 @@ export function startSplash(root) {
     logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
+  let demoTimer = null;
+  if (SPLASH_DEMO) {
+    const tag = document.createElement('div');
+    tag.className = 'splash-tag';
+    root.appendChild(tag);
+    let k = 0;
+    const showColor = async () => {
+      const [name, hex] = DEMO_COLORS[k];
+      const dark = isDark(hex);
+      root.style.backgroundColor = hex;
+      tag.style.color = dark ? '#fff' : '#111';
+      tag.innerHTML = `${k + 1} / ${DEMO_COLORS.length} · ${name}<small>${hex}</small>`;
+      k = (k + 1) % DEMO_COLORS.length;
+      const want = dark ? await lightLogo() : LOGO_SRC;
+      if (!stopped && logo.getAttribute('src') !== want) logo.src = want; // same shape: the collision mask stays right
+    };
+    showColor();
+    demoTimer = setInterval(showColor, DEMO_MS);
+  }
+
   return {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
+      clearInterval(demoTimer);
+      root.style.backgroundColor = '';
       root.innerHTML = '';
     },
   };

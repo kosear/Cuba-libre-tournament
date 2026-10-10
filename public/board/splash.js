@@ -19,6 +19,8 @@ const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
+const CUSHION = 0.8; // speed kept after bouncing off a screen edge
+const CUSHION_CHANCE = 0.4; // after the cue shot, each of the two balls may bounce off an edge once
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
 
 const COLORS = ['#F2C200', '#1F4FBF', '#D21034', '#5B2A86', '#F07A1A', '#11804A', '#7A1F1F', '#111111'];
@@ -329,6 +331,7 @@ export function startSplash(root) {
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.angle += (len(b.vx, b.vy) * dt) / R * (b.vx >= 0 ? 1 : -1);
+    if (b.cushions) bounceOffEdge(b);
 
     const n = logoContact(b.x, b.y);
     if (n) {
@@ -344,6 +347,27 @@ export function startSplash(root) {
         b.y += n[1] * 2;
       }
     }
+  }
+
+  /**
+   * Screen edges are open, except once after the cue shot (b.cushions): the ball bounces off the edge it reaches,
+   * but only when the bounced path still takes it off screen (fast enough, clear of the logo). Otherwise it leaves.
+   */
+  function bounceOffEdge(b) {
+    const nx = b.x < R && b.vx < 0 ? 1 : b.x > W - R && b.vx > 0 ? -1 : 0;
+    const ny = b.y < R && b.vy < 0 ? 1 : b.y > H - R && b.vy > 0 ? -1 : 0;
+    if (!nx && !ny) return;
+    b.cushions = 0; // one chance: bounce now or leave
+    const vx = nx ? -b.vx * CUSHION : b.vx;
+    const vy = ny ? -b.vy * CUSHION : b.vy;
+    const sp = len(vx, vy);
+    const dx = vx / sp;
+    const dy = vy / sp;
+    const dist = exitDistance(b.x, b.y, dx, dy);
+    if (b.friction && sp * sp < 2 * b.friction * (dist + 150)) return;
+    if (pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) return;
+    b.vx = vx;
+    b.vy = vy;
   }
 
   function collide(a, b) {
@@ -369,6 +393,8 @@ export function startSplash(root) {
     for (const x of [a, b]) {
       if (x.resting) x.resting = false;
       if (x.num !== 0) x.friction = FRICTION_FAST;
+      // Decided once per ball, at the cue shot.
+      if ((a.num === 0 || b.num === 0) && x.cushions === undefined) x.cushions = Math.random() < CUSHION_CHANCE ? 1 : 0;
     }
   }
 

@@ -64,6 +64,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .duel .sub { grid-column: 1 / -1; text-align: center; font-size: 110px; line-height: 1; color: var(--blue); font-weight: 900; letter-spacing: 6px; text-transform: uppercase; }
 .duel .side { text-align: center; min-width: 0; }
 .duel .pname { font-size: 100px; font-weight: 800; line-height: 1.05; text-transform: uppercase; letter-spacing: 1px; overflow-wrap: anywhere; }
+.duel.next { transform: translateY(-22px); } /* a touch above centre, ~2% of the 1080 px stage */
 .duel.next .pname { font-size: 110px; }
 .duel .stats { margin-top: 30px; font-size: 34px; color: var(--muted); line-height: 1.6; font-variant-numeric: tabular-nums; }
 .duel .stats b { color: var(--ink); }

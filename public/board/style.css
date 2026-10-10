@@ -132,7 +132,7 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 /* call screen: who goes to the table now, on top of everything for 20 s; the look is in public/board/call.js */
 .call { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 6; overflow: hidden; background: #0b0d14; }
 .call[hidden] { display: none; }
-.splash-logo { position: absolute; left: 330px; top: 279px; width: 1260px; height: auto; will-change: transform; }
+.splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: auto; will-change: transform; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%; background: var(--c); display: grid; place-items: center; will-change: transform; }
 /* Shadow is a sibling, not a box-shadow: the ball element rotates as it rolls, its shadow must not. */
 .ball-shadow { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%; background: radial-gradient(closest-side, rgba(19,33,58,.42), rgba(19,33,58,.22) 70%, rgba(19,33,58,0)); will-change: transform; pointer-events: none; }

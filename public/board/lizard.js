@@ -1,7 +1,7 @@
 // A tokay gecko (the Bali one: blue-grey with orange spots) darts across the splash now and then.
 // Drawn procedurally on a small canvas that moves with a CSS transform: a spine of points follows a curved path,
 // the body bends and the tail waves in step with a trot (diagonal legs together), feet stay planted while on the
-// ground. It runs in dashes with short stops, one of them a longer sit (1-7 s), looks around while stopped, then leaves.
+// ground. It runs in dashes with short stops, one of them a longer sit (1-45 s, mostly short), looks around while stopped, then leaves.
 // The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
 
 const W = 1920;
@@ -128,11 +128,12 @@ export function startLizard(root) {
       g.mode = 'stop';
       const long = g.stops === g.sit;
       g.stops--;
-      g.until = long ? rand(1, 7) : rand(0.7, 1.8);
+      // the sit: 1 + 44·u⁴, so short is common, long is rare: half under ~4 s, 1 in 10 over 30 s, 1 in 30 over 40 s
+      g.until = long ? 1 + 44 * Math.random() ** 4 : rand(0.7, 1.8);
       g.look = long ? g.until - rand(1, 2) : g.until * rand(0.3, 0.6); // when the head turns again
       g.yawTo = rand(-0.4, 0.4);
     } else if (g.mode === 'stop') {
-      if (g.look > 0 && g.until < g.look) { g.look -= rand(1.2, 2.5); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
+      if (g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
       if (g.until <= 0) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = rand(550, 750); g.yawTo = 0; }
     }
     const target = g.mode === 'run' ? g.top : 0;

@@ -1,6 +1,6 @@
 // Splash before the tournament starts: the bar logo in the middle, flat pool balls roll by.
 // Rules (docs/requirements.md, «Анимация заглушки»):
-// - at most 2 balls on screen, the cue ball included;
+// - many balls at once (up to MAX_BALLS, the cue ball included), they collide with each other;
 // - some balls hit the logo: it squashes a little and springs back;
 // - some balls roll in slowly and stop near the logo; later the cue ball knocks such a ball out and both leave.
 // Light for a TV browser: two balls and the logo are DOM elements moved with CSS transforms, no canvas redraw.
@@ -21,6 +21,7 @@ const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
+const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
@@ -560,6 +561,8 @@ export function startSplash(root) {
         b.vy = 0;
         if (onScreen(b.x, b.y)) {
           b.resting = true;
+          b.cueSent = false; // a fresh wait: the cue will come for it
+          b.cueTries = 0;
           b.restAt = performance.now();
           b.restDelay = rand(1800, 4000);
         }
@@ -658,7 +661,7 @@ export function startSplash(root) {
     const steps = Math.max(1, Math.ceil((maxSpeed * dt) / MAX_STEP));
     for (let i = 0; i < steps; i++) {
       for (const b of balls) step(b, dt / steps);
-      if (balls.length === 2) collide(balls[0], balls[1]);
+      for (let i = 0; i < balls.length; i++) for (let j = i + 1; j < balls.length; j++) collide(balls[i], balls[j]);
     }
 
     for (const b of [...balls]) {
@@ -676,20 +679,22 @@ export function startSplash(root) {
   }
 
   function schedule(now) {
+    // The cue comes for a resting ball once its wait is over, whatever else is rolling; one cue per wait.
     const resting = balls.find((b) => b.resting);
-    if (resting) {
-      // The cue comes only when the resting ball is alone on screen (max 2 balls).
-      if (balls.length === 1 && now - resting.restAt > resting.restDelay) spawnCue(resting);
-      return;
+    if (resting && !resting.cueSent && now - resting.restAt > resting.restDelay && balls.length < MAX_BALLS) {
+      const tries = resting.cueTries;
+      spawnCue(resting);
+      if (resting.cueTries === tries) resting.cueSent = true; // a cue is on its way (a retry only resets the wait)
     }
-    if (now < nextSpawn || balls.length >= 2) return;
-    if (balls.some((b) => b.friction === FRICTION_SLOW)) return; // a slow ball is on its way
+    if (now < nextSpawn || balls.length >= MAX_BALLS) return;
+    // Only one slow ball at a time: on its way or waiting by the logo.
+    const slowBusy = balls.some((b) => b.resting || b.friction === FRICTION_SLOW);
     const r = Math.random();
     let ok;
-    if (balls.length === 0 && r < 0.3) ok = spawnSlow();
+    if (!slowBusy && r < 0.25) ok = spawnSlow();
     else if (r < 0.65) ok = spawnRoll(true);
     else ok = spawnRoll(false);
-    nextSpawn = now + (ok ? rand(1500, 5000) : 500);
+    nextSpawn = now + (ok ? rand(800, 2500) : 400);
   }
 
   // Elastic squash of the logo: squeezed along the hit direction, stretched across, damped spring back.

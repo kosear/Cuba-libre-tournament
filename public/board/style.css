@@ -138,6 +138,21 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .qempty { font-size: 24px; color: var(--muted); }
 
+/* EXPERIMENT (2026-10-10): blue queue panel, light text, orange Next card. Delete this block to go back. */
+aside.queue { background: var(--blue); }
+.qhead { color: rgba(255,255,255,.85); }
+.qhead .qtitle { color: #fff; }
+aside.queue::after { background: rgba(255,255,255,.45); }
+.qbig.next { background: #f47b20; color: #fff; } /* the orange of the call screen band */
+.qbig.next .qvs { color: #ffe3cc; }
+.qbig.after { background: rgba(255,255,255,.14); color: #fff; }
+.qbig.after .qvs { color: rgba(255,255,255,.7); }
+.qrow { border-bottom-color: rgba(255,255,255,.2); color: #fff; }
+.qn { color: rgba(255,255,255,.65); }
+.qm i { color: #ffd2da; }
+.qg { color: #fff; background: rgba(255,255,255,.2); }
+.qempty { color: rgba(255,255,255,.8); }
+
 /* splash before the start: logo and rolling balls (splash.js) */
 .splash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; background: #fff; overflow: hidden; }
 /* call screen: who goes to the table now, on top of everything for 20 s; the look is in public/board/call.js */

@@ -155,7 +155,7 @@ It runs unattended for hours: handle reconnects, never show raw errors.
 
 - ~~The TV keeps old frontend code after a deploy.~~ Solved: SSE sends `hello` with the commit, `public/shared/live.js`
   reloads the page when it changes; static files are served with `Cache-Control: no-cache`.
-- No automated prod DB backups yet. This is on the infra owner's side, see `docs/infrastructure.md`.
+- ~~No automated DB backups.~~ Done on the infra side: hourly, daily and before every deploy, see `docs/infrastructure.md`.
 
 ## 9. People
 

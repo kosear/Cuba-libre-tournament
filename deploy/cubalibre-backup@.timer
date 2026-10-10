@@ -1,0 +1,11 @@
+# Database backup for %i every hour.
+[Unit]
+Description=Cuba Libre database backup timer (%i)
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

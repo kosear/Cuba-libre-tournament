@@ -23,6 +23,11 @@ main() {
 
   echo "[$env] $old -> $new"
 
+  # Snapshot of the database before new code (and maybe new migrations) touches it. Never blocks a deploy.
+  if [ -x /usr/local/lib/cubalibre/backup.sh ]; then
+    as_app /usr/local/lib/cubalibre/backup.sh "$env" predeploy || echo "[$env] predeploy backup failed"
+  fi
+
   if as_app git diff --quiet "$old" "$new" -- package.json package-lock.json; then
     as_app git reset -q --hard "$new"
     systemctl restart "cubalibre@$env"

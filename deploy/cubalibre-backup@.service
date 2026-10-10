@@ -1,0 +1,11 @@
+# Hourly database backup for %i, see deploy/backup.sh (copied by setup.sh to /usr/local/lib/cubalibre/).
+[Unit]
+Description=Cuba Libre database backup (%i)
+
+[Service]
+Type=oneshot
+User=cubalibre
+Group=cubalibre
+StateDirectory=cubalibre-backup/%i
+StateDirectoryMode=0700
+ExecStart=/bin/bash /usr/local/lib/cubalibre/backup.sh %i

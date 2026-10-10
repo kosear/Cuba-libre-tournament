@@ -78,8 +78,24 @@ sqlite3 /srv/cubalibre/prod/data/app.db               # консоль базы
 В `sse_clients` из `/api/health` архиватор считается за одного клиента.
 Если формат состояния меняется, пояснение ищи в `docs/CHANGELOG.md`.
 
+## Бэкапы базы
+
+`deploy/backup.sh` делает копию `data/app.db` через `sqlite3 .backup` (целая даже на живой базе) и жмёт её в gzip.
+Лежат в `/var/lib/cubalibre-backup/<env>/`:
+- `hourly/`: таймер `cubalibre-backup@<env>.timer` каждый час, хранится 48 копий;
+- `daily/`: первая копия каждого дня (UTC), хранится 30;
+- `predeploy/`: перед каждой выкладкой, её делает `sync.sh`, хранится 20.
+
+Восстановление:
+```
+systemctl stop cubalibre@prod
+zcat /var/lib/cubalibre-backup/prod/hourly/app-....db.gz > /srv/cubalibre/prod/data/app.db
+rm -f /srv/cubalibre/prod/data/app.db-wal /srv/cubalibre/prod/data/app.db-shm
+chown cubalibre:cubalibre /srv/cubalibre/prod/data/app.db
+systemctl start cubalibre@prod
+```
+
 ## Чего пока нет
 
-- **Бэкапов базы prod.** Простой вариант: ежедневный таймер с `sqlite3 app.db ".backup ..."` и хранением последних N копий.
 - Мониторинга. Минимум: внешняя проверка `https://cubalibre.su/api/health`.
 - Старая установка до переезда в репозиторий лежит в `/root/cubalibre-old-backup`, её можно удалить.

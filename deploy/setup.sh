@@ -28,13 +28,16 @@ setup_env prod main 3000
 setup_env dev  dev  3001
 
 cp "$ROOT/prod/deploy/cubalibre@.service" "$ROOT/prod/deploy/cubalibre-sync@.service" \
-   "$ROOT/prod/deploy/cubalibre-sync@.timer" "$ROOT/prod/deploy/cubalibre-archive@.service" /etc/systemd/system/
+   "$ROOT/prod/deploy/cubalibre-sync@.timer" "$ROOT/prod/deploy/cubalibre-archive@.service" \
+   "$ROOT/prod/deploy/cubalibre-backup@.service" "$ROOT/prod/deploy/cubalibre-backup@.timer" /etc/systemd/system/
 install -D -m 755 "$ROOT/prod/deploy/archive.py" /usr/local/lib/cubalibre/archive.py
+install -D -m 755 "$ROOT/prod/deploy/backup.sh" /usr/local/lib/cubalibre/backup.sh
+install -d -o cubalibre -g cubalibre -m 700 /var/lib/cubalibre-backup/prod /var/lib/cubalibre-backup/dev
 cp "$ROOT/prod/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 
 for env in prod dev; do
-  systemctl enable -q --now "cubalibre@$env" "cubalibre-sync@$env.timer" "cubalibre-archive@$env"
+  systemctl enable -q --now "cubalibre@$env" "cubalibre-sync@$env.timer" "cubalibre-archive@$env" "cubalibre-backup@$env.timer"
   systemctl restart "cubalibre@$env" "cubalibre-archive@$env"
 done
 systemctl reload caddy

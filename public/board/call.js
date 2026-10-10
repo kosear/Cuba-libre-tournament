@@ -104,11 +104,13 @@ const CSS = `
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
-.fight .mascot.m1 { left: 70px; top: 170px; }
-.fight .mascot.m2 { right: 70px; top: 700px; }
+/* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
+.fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
+.fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
 .fight .mname { position: absolute; z-index: 1; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); }
-.fight .mname.m1 { left: 80px; top: 120px; }
-.fight .mname.m2 { right: 80px; bottom: 120px; }
+.fight .mname { width: 600px; margin-left: -300px; text-align: center; }
+.fight .mname.m1 { left: 515px; top: 925px; }
+.fight .mname.m2 { left: 1525px; top: 288px; }
 /* fire for important matches: a still glow plus 7 big flame tongues that only sway and stretch, and a few embers */
 .fight .fire { position: absolute; left: 0; right: 0; bottom: 60px; height: 420px; z-index: 1; pointer-events: none; display: none; }
 .fight.important .fire { display: block; }

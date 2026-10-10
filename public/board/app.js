@@ -139,7 +139,7 @@ function slideNext() {
   return {
     title: label(m),
     html: `<div class="duel next"><div class="sub">Next match</div>
-      <div class="side"><div class="pname">${name(m.p1)}</div></div><div class="vs">VS</div><div class="side"><div class="pname">${name(m.p2)}</div></div></div>`,
+      <div class="side"><div class="pname"><span>${name(m.p1)}</span></div></div><div class="vs">VS</div><div class="side"><div class="pname"><span>${name(m.p2)}</span></div></div></div>`,
   };
 }
 
@@ -264,8 +264,19 @@ function renderSlide() {
   if (el('title').textContent !== view.title) el('title').textContent = view.title;
   el('content').innerHTML = view.html;
   fitText(el('content'));
+  balanceDuel(el('content'));
   renderQueue();
   shownKey = s.key;
+}
+
+// Names hug the VS. When one name is much longer, the whole «name VS name» group would look off-centre:
+// shift it half way towards the shorter name (full centring would push the VS too far from the middle).
+function balanceDuel(root) {
+  const d = root.querySelector('.duel');
+  if (!d) return;
+  const [a, b] = [...d.querySelectorAll('.pname > span')].map((x) => x.offsetWidth); // layout px, stage scale ignored
+  const shift = Math.max(-200, Math.min(200, (a - b) / 4));
+  d.style.setProperty('--shift', `${Math.round(shift)}px`);
 }
 
 function schedule() {

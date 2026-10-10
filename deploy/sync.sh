@@ -22,14 +22,19 @@ main() {
   [ "$old" = "$new" ] && exit 0
 
   echo "[$env] $old -> $new"
-  as_app git reset -q --hard "$new"
 
-  if ! as_app git diff --quiet "$old" "$new" -- package.json package-lock.json; then
+  if as_app git diff --quiet "$old" "$new" -- package.json package-lock.json; then
+    as_app git reset -q --hard "$new"
+    systemctl restart "cubalibre@$env"
+  else
+    # Stop first: --watch would restart the app while npm ci rebuilds node_modules.
     echo "[$env] dependencies changed, npm ci"
+    systemctl stop "cubalibre@$env"
+    as_app git reset -q --hard "$new"
     as_app npm ci --omit=dev --no-audit --no-fund
+    systemctl start "cubalibre@$env"
   fi
 
-  systemctl restart "cubalibre@$env"
   echo "[$env] deployed $(as_app git log -1 --format='%h %s')"
   exit 0
 }

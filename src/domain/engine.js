@@ -52,6 +52,29 @@ export function buildState(actions) {
   return s;
 }
 
+/**
+ * What an action changes, as keys like "match:sf1" or "player:p3". Two admins working offline
+ * conflict when their actions share a key: the first one to reach the server wins.
+ */
+export function actionKeys(type, payload = {}) {
+  const [entity] = String(type).split('.');
+  switch (type) {
+    case 'group.add':
+    case 'player.add':
+      return []; // new ids never clash
+    case 'tournament.start':
+      return ['tournament'];
+    case 'queue.move':
+    case 'queue.postpone':
+      return [`match:${payload.id}`];
+    case 'playoff.set':
+    case 'playoff.auto':
+      return [`match:${payload.slot}`];
+    default:
+      return [`${entity}:${payload.id}`];
+  }
+}
+
 // ---------- helpers ----------
 
 function cleanName(value) {

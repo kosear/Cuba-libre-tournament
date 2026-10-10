@@ -30,6 +30,8 @@ const staticOpts = { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cac
 
 // Static: / -> start screen, /board -> TV scoreboard, /admin -> admin panel (login required, except the login page)
 app.use('/shared', express.static(path.join(ROOT, 'public/shared'), staticOpts));
+// The rules engine also runs in the admin page, to show actions made offline before they reach the server.
+app.use('/domain', express.static(path.join(ROOT, 'src/domain'), staticOpts));
 app.use('/assets', express.static(path.join(ROOT, 'public/assets'), staticOpts));
 app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin'), staticOpts));
 app.use('/board', express.static(path.join(ROOT, 'public/board'), staticOpts));

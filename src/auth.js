@@ -63,7 +63,7 @@ export function requireAdminApi(req, res, next) {
 
 // For /admin pages: redirect to the login page when not logged in.
 // The login page itself and shared static files stay public.
-const PUBLIC_ADMIN_FILES = new Set(['/login.html', '/login.js', '/style.css']);
+const PUBLIC_ADMIN_FILES = new Set(['/login.html', '/login.js', '/style.css', '/sw.js']);
 export function requireAdminPage(req, res, next) {
   if (PUBLIC_ADMIN_FILES.has(req.path)) return next();
   req.admin = currentAdmin(req);

@@ -27,10 +27,11 @@ export function broadcast(type, payload = {}) {
   for (const res of clients) res.write(msg);
 }
 
-// Heartbeat keeps proxies (Caddy) from closing idle connections.
+// Heartbeat: keeps proxies (Caddy) from closing idle connections, and lets pages notice a dead
+// connection (no ping for a while) that the browser has not reported yet. See public/shared/live.js.
 setInterval(() => {
-  for (const res of clients) res.write(': ping\n\n');
-}, 25_000).unref();
+  for (const res of clients) res.write('event: ping\ndata: {}\n\n');
+}, 15_000).unref();
 
 export function clientCount() {
   return clients.size;

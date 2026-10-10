@@ -82,13 +82,14 @@ src/routes/public.js   GET /api/state and getState(): everything the TV needs, o
 src/routes/admin.js    POST/PUT/DELETE under /api/admin/*, login required
 scripts/admin.js       CLI to add / remove admins and change passwords
 migrations/NNN_*.sql   schema, applied once in filename order at startup
-src/domain/            tournament rules engine: state is rebuilt from the action log (pure functions, tested)
+src/domain/            tournament rules engine: state is rebuilt from the action log (pure functions, tested);
+                       also served at /domain, the admin page runs it to apply offline actions locally
 src/tournament.js      action log storage: current tournament, undo/redo, journal
 test/                  `npm test`: rules engine tests (node:test)
 public/start/          served at /        (start screen: Scoreboard or Admin panel, public)
 public/board/          served at /board   (TV scoreboard, public)
-public/admin/          served at /admin   (admin page, login required; login.html/login.js/style.css are public)
-public/shared/         served at /shared  (live.js: SSE + auto-reload after a deploy)
+public/admin/          served at /admin   (admin page, login required; login.html/login.js/style.css/sw.js are public)
+public/shared/         served at /shared  (live.js: SSE, auto-reload after a deploy, reconnect when pings stop)
 public/assets/         served at /assets  (bar logo)
 deploy/                Caddyfile, systemd units, setup and sync scripts
 ```
@@ -107,6 +108,10 @@ creates a row in `sessions` and an HttpOnly cookie valid for 30 days, so admins 
   Inside a handler, `req.admin` is `{ id, username }`, useful for an action log.
 - New admin pages go into `public/admin/`; they are protected automatically. Only files listed in `PUBLIC_ADMIN_FILES` in `src/auth.js` are public.
 - In admin page JS use the `api()` helper from `public/admin/app.js`: on 401 it sends the user back to the login page.
+- Tournament changes from the admin page go through `act()`: it checks the action with the local engine, shows it at once,
+  keeps it in the outbox (localStorage) and sends it when there is a connection. Each action carries `base`
+  (the last log id the page knew); the server rejects it with `conflict` when the other admin changed the same thing
+  after that (`actionKeys()` in `src/domain/engine.js`). Undo, redo and «New tournament» work only online with an empty outbox.
 - No roles: all admins can do everything. No self-registration. Accounts are managed by the infra owner, see «Admins» below.
 
 ### Admins

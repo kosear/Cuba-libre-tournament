@@ -1,6 +1,10 @@
 // Admin panel. Every change is sent as an action to /api/admin/actions; the server validates it,
 // stores it in the log and broadcasts the new state. The page re-renders from the snapshot.
+// Offline: actions wait in an outbox (localStorage) and are applied locally with the same rules
+// engine, so the admin keeps working; they are sent in order when the connection is back.
 import { live } from '/shared/live.js';
+import { applyAction, DomainError } from '/domain/engine.js';
+import { snapshot } from '/domain/view.js';
 import { t, lang, setLang, LANGS, has } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -10,7 +14,10 @@ const TABS = [
 ];
 const SLOTS = ['sf1', 'sf2', 'third', 'final'];
 
-let S = null; // { tournament, journal } from /api/admin/state
+let server = null; // last { tournament, journal, raw, head, tournamentId } from /api/admin/state
+let S = null; // what the page shows: the server state plus the actions not sent yet
+let online = false;
+const outbox = loadJson('outbox', []); // actions not yet accepted by the server, oldest first
 let me = null;
 let tab = load('tab', 'game');
 const ui = { pick: null, balls: null }; // result entry in progress: { matchId, winner }
@@ -19,6 +26,8 @@ let deferred = false; // a re-render waits until the admin finishes typing
 
 function load(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }
 function store(k, v) { try { localStorage.setItem(k, v); } catch {} }
+function loadJson(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+const nowSql = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 
@@ -33,7 +42,9 @@ async function api(url, options = {}) {
   return res;
 }
 
+// Undo, redo and a new tournament work on the server log directly: only online, with the outbox empty.
 async function post(url, body) {
+  if (!online || outbox.length) { toast(t('err.needOnline'), true); return false; }
   try {
     const res = await api(url, { method: 'POST', body: JSON.stringify(body ?? {}) });
     const data = await res.json().catch(() => ({}));
@@ -46,7 +57,89 @@ async function post(url, body) {
   }
 }
 
-const act = (type, payload) => post('/api/admin/actions', { clientId: uuid(), type, payload });
+/** Make a change: check it locally, show it at once, send it when possible. */
+async function act(type, payload) {
+  if (!S) return false;
+  const p = { ...payload };
+  if ((type === 'tournament.start' || type === 'player.add') && p.seed === undefined) p.seed = Math.floor(Math.random() * 2 ** 31);
+  const a = { clientId: uuid(), type, payload: p, base: server.head, tournamentId: server.tournamentId, created_at: nowSql() };
+  try {
+    applyAction(S.raw, a);
+  } catch (e) {
+    toast(e instanceof DomainError ? errorText({ error: e.code, params: e.params }) : t('err.generic'), true);
+    return false;
+  }
+  outbox.push(a);
+  saveOutbox();
+  setTimeout(refresh, 0); // after the caller has reset its own UI state (picked winner, open sheet)
+  flush();
+  return true;
+}
+
+function saveOutbox() { try { localStorage.setItem('outbox', JSON.stringify(outbox)); } catch {} }
+
+let flushing = false;
+let retryTimer = null;
+/** Send the outbox in order. Rejected actions are dropped with a warning (e.g. the other admin was first). */
+async function flush() {
+  if (flushing || !outbox.length) return;
+  flushing = true;
+  clearTimeout(retryTimer);
+  let sent = false;
+  try {
+    while (outbox.length) {
+      const a = outbox[0];
+      let res;
+      try {
+        res = await api('/api/admin/actions', { method: 'POST', body: JSON.stringify({ clientId: a.clientId, type: a.type, payload: a.payload, base: a.base, tournamentId: a.tournamentId }) });
+      } catch {
+        online = false; // no connection (or logged out): keep the outbox
+        break;
+      }
+      if (res.status >= 500) break; // server restarting after a deploy: try again later
+      if (!res.ok) toast(rejectText(a, await res.json().catch(() => ({}))), true);
+      outbox.shift();
+      saveOutbox();
+      sent = true;
+    }
+  } finally {
+    flushing = false;
+  }
+  if (sent) conn.reload();
+  if (outbox.length) retryTimer = setTimeout(flush, 5000);
+  showStatus();
+}
+
+function rejectText(a, data) {
+  const what = describe(a);
+  if (data?.error === 'conflict') return t('err.conflict', { action: what });
+  return `${t('err.notSaved', { action: what })} ${errorText(data)}`;
+}
+
+/** Server state + outbox -> what the page shows. */
+function compose() {
+  if (!server) return;
+  if (!outbox.length) { S = server; return; }
+  let raw = server.raw;
+  const names = { ...server.journal.names };
+  const pending = [];
+  for (const a of outbox) {
+    if (a.tournamentId !== server.tournamentId) continue; // will be rejected when sent
+    try { raw = applyAction(raw, a); } catch { continue; } // will be reported when sent
+    if (a.payload.id && a.payload.name) names[a.payload.id] = a.payload.name;
+    pending.unshift({ id: a.clientId, type: a.type, payload: a.payload, status: 'pending', created_at: a.created_at, admin: me?.username });
+  }
+  S = { ...server, raw, tournament: snapshot(raw), journal: { ...server.journal, names, entries: [...pending, ...server.journal.entries] } };
+}
+
+function showStatus() {
+  const el = $('offline');
+  const n = outbox.length;
+  el.hidden = online && !n;
+  el.classList.toggle('sending', online);
+  el.textContent = online ? t('sending', { n }) : n ? t('offlinePending', { n }) : t('offline');
+  renderChrome();
+}
 
 function errorText(data) {
   const key = `err.${data?.error}`;
@@ -87,8 +180,9 @@ const vs = (m, winnerMark = false) => {
 
 function renderChrome() {
   $('title').textContent = t(`title.${tab}`);
-  $('undo').disabled = !S?.journal.canUndo;
-  $('redo').disabled = !S?.journal.canRedo;
+  const direct = online && !outbox.length; // undo/redo need the server
+  $('undo').disabled = !direct || !S?.journal.canUndo;
+  $('redo').disabled = !direct || !S?.journal.canRedo;
   $('undo').title = t('undo');
   $('redo').title = t('redo');
   $('lang').innerHTML = LANGS.map((l) => `<button data-lang="${l}" class="${l === lang() ? 'on' : ''}">${l.toUpperCase()}</button>`).join('');
@@ -321,13 +415,16 @@ function describe(e) {
 
 function viewJournal() {
   const j = S.journal;
+  const direct = online && !outbox.length;
   const time = (iso) => new Date(`${iso.replace(' ', 'T')}Z`).toLocaleTimeString(lang(), { hour: '2-digit', minute: '2-digit' });
   const entries = j.entries.map((e) => {
-    const badge = e.status === 'undone' ? `<span class="tag red">${esc(t('journal.undone'))}</span>` : e.status === 'discarded' ? `<span class="tag grey">${esc(t('journal.discarded'))}</span>` : '';
+    const badge = e.status === 'undone' ? `<span class="tag red">${esc(t('journal.undone'))}</span>`
+      : e.status === 'discarded' ? `<span class="tag grey">${esc(t('journal.discarded'))}</span>`
+        : e.status === 'pending' ? `<span class="tag">${esc(t('journal.pending'))}</span>` : '';
     return `<div class="e ${e.status}"><span class="t">${esc(time(e.created_at))}</span><div class="d"><span>${esc(describe(e))}</span><small>${esc(e.admin ?? '')}</small></div>${badge}</div>`;
   }).join('');
   return `<div class="muted">${esc(t('journal.hint'))}</div>
-    <div class="two"><button class="btn" data-undo ${j.canUndo ? '' : 'disabled'}>${esc(t('journal.undoLast'))}</button><button class="btn" data-redo ${j.canRedo ? '' : 'disabled'}>${esc(t('journal.redo'))}</button></div>
+    <div class="two"><button class="btn" data-undo ${j.canUndo && direct ? '' : 'disabled'}>${esc(t('journal.undoLast'))}</button><button class="btn" data-redo ${j.canRedo && direct ? '' : 'disabled'}>${esc(t('journal.redo'))}</button></div>
     <div class="log">${entries || `<div class="muted">${esc(t('journal.empty'))}</div>`}</div>`;
 }
 
@@ -506,13 +603,32 @@ document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !
 
 setLang(lang());
 api('/api/auth/me').then((r) => r.json()).then((x) => { me = x; }).catch(() => {});
+function refresh() {
+  compose();
+  if (!S) return;
+  if (ui.pick && !S.tournament.queue.some((m) => m.id === ui.pick.matchId)) { ui.pick = null; ui.balls = null; }
+  render();
+}
+
+function onState(state) {
+  server = state;
+  store('adminState', JSON.stringify(state)); // to open the page without a connection
+  refresh();
+}
+
+const cached = loadJson('adminState', null);
+if (cached?.raw) onState(cached);
 const conn = live({
   stateUrl: '/api/admin/state',
-  onState: (state) => {
-    S = state;
-    if (ui.pick && !S.tournament.queue.some((m) => m.id === ui.pick.matchId)) { ui.pick = null; ui.balls = null; }
-    render();
+  onState: (state) => { onState(state); flush(); },
+  onStatus: (on) => {
+    if (on === online) return;
+    online = on;
+    showStatus();
+    if (on) flush();
   },
-  onStatus: (on) => { $('offline').hidden = on; $('offline').textContent = t('offline'); },
 });
-renderChrome();
+window.addEventListener('online', flush);
+showStatus();
+// The service worker keeps the page's files, so it opens even when the phone reloads the tab offline.
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/admin/sw.js').catch(() => {});

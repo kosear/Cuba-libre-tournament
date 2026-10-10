@@ -4,13 +4,16 @@ import { Router } from 'express';
 import { broadcast } from '../events.js';
 import { getState } from './public.js';
 import { DomainError } from '../domain/engine.js';
-import { addAction, undo, redo, newTournament, journal, getTournamentState } from '../tournament.js';
+import { addAction, undo, redo, newTournament, journal, getTournamentState, currentTournamentId, logHead } from '../tournament.js';
 import { snapshot } from '../domain/view.js';
 
 export const adminRoutes = Router();
 
+// raw + head + tournamentId let the page apply its offline actions locally (public/admin/app.js).
 function adminState() {
-  return { tournament: snapshot(getTournamentState()), journal: journal() };
+  const raw = getTournamentState();
+  const tournamentId = currentTournamentId();
+  return { tournament: snapshot(raw), journal: journal(), raw, head: logHead(tournamentId), tournamentId };
 }
 
 // Domain errors become 400 with a code the admin page translates.
@@ -28,8 +31,8 @@ function run(res, fn) {
 adminRoutes.get('/state', (req, res) => res.json(adminState()));
 
 adminRoutes.post('/actions', (req, res) => {
-  const { clientId, type, payload } = req.body || {};
-  run(res, () => addAction({ clientId, type, payload, adminId: req.admin.id }));
+  const { clientId, type, payload, base, tournamentId } = req.body || {};
+  run(res, () => addAction({ clientId, type, payload, adminId: req.admin.id, base, tournamentId }));
 });
 
 adminRoutes.post('/undo', (req, res) => run(res, () => { undo(); }));

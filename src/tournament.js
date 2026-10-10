@@ -2,7 +2,7 @@
 // The tournament state is never stored, it is rebuilt from the active actions (and cached in memory).
 import crypto from 'node:crypto';
 import { db } from './db.js';
-import { applyInPlace, initialState, DomainError } from './domain/engine.js';
+import { applyInPlace, initialState, actionKeys, DomainError } from './domain/engine.js';
 
 const JOURNAL_LIMIT = 300;
 
@@ -36,6 +36,25 @@ export function getTournamentState() {
   return state;
 }
 
+/** Id of the newest action of the tournament (any status): the version the admin page saw. */
+export function logHead(tid = currentTournamentId()) {
+  return db.prepare('SELECT COALESCE(MAX(id), 0) head FROM actions WHERE tournament_id = ?').get(tid).head;
+}
+
+/**
+ * An action made on top of an old view (offline, or two admins at once) is rejected
+ * when another admin has since changed the same thing.
+ */
+function checkConflict(tid, base, adminId, type, payload) {
+  const keys = new Set(actionKeys(type, payload));
+  if (!keys.size) return;
+  const newer = db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND id > ? AND status = 'active' AND admin_id IS NOT ?")
+    .all(tid, base, adminId ?? null);
+  for (const a of newer) {
+    if (actionKeys(a.type, JSON.parse(a.payload)).some((k) => keys.has(k))) throw new DomainError('conflict');
+  }
+}
+
 /** Fill in server-side parts of a payload (random seeds). */
 function withSeeds(type, payload) {
   const p = { ...payload };
@@ -49,12 +68,14 @@ function withSeeds(type, payload) {
  * @returns {{ duplicate: boolean }}
  * @throws DomainError
  */
-export function addAction({ clientId, type, payload, adminId }) {
+export function addAction({ clientId, type, payload, adminId, base, tournamentId }) {
   const cid = String(clientId || '').slice(0, 64) || crypto.randomUUID();
   return db.transaction(() => {
     if (db.prepare('SELECT 1 FROM actions WHERE client_id = ?').get(cid)) return { duplicate: true };
     const tid = currentTournamentId();
+    if (tournamentId !== undefined && Number(tournamentId) !== tid) throw new DomainError('tournament_changed');
     const p = withSeeds(String(type), payload && typeof payload === 'object' ? payload : {});
+    if (base !== undefined) checkConflict(tid, Number(base) || 0, adminId, String(type), p);
     const state = structuredClone(getTournamentState());
     applyInPlace(state, { type: String(type), payload: p }); // throws if not allowed
     db.prepare("UPDATE actions SET status = 'discarded' WHERE tournament_id = ? AND status = 'undone'").run(tid);

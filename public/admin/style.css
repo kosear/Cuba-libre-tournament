@@ -20,6 +20,7 @@ button { cursor: pointer; border: none; background: none; touch-action: manipula
 .lang button { padding: 6px 7px; color: var(--muted); }
 .lang button.on { background: var(--blue); color: #fff; }
 .offline { background: var(--red-soft); color: var(--red); font-size: 13px; font-weight: 600; text-align: center; padding: 6px; }
+.offline.sending { background: var(--blue-soft); color: var(--blue); }
 
 /* ---------- layout ---------- */
 main.page { padding: 14px 14px 96px; display: grid; gap: 12px; max-width: 640px; margin: 0 auto; }
@@ -36,7 +37,8 @@ main.page { padding: 14px 14px 96px; display: grid; gap: 12px; max-width: 640px;
 
 .btn { display: block; text-decoration: none; color: var(--ink); width: 100%; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-weight: 600; font-size: 15px; padding: 12px; text-align: center; }
 .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 800; font-size: 17px; padding: 15px; }
-.btn.primary:disabled { background: #a9c1e8; border-color: #a9c1e8; }
+.btn:disabled { color: #b4bdcb; }
+.btn.primary:disabled { background: #a9c1e8; border-color: #a9c1e8; color: #fff; }
 .btn.danger { color: var(--red); border-color: #f3c2cc; }
 .btn.dashed { border-style: dashed; color: var(--blue); }
 .btn.small { width: auto; display: inline-block; font-size: 13px; padding: 7px 10px; color: var(--blue); font-weight: 700; }

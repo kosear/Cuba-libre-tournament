@@ -3,8 +3,14 @@
 // - Reloads the page when the server runs a different commit (a deploy happened),
 //   so the TV never keeps old JS/CSS after an update.
 // - EventSource reconnects by itself; onStatus(true/false) reports the connection.
+// - The server pings every 15 s. A connection silent for longer than STALE_MS is treated as dead
+//   and reopened: a dropped Wi-Fi often leaves the old stream hanging without an error.
+const STALE_MS = 40_000;
+
 export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) {
   let commit = null;
+  let es = null;
+  let lastSeen = Date.now();
 
   async function load() {
     try {
@@ -16,15 +22,34 @@ export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) 
     }
   }
 
-  const es = new EventSource('/api/events');
-  es.addEventListener('hello', (e) => {
-    const c = JSON.parse(e.data).commit;
-    if (commit && c !== commit) { location.reload(); return; }
-    commit = c;
+  function seen() {
+    lastSeen = Date.now();
     onStatus(true);
-    load();
-  });
-  es.addEventListener('state', () => load());
-  es.onerror = () => onStatus(false);
+  }
+
+  function connect() {
+    es?.close();
+    lastSeen = Date.now();
+    es = new EventSource('/api/events');
+    es.addEventListener('hello', (e) => {
+      const c = JSON.parse(e.data).commit;
+      if (commit && c !== commit) { location.reload(); return; }
+      commit = c;
+      seen();
+      load();
+    });
+    es.addEventListener('state', () => { seen(); load(); });
+    es.addEventListener('ping', seen);
+    es.onerror = () => onStatus(false);
+  }
+
+  setInterval(() => {
+    if (Date.now() - lastSeen > STALE_MS) {
+      onStatus(false);
+      connect();
+    }
+  }, 5000);
+
+  connect();
   return { reload: load };
 }

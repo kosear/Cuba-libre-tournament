@@ -13,6 +13,8 @@ const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
 const LOGO_TEXT_Y = 0.38; // vertical centre of the «CUBA LIBRE» letters, as a share of the logo height
 const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share of its height (a bit above the middle)
+const SHADOW_DX = 12; // ball shadow offset: light from the top left
+const SHADOW_DY = 18;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
@@ -138,8 +140,10 @@ export function startSplash(root) {
       el.style.setProperty('--c', color);
       el.innerHTML = `<span>${num}</span>`;
     }
-    root.appendChild(el);
-    const b = { num, el, x, y, vx, vy, friction, angle: rand(0, Math.PI * 2), resting: false, restAt: 0, entered: false };
+    const shadow = document.createElement('div');
+    shadow.className = 'ball-shadow';
+    root.append(shadow, el);
+    const b = { num, el, shadow, x, y, vx, vy, friction, angle: rand(0, Math.PI * 2), resting: false, restAt: 0, entered: false };
     balls.push(b);
     place(b);
     return b;
@@ -147,10 +151,12 @@ export function startSplash(root) {
 
   function place(b) {
     b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px) rotate(${b.angle}rad)`;
+    b.shadow.style.transform = `translate(${b.x - R + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px)`;
   }
 
   function removeBall(b) {
     b.el.remove();
+    b.shadow.remove();
     balls = balls.filter((x) => x !== b);
   }
 
@@ -170,6 +176,13 @@ export function startSplash(root) {
     let s = 0;
     while (onScreen(x - dx * s, y - dy * s, R + 4) && s < 5000) s += 10;
     return [x - dx * s, y - dy * s];
+  }
+
+  /** Distance from (x, y) along dir until the ball is fully off screen. */
+  function exitDistance(x, y, dx, dy) {
+    let s = 50;
+    while (onScreen(x + dx * s, y + dy * s, R + 4) && s < 5000) s += 10;
+    return s;
   }
 
   const freeNumber = () => {
@@ -201,7 +214,9 @@ export function startSplash(root) {
       const dx = (tx - sx) / d;
       const dy = (ty - sy) / d;
       if (!hit && pathHitsLogo(sx, sy, sx + dx * 2600, sy + dy * 2600)) continue;
-      const v = hit ? rand(650, 1000) : rand(420, 760);
+      // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
+      const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
+      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760));
       makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
       return true;
     }
@@ -225,6 +240,8 @@ export function startSplash(root) {
       const qx = cx + (ux / ul) * s;
       const qy = cy + (uy / ul) * s;
       if (!onScreen(qx, qy, -(R + 30))) continue;
+      // No clean cue shot from there (e.g. squeezed between the logo and the screen edge): pick another spot.
+      if (!findShot(qx, qy, 200)) continue;
       const [sx, sy] = edgePoint();
       if (pathHitsLogo(sx, sy, qx, qy)) continue;
       const d = len(qx - sx, qy - sy);
@@ -235,22 +252,34 @@ export function startSplash(root) {
     return false;
   }
 
-  // The cue ball comes in and knocks the resting ball away from the logo.
-  function spawnCue(target) {
-    for (let t = 0; t < 60; t++) {
+  /**
+   * A cue shot at a ball resting at (x, y): the struck ball leaves without running into the logo, and the cue's own
+   * path from the screen edge is clear. Returns { sx, sy, vx, vy } (start point, unit direction) or null.
+   */
+  function findShot(x, y, tries) {
+    for (let t = 0; t < tries; t++) {
       // Direction the struck ball will take: must not run into the logo.
       const oa = rand(0, Math.PI * 2);
       const ox = Math.cos(oa);
       const oy = Math.sin(oa);
-      if (pathHitsLogo(target.x + ox * (R + 2), target.y + oy * (R + 2), target.x + ox * 700, target.y + oy * 700, R)) continue;
+      if (pathHitsLogo(x + ox * (R + 2), y + oy * (R + 2), x + ox * 700, y + oy * 700, R)) continue;
       // Cut angle keeps the cue moving after the hit, so it leaves the screen too.
-      const [vx, vy] = rot(ox, oy, (Math.random() < 0.5 ? -1 : 1) * rand(0.45, 0.85));
-      const contactX = target.x - ox * 2 * R;
-      const contactY = target.y - oy * 2 * R;
+      const [vx, vy] = rot(ox, oy, (Math.random() < 0.5 ? -1 : 1) * rand(0.35, 0.95));
+      const contactX = x - ox * 2 * R;
+      const contactY = y - oy * 2 * R;
       const [sx, sy] = backToEdge(contactX, contactY, vx, vy);
       if (pathHitsLogo(sx, sy, contactX, contactY)) continue;
+      return { sx, sy, vx, vy };
+    }
+    return null;
+  }
+
+  // The cue ball comes in and knocks the resting ball away from the logo.
+  function spawnCue(target) {
+    const shot = findShot(target.x, target.y, 300);
+    if (shot) {
       const v = rand(1300, 1700);
-      makeBall(0, sx, sy, vx * v, vy * v, 0);
+      makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, 0);
       return true;
     }
     // No clean shot: nudge the ball away instead.
@@ -275,7 +304,11 @@ export function startSplash(root) {
     const speed = len(b.vx, b.vy);
     if (b.friction && speed > 0) {
       const ns = Math.max(0, speed - b.friction * dt);
-      if (ns < 6) {
+      if (ns < 6 && !onScreen(b.x, b.y) && onScreen(b.x, b.y, R)) {
+        // Stopping half off screen would make it vanish (see frame()): keep it rolling slowly instead.
+        b.vx *= 40 / speed;
+        b.vy *= 40 / speed;
+      } else if (ns < 6) {
         b.vx = 0;
         b.vy = 0;
         if (onScreen(b.x, b.y)) {
@@ -284,9 +317,10 @@ export function startSplash(root) {
           b.restDelay = rand(1800, 4000);
         }
         return;
+      } else {
+        b.vx *= ns / speed;
+        b.vy *= ns / speed;
       }
-      b.vx *= ns / speed;
-      b.vy *= ns / speed;
     }
     b.x += b.vx * dt;
     b.y += b.vy * dt;

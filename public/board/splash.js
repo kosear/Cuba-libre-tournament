@@ -33,11 +33,17 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Every time a ball hits the logo the background turns a random other colour (it starts white). The logo's lettering
 // follows only when the colour needs it: black on light backgrounds, white on dark ones. The figure never changes.
-// Hits push the logo: it floats off in the direction of the blow, slows down, and a weak spring brings it back.
+// Hits push the logo: it floats off in the direction of the blow and slows down within a second; between hits it
+// glides back home very slowly (no spring, no swinging back and forth).
 const LOGO_PUSH = 0.12; // logo speed per ball speed into it
 const LOGO_DAMP = 1.2; // 1/s, like floating on water
-const LOGO_SPRING = 0.8; // 1/s², pull back to the centre
+const LOGO_RETURN = 0.2; // 1/s: the way home shrinks ~18% a second, ~15-20 s to get back
 const LOGO_MAX = [220, 120]; // never further than this from the centre, px
+// Off-centre hits also spin it (torque = lever × push); the spin dies down, then it slowly turns back straight.
+const LOGO_SPIN = 7.5e-7; // rad/s per (px × px/s)
+const LOGO_SPIN_DAMP = 1.5;
+const LOGO_SPIN_RETURN = 0.2; // 1/s, as LOGO_RETURN
+const LOGO_MAX_ANGLE = 0.21; // ~12°
 
 const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
 const SPLASH_COLORS = [
@@ -95,7 +101,7 @@ export function startSplash(root) {
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
   let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)
   let logoHome = null; // where it stands at rest
-  const drift = { x: 0, y: 0, vx: 0, vy: 0 }; // offset from home and its speed
+  const drift = { x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0 }; // offset from home, angle (rad), and their speeds
   let balls = [];
   let wobbles = [];
   let nextSpawn = performance.now() + 1500;
@@ -141,6 +147,16 @@ export function startSplash(root) {
 
   function solid(x, y) {
     if (!mask) return false;
+    if (drift.a) { // the logo is turned around its centre: turn the point back into the drawing's own frame
+      const cx = logoBox.x + logoBox.w / 2;
+      const cy = logoBox.y + logoBox.h / 2;
+      const c = Math.cos(-drift.a);
+      const s = Math.sin(-drift.a);
+      const dx = x - cx;
+      const dy = y - cy;
+      x = cx + dx * c - dy * s;
+      y = cy + dx * s + dy * c;
+    }
     const mx = Math.floor((x - logoBox.x) * MASK_SCALE);
     const my = Math.floor((y - logoBox.y) * MASK_SCALE);
     if (mx < 0 || my < 0 || mx >= mask.w || my >= mask.h) return false;
@@ -152,7 +168,8 @@ export function startSplash(root) {
   /** Contact of a ball at (x, y) with the logo: outward normal, or null. */
   function logoContact(x, y, r = R) {
     if (!mask) return null;
-    if (x + r < logoBox.x || x - r > logoBox.x + logoBox.w || y + r < logoBox.y || y - r > logoBox.y + logoBox.h) return null;
+    const m = r + 140; // a turned logo reaches beyond its box (12° on 1260 px: ~130 px)
+    if (x + m < logoBox.x || x - m > logoBox.x + logoBox.w || y + m < logoBox.y || y - m > logoBox.y + logoBox.h) return null;
     let nx = 0;
     let ny = 0;
     let hits = 0;
@@ -531,6 +548,10 @@ export function startSplash(root) {
         wobble(n[0], n[1], -vn);
         drift.vx -= n[0] * -vn * LOGO_PUSH; // n points out of the logo, the push goes the other way
         drift.vy -= n[1] * -vn * LOGO_PUSH;
+        // spin: lever from the logo centre to the contact point × the push
+        const rx = b.x - n[0] * R - (logoBox.x + logoBox.w / 2);
+        const ry = b.y - n[1] * R - (logoBox.y + logoBox.h / 2);
+        drift.va += (rx * (-n[1] * -vn) - ry * (-n[0] * -vn)) * LOGO_SPIN;
         onLogoHit();
       }
       // Push out of the logo.
@@ -637,10 +658,15 @@ export function startSplash(root) {
   function moveLogo(dt) {
     if (!logoHome) return;
     const k = Math.exp(-LOGO_DAMP * dt);
-    drift.vx = (drift.vx - drift.x * LOGO_SPRING * dt) * k;
-    drift.vy = (drift.vy - drift.y * LOGO_SPRING * dt) * k;
-    drift.x += drift.vx * dt;
-    drift.y += drift.vy * dt;
+    const back = Math.exp(-LOGO_RETURN * dt);
+    drift.vx *= k;
+    drift.vy *= k;
+    drift.x = (drift.x + drift.vx * dt) * back;
+    drift.y = (drift.y + drift.vy * dt) * back;
+    drift.va *= Math.exp(-LOGO_SPIN_DAMP * dt);
+    drift.a = (drift.a + drift.va * dt) * Math.exp(-LOGO_SPIN_RETURN * dt);
+    if (Math.abs(drift.a) > LOGO_MAX_ANGLE) { drift.a = Math.sign(drift.a) * LOGO_MAX_ANGLE; drift.va = 0; }
+    if (Math.abs(drift.a) < 0.0005 && Math.abs(drift.va) < 0.0005) drift.a = drift.va = 0;
     for (const [axis, v, max] of [['x', 'vx', LOGO_MAX[0]], ['y', 'vy', LOGO_MAX[1]]]) {
       if (Math.abs(drift[axis]) > max) { drift[axis] = Math.sign(drift[axis]) * max; drift[v] = 0; }
     }
@@ -660,7 +686,7 @@ export function startSplash(root) {
   let logoStill = true;
   function drawLogo(now) {
     wobbles = wobbles.filter((w) => now - w.t0 < 900);
-    const still = !wobbles.length && !drift.x && !drift.y;
+    const still = !wobbles.length && !drift.x && !drift.y && !drift.a;
     if (still) {
       if (!logoStill) logo.style.transform = '';
       logoStill = true;
@@ -686,7 +712,7 @@ export function startSplash(root) {
       tx -= nx * s * 120;
       ty -= ny * s * 120;
     }
-    logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx + drift.x}, ${ty + drift.y})`;
+    logo.style.transform = `translate(${drift.x}px, ${drift.y}px) rotate(${drift.a}rad) matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
   // ---------- colour changes on hits ----------

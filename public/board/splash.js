@@ -13,8 +13,8 @@ const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
 const LOGO_TEXT_Y = 0.38; // vertical centre of the «CUBA LIBRE» letters, as a share of the logo height
 const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share of its height (a bit above the middle)
-const SHADOW_DX = 9; // ball shadow offset: light from the top left
-const SHADOW_DY = 13;
+const SHADOW_DX = 24; // cast shadow offset: light from the top left, so it falls to the bottom right
+const SHADOW_DY = 32;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
@@ -286,7 +286,8 @@ export function startSplash(root) {
 
   function place(b) {
     b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
-    b.shadow.style.transform = `translate(${b.x - R + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px)`;
+    // the shadow box is 1.4R × 1R larger than the ball's (see .ball-shadow), centred on the offset point, stretched along the light
+    b.shadow.style.transform = `translate(${b.x - R * 1.4 + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px) rotate(37deg)`;
     drawBall(b);
   }
 

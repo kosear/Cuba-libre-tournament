@@ -134,5 +134,9 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .call[hidden] { display: none; }
 .splash-logo { position: absolute; left: 330px; top: 295px; width: 1260px; height: auto; will-change: transform; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); will-change: transform; } /* a canvas shaded by splash.js */
-/* Shadow is a sibling, not a box-shadow: the ball element rotates as it rolls, its shadow must not. */
-.ball-shadow { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%; background: radial-gradient(closest-side, rgba(19,33,58,.42), rgba(19,33,58,.22) 70%, rgba(19,33,58,0)); will-change: transform; pointer-events: none; }
+/* Cast shadow of a ball lit from the top left: an ellipse stretched along the light (rotated in splash.js), dark core,
+   soft edge; ::before is the small contact shadow where the ball touches the table (towards the ball's centre). */
+.ball-shadow { position: absolute; left: 0; top: 0; width: calc(var(--ball, 118px) * 1.4); height: var(--ball, 118px); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(10,18,36,.55), rgba(10,18,36,.38) 45%, rgba(10,18,36,.12) 80%, rgba(10,18,36,0)); will-change: transform; pointer-events: none; }
+.ball-shadow::before { content: ''; position: absolute; left: 6%; top: 22%; width: 44%; height: 56%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(5,10,20,.55), rgba(5,10,20,0)); }

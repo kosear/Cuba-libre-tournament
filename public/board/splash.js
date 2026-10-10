@@ -516,10 +516,17 @@ export function startSplash(root) {
 
   // The cue ball comes in and knocks the resting ball away from the logo.
   function spawnCue(target) {
-    const shot = findShot(target.x, target.y, 300);
+    const shot = findShot(target.x, target.y, 600);
     if (shot) {
       const v = rand(1300, 1700);
       makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, 0);
+      return true;
+    }
+    // No clean shot this time (the search is random): wait a little and try again, up to 3 times.
+    target.cueTries = (target.cueTries || 0) + 1;
+    if (target.cueTries < 3) {
+      target.restAt = performance.now();
+      target.restDelay = 1500;
       return true;
     }
     // No clean shot: nudge the ball away instead.
@@ -688,6 +695,12 @@ export function startSplash(root) {
   // Elastic squash of the logo: squeezed along the hit direction, stretched across, damped spring back.
   function moveLogo(dt) {
     if (!logoHome) return;
+    // While a slow ball rolls in or waits by the logo for the cue, the logo holds still: its resting spot and the
+    // cue's shot were worked out for this position (moving on, the logo would bump the ball away).
+    if (balls.some((b) => b.resting || b.friction === FRICTION_SLOW)) {
+      drift.vx = drift.vy = drift.va = 0;
+      return;
+    }
     const k = Math.exp(-LOGO_DAMP * dt);
     const back = Math.exp(-LOGO_RETURN * dt);
     drift.vx *= k;

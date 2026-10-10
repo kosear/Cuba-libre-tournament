@@ -7,7 +7,7 @@ const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
-const DURATION = { groups: 30000, group: 10000, next: 10000, playoff: 10000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 30000, group: 10000, playoff: 10000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 
@@ -83,7 +83,6 @@ function buildSlides(t) {
     for (let p = 0; p < pages; p++) out.push({ kind: 'groups', key: `groups:${p}`, page: p, pages });
     for (const g of t.groups) out.push({ kind: 'group', key: `group:${g.id}`, id: g.id });
   }
-  if (t.next) out.push({ kind: 'next', key: 'next' });
   if (t.playoff || t.contenders) out.push({ kind: 'playoff', key: 'playoff' }); // hidden until the first group game
   return out;
 }
@@ -133,16 +132,6 @@ function slideGroup(s) {
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
         <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>${HOURGLASS} to be played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
-  };
-}
-
-function slideNext() {
-  const m = T.next;
-  if (!m) return null;
-  return {
-    title: label(m),
-    html: `<div class="duel next"><div class="sub">Next match</div>
-      <div class="side"><div class="pname"><span>${name(m.p1)}</span></div></div><div class="vs">VS</div><div class="side"><div class="pname"><span>${name(m.p2)}</span></div></div></div>`,
   };
 }
 
@@ -260,27 +249,16 @@ function renderSlide() {
     splash = null;
     el('splash').hidden = true;
   }
-  const make = { groups: slideGroups, group: slideGroup, next: slideNext, playoff: slidePlayoff, podium: slidePodium }[s.kind];
+  const make = { groups: slideGroups, group: slideGroup, playoff: slidePlayoff, podium: slidePodium }[s.kind];
   const view = make(s);
   if (!view) return;
   stage.classList.toggle('full', s.kind === 'podium'); // the podium uses the whole width, no queue
   if (el('title').textContent !== view.title) el('title').textContent = view.title;
   el('content').innerHTML = view.html;
   fitText(el('content'));
-  balanceDuel(el('content'));
   alignGroupRows(el('content'));
   renderQueue();
   shownKey = s.key;
-}
-
-// Names hug the VS. When one name is much longer, the whole «name VS name» group would look off-centre:
-// shift it half way towards the shorter name (full centring would push the VS too far from the middle).
-function balanceDuel(root) {
-  const d = root.querySelector('.duel');
-  if (!d) return;
-  const [a, b] = [...d.querySelectorAll('.pname > span')].map((x) => x.offsetWidth); // layout px, stage scale ignored
-  const shift = Math.max(-200, Math.min(200, (a - b) / 4));
-  d.style.setProperty('--shift', `${Math.round(shift)}px`);
 }
 
 // Group slide: Standings and Results list the same players in the same order. Give every Standings row

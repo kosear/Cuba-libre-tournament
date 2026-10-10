@@ -19,6 +19,12 @@ button { cursor: pointer; border: none; background: none; touch-action: manipula
 .lang { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 12px; font-weight: 700; flex: none; }
 .lang button { padding: 6px 7px; color: var(--muted); }
 .lang button.on { background: var(--blue); color: #fff; }
+@media (max-width: 380px) { /* three languages must fit next to the title on small phones */
+  .bar { gap: 6px; }
+  .bar .flag { width: 24px; height: 24px; }
+  .iconbtn { width: 34px; height: 34px; }
+  .lang button { padding: 6px 5px; }
+}
 .offline { background: var(--red-soft); color: var(--red); font-size: 13px; font-weight: 600; text-align: center; padding: 6px; }
 .offline.sending { background: var(--blue-soft); color: var(--blue); }
 

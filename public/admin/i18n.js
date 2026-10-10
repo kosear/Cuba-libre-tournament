@@ -1,5 +1,5 @@
-// Admin panel translations. English is the default; the choice is remembered on the phone.
-// Indonesian comes in plan stage 6: add an `id` dictionary with the same keys.
+// Admin panel translations: English (default), Indonesian, Russian. The choice is remembered on the phone.
+// Every dictionary has the same keys; a missing key falls back to English.
 
 const DICT = {
   en: {
@@ -66,6 +66,7 @@ const DICT = {
     'err.already_played': 'This match is already played', 'err.same_player': 'Choose two different players',
     'err.player_withdrawn': 'This player withdrew', 'err.nothing_to_undo': 'Nothing to undo', 'err.nothing_to_redo': 'Nothing to redo',
     'err.not_in_queue': 'The match is not in the queue', 'err.not_finished': 'The match has no result',
+    'err.match_not_found': 'The match no longer exists', 'err.player_not_found': 'The player no longer exists', 'err.group_not_found': 'The group no longer exists',
   },
   ru: {
     'tab.game': 'Игра', 'tab.queue': 'Очередь', 'tab.groups': 'Группы', 'tab.playoff': 'Плей-офф', 'tab.journal': 'Журнал',
@@ -131,10 +132,77 @@ const DICT = {
     'err.already_played': 'Этот матч уже сыгран', 'err.same_player': 'Выберите двух разных игроков',
     'err.player_withdrawn': 'Этот игрок выбыл', 'err.nothing_to_undo': 'Нечего отменять', 'err.nothing_to_redo': 'Нечего возвращать',
     'err.not_in_queue': 'Матча нет в очереди', 'err.not_finished': 'У матча нет результата',
+    'err.match_not_found': 'Матча больше нет', 'err.player_not_found': 'Игрока больше нет', 'err.group_not_found': 'Группы больше нет',
+  },
+  id: {
+    'tab.game': 'Laga', 'tab.queue': 'Antrean', 'tab.groups': 'Grup', 'tab.playoff': 'Play-off', 'tab.journal': 'Riwayat',
+    'title.game': 'Turnamen', 'title.queue': 'Antrean', 'title.groups': 'Grup', 'title.playoff': 'Play-off', 'title.journal': 'Riwayat',
+    undo: 'Batalkan', redo: 'Ulangi', settings: 'Pengaturan', save: 'Simpan', cancel: 'Batal', delete: 'Hapus', close: 'Tutup',
+    'game.notStarted': 'Turnamen belum dimulai. Buat grup, lalu tekan «Mulai turnamen».',
+    'game.toGroups': 'Ke grup',
+    'game.now': 'Sedang main', 'game.next': 'Laga berikutnya', 'game.last': 'Hasil terakhir', 'game.noNext': 'Tidak ada laga lagi di antrean',
+    'game.whoWon': 'Siapa yang menang?', 'game.balls': 'Berapa bola milik {name} yang tersisa di meja?',
+    'game.confirmBalls': 'Konfirmasi: {name} +{balls}', 'game.confirmWin': 'Konfirmasi: {name} menang',
+    'game.autoNext': 'Setelah dikonfirmasi, laga berikutnya dimulai otomatis',
+    'game.noBalls': 'Bola tidak dihitung di laga ini',
+    'game.empty': 'Tidak ada laga yang sedang dimainkan', 'game.edit': 'Ubah',
+    'game.finished': 'Turnamen selesai', 'game.place1': 'Juara 1', 'game.place2': 'Juara 2', 'game.place3': 'Juara 3',
+    'stats.short': 'Main: {frames} · Menang: {wins}',
+    'queue.hint': 'Geser laga lewat ⠿ untuk mengubah urutan', 'queue.empty': 'Antrean kosong',
+    'queue.playing': 'sedang main', 'queue.next': 'berikutnya', 'queue.postpone': 'Tunda ↓',
+    'groups.setupHint': 'Turnamen belum dimulai. Buat grup, lalu tekan «Mulai turnamen»: laga dan antrean dibuat otomatis.',
+    'groups.addPlayer': 'Tambah pemain', 'groups.playerName': 'Nama pemain', 'groups.addGroup': '+ Tambah grup',
+    'groups.start': '▶ Mulai turnamen', 'groups.startConfirm': 'Mulai turnamen? Setelah itu grup tidak bisa diubah, kecuali menambah pemain yang terlambat.',
+    'groups.unassigned': 'Tanpa grup', 'groups.lateHint': 'Pemain yang terlambat mendapat laga melawan semua pemain di grupnya.',
+    'groups.empty': 'Belum ada pemain', 'groups.played': '{played} dari {total} dimainkan',
+    'col.name': 'Nama', 'col.games': 'L', 'col.wins': 'M', 'col.balls': 'Bola',
+    'playoff.waiting': 'Bagan muncul setelah babak grup selesai.',
+    'playoff.tiebreak': 'Laga penentu sudah masuk antrean. Bagan muncul setelahnya.',
+    'playoff.impossible': 'Pemain tidak cukup untuk membuat bagan otomatis. Tentukan peserta secara manual.',
+    'playoff.ready': 'Bagan sudah siap.', 'playoff.manual': 'diatur manual', 'playoff.edit': 'Ganti pemain',
+    'playoff.auto': 'Kembali ke otomatis', 'playoff.tbd': 'Menunggu', 'playoff.vs': 'vs',
+    'slot.sf1': 'Semifinal 1', 'slot.sf2': 'Semifinal 2', 'slot.third': 'Perebutan juara 3', 'slot.final': 'Final',
+    'journal.hint': 'Batalkan mundur satu aksi setiap kali, mulai dari yang terbaru. Aksi yang dibatalkan bisa diulang selama belum ada aksi baru.',
+    'journal.undoLast': '↶ Batalkan terakhir', 'journal.redo': '↷ Ulangi', 'journal.empty': 'Belum ada aksi',
+    'journal.undone': 'dibatalkan', 'journal.discarded': 'dihapus', 'journal.pending': 'belum terkirim',
+    'sheet.match': 'Laga', 'sheet.player': 'Pemain', 'sheet.group': 'Grup', 'sheet.settings': 'Pengaturan',
+    'match.winner': 'Pemenang', 'match.balls': 'Bola pihak yang kalah yang tersisa di meja', 'match.record': 'Simpan hasil',
+    'match.reopen': 'Hapus hasil', 'match.reopenConfirm': 'Hapus hasil? Laga kembali ke depan antrean.',
+    'match.playNow': 'Main sekarang', 'match.postpone': 'Tunda', 'match.walkover': 'Menang WO: lawan mundur.',
+    'player.name': 'Nama', 'player.group': 'Grup', 'player.withdraw': 'Mundur dari turnamen',
+    'player.withdrawConfirm': '{name} mundur dari turnamen: semua lawannya di grup mendapat kemenangan. Lanjutkan?',
+    'player.restore': 'Kembalikan ke turnamen', 'player.deleteConfirm': 'Hapus {name}?', 'player.withdrawn': 'mundur',
+    'group.name': 'Nama', 'group.deleteConfirm': 'Hapus {name}? Pemainnya tetap ada, tanpa grup.',
+    'settings.language': 'Bahasa', 'settings.signedIn': 'Masuk sebagai {name}', 'settings.board': 'Buka papan skor',
+    'settings.newTournament': 'Turnamen baru', 'settings.newConfirm': 'Mulai turnamen baru? Turnamen saat ini akan disembunyikan. Ini tidak bisa dibatalkan.',
+    'settings.logout': 'Keluar',
+    'offline': 'Tidak ada koneksi', 'offlinePending': 'Tidak ada koneksi · belum terkirim: {n}', 'sending': 'Mengirim: {n}…',
+    'label.tiebreak': 'Laga penentu',
+    'log.group.add': 'Grup {name} ditambahkan', 'log.group.rename': 'Nama grup diganti menjadi {name}', 'log.group.remove': '{group} dihapus',
+    'log.player.add': '{name} ditambahkan ke {group}', 'log.player.rename': 'Nama {old} diganti menjadi {name}', 'log.player.move': '{player} dipindah ke {group}',
+    'log.player.remove': '{player} dihapus', 'log.player.withdraw': '{player} mundur', 'log.player.restore': '{player} kembali ke turnamen',
+    'log.tournament.start': 'Turnamen dimulai', 'log.match.result': 'Hasil: {winner} mengalahkan {loser}{balls}',
+    'log.match.reopen': 'Hasil dihapus: {match}', 'log.queue.move': '{match} dipindah ke posisi {to}',
+    'log.queue.postpone': '{match} ditunda', 'log.playoff.set': '{slot}: {p1} vs {p2}', 'log.playoff.auto': '{slot}: kembali otomatis',
+    'log.balls': ', bola {balls}', 'log.unknown': 'Aksi {type}',
+    'err.generic': 'Terjadi kesalahan', 'err.network': 'Tidak ada koneksi, coba lagi',
+    'err.conflict': 'Tidak tersimpan: admin lain sudah mengubah ini. {action}', 'err.notSaved': 'Tidak tersimpan: {action}.',
+    'err.tournament_changed': 'Turnamen baru sudah dimulai.', 'err.needOnline': 'Perlu koneksi dan semua perubahan sudah terkirim',
+    'err.name_required': 'Masukkan nama', 'err.name_too_long': 'Nama terlalu panjang', 'err.player_name_taken': '{name} sudah ada di turnamen',
+    'err.wrong_phase': 'Tidak bisa di tahap turnamen ini', 'err.group_required': 'Pilih grup',
+    'err.no_groups': 'Tambahkan minimal satu grup', 'err.players_without_group': 'Ada pemain tanpa grup',
+    'err.group_too_small': '{group} perlu minimal 2 pemain', 'err.need_four_players': 'Jika hanya ada satu grup, perlu minimal 4 pemain',
+    'err.bad_balls': 'Jumlah bola harus 0 sampai {max}', 'err.bad_winner': 'Pilih pemenang', 'err.players_unknown': 'Pemain belum ditentukan',
+    'err.forfeit_locked': 'Hasil WO tidak bisa diubah. Kembalikan pemain ke turnamen.',
+    'err.already_withdrawn': 'Pemain sudah mundur', 'err.not_withdrawn': 'Pemain masih ikut turnamen',
+    'err.already_played': 'Laga ini sudah dimainkan', 'err.same_player': 'Pilih dua pemain yang berbeda',
+    'err.player_withdrawn': 'Pemain ini sudah mundur', 'err.nothing_to_undo': 'Tidak ada yang bisa dibatalkan', 'err.nothing_to_redo': 'Tidak ada yang bisa diulang',
+    'err.not_in_queue': 'Laga tidak ada di antrean', 'err.not_finished': 'Laga belum punya hasil',
+    'err.match_not_found': 'Laga sudah tidak ada', 'err.player_not_found': 'Pemain sudah tidak ada', 'err.group_not_found': 'Grup sudah tidak ada',
   },
 };
 
-export const LANGS = ['en', 'ru'];
+export const LANGS = ['en', 'id', 'ru'];
 let current = (() => {
   try { const l = localStorage.getItem('lang'); return LANGS.includes(l) ? l : 'en'; } catch { return 'en'; }
 })();

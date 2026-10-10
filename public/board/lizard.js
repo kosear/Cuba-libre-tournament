@@ -6,9 +6,8 @@
 
 const W = 1920;
 const H = 1080;
-// TEMPORARY while testing on the TV: about once a minute; back to 7-13 minutes afterwards.
-const PERIOD_MIN = 50 * 1000; // 7 * 60 * 1000
-const PERIOD_MAX = 70 * 1000; // 13 * 60 * 1000
+const PERIOD_MIN = 7 * 60 * 1000;
+const PERIOD_MAX = 13 * 60 * 1000;
 const SEG = 12; // px between spine points
 const N = 26; // spine points: 0-3 head, 4 neck, 5 shoulders, 11 hips, 12-25 tail
 const SHOULDER = 5;

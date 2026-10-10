@@ -81,7 +81,9 @@ table.cross td.loss { color: #111; font-weight: 600; }
 /* projected semi-finals before the groups are over */
 .bm.cand { border-style: dashed; border-color: #b9c3d4; }
 .bm .p.cand { color: #8a94a8; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 22px 8px; }
-.bm .p.cand > span { max-width: 100%; }
+.bm .p.cand .cn { display: flex; align-items: baseline; gap: 12px; max-width: 100%; min-width: 0; }
+.bm .p.cand .cn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.bm .cq { flex: none; font-weight: 900; color: #b0b9c9; } /* the name is cut by the ellipsis, the question mark stays */
 .bm .ctag { font-style: normal; font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #8a94a8;
   background: #eef1f6; border-radius: 6px; padding: 2px 8px; line-height: 1.3; } /* «not in the play-off yet, would be if the groups ended now» */
 .bracket .cand-note { left: 0; top: 370px; width: 500px; text-align: center; }

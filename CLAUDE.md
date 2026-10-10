@@ -8,6 +8,7 @@ You are picking up a vibe-coded project. Read this file fully, then the docs it 
 |---|---|
 | `docs/requirements.md` | Product requirements and tournament rules. **Source of truth for what to build.** |
 | `docs/open-questions.md` | Undecided questions. Do not implement around them, ask. |
+| `docs/bugs.md` | Bugs found while testing. Check it before starting work, move fixed ones to «Fixed». |
 | `docs/mockups/` | Approved mockups: PNG screenshots + HTML/CSS sources in `src/` (`tv.css`, `admin.css`, `data.js`). Reuse the CSS when building real pages. |
 | `docs/assets/` | Bar logo, SVG and PNG. |
 | `docs/infrastructure.md` | Server, DNS, systemd, deploy internals. You rarely need it. |

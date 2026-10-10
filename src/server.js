@@ -35,6 +35,7 @@ app.use('/domain', express.static(path.join(ROOT, 'src/domain'), staticOpts));
 app.use('/assets', express.static(path.join(ROOT, 'public/assets'), staticOpts));
 app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin'), staticOpts));
 app.use('/board', express.static(path.join(ROOT, 'public/board'), staticOpts));
+app.use('/lab', express.static(path.join(ROOT, 'public/lab'), staticOpts)); // animation playground, fake data
 app.use('/', express.static(path.join(ROOT, 'public/start'), staticOpts));
 
 app.use((err, req, res, next) => {

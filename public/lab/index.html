@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuba Libre · Slide lab</title>
+<!-- Animation playground, not part of the app: fake data, board styles only for the look. -->
+<link rel="stylesheet" href="/board/style.css">
+<style>
+  body { cursor: auto; }
+  #stage { grid-template-columns: 1fr 540px; }
+  .content { position: relative; }
+  .layer { position: absolute; inset: 40px 28px 32px; } /* same box as .content padding */
+  .lab-q { padding: 42px 30px 24px; }
+  .lab-row { font-size: 28px; padding: 12px 4px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+  .lab-row i { color: var(--red); font-style: normal; font-weight: 700; font-size: .75em; }
+  #panel { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: rgba(19,33,58,.88); color: #fff; padding: 10px 14px; border-radius: 12px; font: 14px system-ui, sans-serif; max-width: calc(100vw - 24px); }
+  #panel select, #panel button, #panel input { font: inherit; }
+  #panel button { background: #fff; color: #13213a; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  #panel label { display: flex; gap: 6px; align-items: center; }
+  .bk { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .bk .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; }
+  .bk .p { font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <main>
+    <header class="top"><img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt=""><div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
+    <div class="content" id="content"></div>
+  </main>
+  <aside class="queue lab-q"><div class="qhead">Queue</div><div id="lab-queue"></div></aside>
+</div>
+
+<div id="panel">
+  <label>Transition <select id="kind"></select></label>
+  <label>Speed <input id="speed" type="range" min="250" max="2000" step="50" value="700"> <span id="speedv"></span></label>
+  <label>Easing <select id="ease">
+    <option value="cubic-bezier(.22,.8,.24,1)">smooth out</option>
+    <option value="cubic-bezier(.65,0,.35,1)">in-out</option>
+    <option value="linear">linear</option>
+    <option value="cubic-bezier(.34,1.4,.5,1)">overshoot</option>
+  </select></label>
+  <button id="prev">←</button><button id="next">→</button>
+  <label><input id="auto" type="checkbox"> auto every 4 s</label>
+</div>
+
+<script>
+// ---------- fake data ----------
+const NAMES = ['Andrei', 'Bobr', 'Kolya', 'Maxim Petrov', 'Sergey', 'Timur', 'Dima K.', 'Alexander the Great', 'Igor', 'Pasha', 'Lena', 'Oleg', 'Vova', 'Nastya', 'Rustam', 'Zhenya'];
+const groups = 'ABCD'.split('').map((g, i) => ({
+  name: `Group ${g}`,
+  rows: NAMES.slice(i * 4, i * 4 + 4).map((n, j) => ({ name: n, frames: 3 - (j % 2), wins: 3 - j, balls: 12 - j * 3 })),
+}));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const table = (g) => `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${
+  g.rows.map((r, i) => `<tr class="${i ? '' : 'leader'}"><td class="name">${esc(r.name)}${i ? '' : ' 🏆'}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.balls}</td></tr>`).join('')}</tbody></table>`;
+const cross = (g) => `<table class="cross"><tr>${g.rows.map((r) => `<th>${esc(r.name.split(' ')[0])}</th>`).join('')}</tr>${
+  g.rows.map((r, i) => `<tr>${g.rows.map((c, j) => (i === j ? '<td class="diag"></td>' : i < j ? `<td class="win">${3 + i + j}</td>` : '<td class="loss">0</td>')).join('')}</tr>`).join('')}</table>`;
+
+const SLIDES = [
+  { title: 'Group stage', html: `<div class="groups n4">${groups.map((g) => `<div class="card"><h3>${g.name}</h3><div class="fit">${table(g)}</div></div>`).join('')}</div>` },
+  { title: 'Group A', html: `<div class="group-one"><div class="card"><h3>Standings</h3><div class="fit">${table(groups[0])}</div></div><div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${cross(groups[0])}</div></div></div>` },
+  { title: 'Group B', html: `<div class="group-one"><div class="card"><h3>Standings</h3><div class="fit">${table(groups[1])}</div></div><div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${cross(groups[1])}</div></div></div>` },
+  { title: 'Play-off', html: `<div style="position:relative;height:100%">
+      <div class="bk" style="left:0;top:105px;width:500px"><div class="t">Semi-final 1</div><div class="p">Andrei</div><div class="p">Sergey</div></div>
+      <div class="bk" style="left:0;top:465px;width:500px"><div class="t">Semi-final 2</div><div class="p">Timur</div><div class="p">Pasha</div></div>
+      <div class="bk" style="left:720px;top:285px;width:564px;border-color:var(--blue)"><div class="t">Final</div><div class="p">Winner SF1</div><div class="p">Winner SF2</div></div></div>` },
+];
+document.getElementById('lab-queue').innerHTML = NAMES.slice(0, 10).map((n, i) => `<div class="lab-row"><span>${esc(n)}</span><i>vs</i><span>${esc(NAMES[15 - i])}</span></div>`).join('');
+
+// ---------- stage scaling (as on the board) ----------
+const stage = document.getElementById('stage');
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener('resize', fit);
+fit();
+
+// ---------- transitions: (oldEl, newEl, dir = 1 forward / -1 back, opts) -> Animation[] ----------
+const W = 1920 - 540 - 56; // content width
+const T = {
+  'Push (both move)': (o, n, d) => [
+    o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W}px)` }], opts()),
+    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
+  ],
+  'Slide + fade (short)': (o, n, d) => [
+    o.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-d * 120}px)`, opacity: 0 }], opts()),
+    n.animate([{ transform: `translateX(${d * 120}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], opts()),
+  ],
+  'Cover (new slides over)': (o, n, d) => [
+    o.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(.85)' }], opts()),
+    n.animate([{ transform: `translateX(${d * W}px)`, boxShadow: '0 0 0 rgba(0,0,0,0)' }, { transform: 'none', boxShadow: '-30px 0 60px rgba(19,33,58,.15)' }], opts()),
+  ],
+  'Parallax': (o, n, d) => [
+    o.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-d * W * 0.3}px)`, opacity: 0.2 }], opts()),
+    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
+  ],
+  '3D cube': (o, n, d) => {
+    stage.querySelector('.content').style.perspective = '2400px';
+    return [
+      o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W / 2}px) rotateY(${-d * 80}deg) translateX(${-d * W / 2}px)` }], opts()),
+      n.animate([{ transform: `translateX(${d * W / 2}px) rotateY(${d * 80}deg) translateX(${d * W / 2}px)` }, { transform: 'none' }], opts()),
+    ];
+  },
+  'Zoom out, slide in': (o, n, d) => [
+    o.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.9)', opacity: 0 }], opts()),
+    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
+  ],
+  'Cards one by one': (o, n, d) => {
+    const cards = [...n.querySelectorAll('.card, .bk')];
+    return [
+      o.animate([{ opacity: 1 }, { opacity: 0 }], opts(0.6)),
+      ...cards.map((c, i) => c.animate([{ transform: `translateX(${d * 300}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+        { ...opts(), delay: i * opts().duration * 0.15, fill: 'backwards' })),
+    ];
+  },
+};
+
+const $ = (id) => document.getElementById(id);
+for (const k of Object.keys(T)) $('kind').add(new Option(k, k));
+const opts = (f = 1) => ({ duration: +$('speed').value * f, easing: $('ease').value, fill: 'forwards' });
+$('speedv').textContent = `${$('speed').value} ms`;
+$('speed').oninput = () => { $('speedv').textContent = `${$('speed').value} ms`; };
+
+// ---------- slide switching ----------
+const content = $('content');
+let index = 0;
+let current = null;
+let busy = false;
+
+function layer(i) {
+  const el = document.createElement('div');
+  el.className = 'layer';
+  el.innerHTML = SLIDES[i].html;
+  el.style.background = 'var(--bg)';
+  content.append(el);
+  return el;
+}
+
+function show(i, dir) {
+  if (busy) return;
+  const next = layer(i);
+  $('title').textContent = SLIDES[i].title;
+  if (!current) { current = next; return; }
+  busy = true;
+  const old = current;
+  current = next;
+  content.style.perspective = '';
+  const anims = T[$('kind').value](old, next, dir);
+  Promise.all(anims.map((a) => a.finished)).then(() => {
+    old.remove();
+    anims.forEach((a) => a.cancel()); // drop fill: forwards, the layer stays in its final (natural) place
+    busy = false;
+  });
+}
+
+const go = (dir) => { if (busy) return; index = (index + dir + SLIDES.length) % SLIDES.length; show(index, dir); };
+$('next').onclick = () => go(1);
+$('prev').onclick = () => go(-1);
+addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); });
+let autoTimer = null;
+$('auto').onchange = () => { clearInterval(autoTimer); if ($('auto').checked) autoTimer = setInterval(() => go(1), 4000); };
+show(0, 1);
+</script>
+</body>
+</html>

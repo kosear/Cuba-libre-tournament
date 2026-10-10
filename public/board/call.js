@@ -1,7 +1,7 @@
 // «Now playing» call screen, fight-night style (designed in /lab/): who goes to the table right now.
 // Red corner left, blue corner right, a random background pattern, two random mascots, the names punch in
-// from opposite sides, VS slams down, then an idle motion. Real fire along the bottom only for important matches.
-// Light for a TV browser: transforms and opacity only; the fire is a tiny canvas stretched by CSS.
+// from opposite sides, VS slams down, then an idle motion. Fire along the bottom only for important matches.
+// Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
   'halftone', 'carbon', 'chevron', 'ropes', 'checker', 'felt', 'sunburst', 'stripes',
@@ -37,25 +37,22 @@ const CSS = `
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
-/* anime speed lines: bold spikes (SVG drawn once, see rays()); the whole fan turns slowly and jitters in small jerks.
-   Outer box: slow rotation; inner svg: the jitter. Only transforms change, nothing is repainted. */
-.fight .rays { position: absolute; left: -280px; top: -700px; width: 2600px; height: 2600px; z-index: 1; pointer-events: none;
-  will-change: transform; animation: rays-turn 60s linear infinite; } /* a square centred on the stage (the ring overhangs by 60 px), half-side 1300 > 1101 to the screen corner:
-     the rays' ends are always off screen, at any angle */
-.fight .rays.r2 { animation-duration: 90s; animation-direction: reverse; opacity: .6; }
-.fight .rays svg { width: 100%; height: 100%; display: block; overflow: visible; will-change: transform; animation: rays-jitter .32s infinite; }
-.fight .rays.r2 svg { animation-duration: .4s; animation-delay: -.15s; }
-@keyframes rays-turn { to { transform: rotate(360deg); } }
+/* anime speed lines: 12 SVG triangles in ONE layer just a bit bigger than the stage (2112×1188, centred), so the TV's
+   graphics chip keeps a single small texture. The fan sways ±1.5° (never a full turn: the rays' ends stay off screen)
+   and jitters in small jerks. Only transforms change, nothing is repainted. */
+.fight .rays { position: absolute; left: -36px; top: 6px; width: 2112px; height: 1188px; z-index: 1; pointer-events: none;
+  will-change: transform; animation: rays-sway 8s ease-in-out infinite alternate; }
+@keyframes rays-sway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+.fight .rays svg { width: 100%; height: 100%; display: block; animation: rays-jitter .5s infinite; }
 @keyframes rays-jitter {
-  0% { transform: translate(0, 0) scale(1); animation-timing-function: steps(1); }
-  25% { transform: translate(6px, -4px) scale(1.012); animation-timing-function: steps(1); }
-  50% { transform: translate(-5px, 3px) scale(.995); animation-timing-function: steps(1); }
-  75% { transform: translate(3px, 6px) scale(1.008); animation-timing-function: steps(1); }
+  0% { transform: translate(0, 0); animation-timing-function: steps(1); }
+  25% { transform: translate(5px, -3px); animation-timing-function: steps(1); }
+  50% { transform: translate(-4px, 2px); animation-timing-function: steps(1); }
+  75% { transform: translate(2px, 4px); animation-timing-function: steps(1); }
 }
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
-.p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;
-  -webkit-mask: radial-gradient(ellipse at center, transparent 25%, #000 85%); mask: radial-gradient(ellipse at center, transparent 25%, #000 85%); }
+.p-halftone { opacity: .25; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px; } /* no mask: masks are heavy on the TV */
 .p-carbon { opacity: .28; background:
   linear-gradient(27deg, #000 5px, transparent 5px) 0 5px / 20px 20px, linear-gradient(207deg, #000 5px, transparent 5px) 10px 0 / 20px 20px,
   linear-gradient(27deg, #222 5px, transparent 5px) 0 10px / 20px 20px, linear-gradient(207deg, #222 5px, transparent 5px) 10px 5px / 20px 20px,
@@ -112,26 +109,53 @@ const CSS = `
 .fight .mname { position: absolute; z-index: 1; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); }
 .fight .mname.m1 { left: 80px; top: 120px; }
 .fight .mname.m2 { right: 80px; bottom: 120px; }
-.fight canvas.fire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 460px; z-index: 1; pointer-events: none; display: none; }
-.fight.important canvas.fire { display: block; }
+/* fire for important matches: a still glow plus 7 big flame tongues that only sway and stretch, and a few embers */
+.fight .fire { position: absolute; left: 0; right: 0; bottom: 60px; height: 420px; z-index: 1; pointer-events: none; display: none; }
+.fight.important .fire { display: block; }
+.fight .fire .glow { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; background: linear-gradient(transparent, rgba(255,90,0,.45) 60%, rgba(255,170,0,.7)); }
+.fight .fire .tongue { position: absolute; bottom: -30px; width: 420px; height: 400px; transform-origin: 50% 100%; will-change: transform;
+  animation: tongue var(--d) ease-in-out infinite alternate; }
+.fight .fire .tongue svg { width: 100%; height: 100%; display: block; }
+@keyframes tongue {
+  0% { transform: scaleY(.85) skewX(-5deg); }
+  50% { transform: scaleY(1.12) skewX(3deg); }
+  100% { transform: scaleY(.95) skewX(-2deg); }
+}
+.fight .fire .ember { position: absolute; bottom: 60px; width: 10px; height: 10px; border-radius: 50%; background: #ffd27a; will-change: transform, opacity;
+  animation: ember var(--d) linear infinite; animation-delay: var(--delay); opacity: 0; }
+@keyframes ember { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx), -600px); opacity: 0; } }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
-/** Bold white spikes pointing at the centre of the stage, random lengths and widths; the middle stays clear. */
-function rays(n) {
-  const cx = 1300; // centre of the 2600×2600 box = centre of the stage
-  const cy = 1300;
-  const count = n === 1 ? 12 : 9;
+/** 12 white triangles pointing at the centre of the stage; tips away from the middle, outer ends far off screen. */
+function rays() {
+  const cx = 1056; // centre of the 2112×1188 box = centre of the stage
+  const cy = 594;
   let d = '';
-  for (let k = 0; k < count; k++) {
-    const a = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
-    const w = n === 1 ? 0.016 + Math.random() * 0.028 : 0.008 + Math.random() * 0.014; // half-width at the outer end, radians
-    const r1 = 280 + Math.random() * 260; // the sharp tip
-    const r2 = 1700; // well past every screen corner
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+    const w = 0.02 + Math.random() * 0.03; // half-width at the outer end, radians
+    const r1 = 300 + Math.random() * 240; // the sharp tip
+    const r2 = 1500; // > 1101 to a screen corner + sway and jitter
     const p = (r, t) => `${(cx + r * Math.cos(t)).toFixed(0)},${(cy + r * Math.sin(t)).toFixed(0)}`;
     d += `<polygon points="${p(r1, a)} ${p(r2, a - w)} ${p(r2, a + w)}"/>`;
   }
-  return `<div class="rays r${n}"><svg viewBox="0 0 2600 2600" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
+  return `<div class="rays"><svg viewBox="0 0 2112 1188" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
+}
+
+/** Fire: a glow and 7 flame tongues (SVG, drawn once), 10 embers. */
+function fireMarkup() {
+  const tongue = (id) => `<svg viewBox="0 0 100 160" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#fff1a8"/><stop offset=".3" stop-color="#ffb000"/><stop offset=".65" stop-color="#ff4d00"/><stop offset="1" stop-color="#c8102e" stop-opacity="0"/></linearGradient></defs>
+    <path d="M50 0 C62 30 94 54 94 104 C94 138 74 160 50 160 C26 160 6 138 6 104 C6 72 30 58 34 30 C40 48 46 54 50 0z" fill="url(#${id})"/></svg>`;
+  let html = '<div class="glow"></div>';
+  for (let k = 0; k < 7; k++) {
+    html += `<div class="tongue" style="left:${k * 300 - 90}px;--d:${(0.7 + Math.random() * 0.5).toFixed(2)}s">${tongue(`ft${k}`)}</div>`;
+  }
+  for (let k = 0; k < 10; k++) {
+    html += `<div class="ember" style="left:${Math.round(Math.random() * 2040)}px;--d:${(1.8 + Math.random() * 1.5).toFixed(2)}s;--delay:${(-Math.random() * 3).toFixed(2)}s;--dx:${Math.round(Math.random() * 140 - 70)}px"></div>`;
+  }
+  return `<div class="fire">${html}</div>`;
 }
 
 export function createCall(root) {
@@ -140,8 +164,8 @@ export function createCall(root) {
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays(1)}${rays(2)}
-      <canvas class="fire" width="170" height="64"></canvas>
+      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
+      ${fireMarkup()}
       <div class="mascot m1"></div><div class="mascot m2"></div><div class="mname m1"></div><div class="mname m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
@@ -150,7 +174,6 @@ export function createCall(root) {
   const q = (sel) => root.querySelector(sel);
   const fight = q('.fight');
   const ring = q('.ring');
-  const fire = makeFire(q('canvas.fire'));
   let running = []; // animations of the current show, cancelled by the next one
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
@@ -225,7 +248,7 @@ export function createCall(root) {
   }
 
   return {
-    /** m: match view (p1, p2, label); important: real fire along the bottom; ms: how long the screen stays. */
+    /** m: match view (p1, p2, label); important: fire along the bottom; ms: how long the screen stays. */
     show(m, important, ms) {
       running.forEach((a) => a.cancel());
       running = [];
@@ -234,7 +257,6 @@ export function createCall(root) {
       setName(q('.n2'), m.p2?.name ?? '');
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!important);
-      if (important) fire.start(); else fire.stop();
       const m1 = pick(MASCOTS);
       let m2;
       do m2 = pick(MASCOTS); while (m2 === m1);
@@ -277,54 +299,6 @@ export function createCall(root) {
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
-      fire.stop();
     },
-  };
-}
-
-// Classic «Doom fire» on a tiny canvas: heat rises from the bottom row, decays and drifts; CSS stretches it smoothly.
-function makeFire(cv) {
-  const ctx = cv.getContext('2d');
-  const FW = cv.width;
-  const FH = cv.height;
-  const MAX = 36;
-  const heat = new Uint8Array(FW * FH);
-  const pal = []; // black -> red -> orange -> yellow -> white; low heat is transparent
-  for (let k = 0; k <= MAX; k++) {
-    const t = k / MAX;
-    pal.push([
-      Math.min(255, Math.round(255 * Math.min(1, t * 2.2))),
-      Math.round(255 * Math.max(0, Math.min(1, (t - 0.35) * 1.8))),
-      Math.round(255 * Math.max(0, (t - 0.8) * 4)),
-      Math.round(255 * Math.min(1, t * 3.5)),
-    ]);
-  }
-  const img = ctx.createImageData(FW, FH);
-  for (let x = 0; x < FW; x++) heat[(FH - 1) * FW + x] = MAX;
-  let running = false;
-  let last = 0;
-  function step() {
-    for (let x = 0; x < FW; x++) {
-      for (let y = 1; y < FH; y++) {
-        const src = y * FW + x;
-        const r = (Math.random() * 3.6) | 0;
-        const dst = src - FW - (r & 1) + ((Math.random() * 1.6) | 0);
-        if (dst >= 0) heat[dst] = Math.max(0, heat[src] - (r > 2 ? 2 : r & 1));
-      }
-    }
-    for (let k = 0; k < heat.length; k++) {
-      const c = pal[heat[k]];
-      img.data[k * 4] = c[0]; img.data[k * 4 + 1] = c[1]; img.data[k * 4 + 2] = c[2]; img.data[k * 4 + 3] = c[3];
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-  function frame(now) {
-    if (!running) return;
-    if (now - last > 33) { step(); last = now; } // ~30 fps
-    requestAnimationFrame(frame);
-  }
-  return {
-    start() { if (!running) { running = true; requestAnimationFrame(frame); } },
-    stop() { running = false; },
   };
 }

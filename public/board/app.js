@@ -16,6 +16,7 @@ let slides = [];
 let index = 0;
 let timer = null;
 let shownKey = null;
+let shownKind = null;
 let splash = null; // running splash animation
 
 // ---------- scale the 1920×1080 stage to the screen ----------
@@ -242,6 +243,7 @@ function renderSlide() {
       splash = startSplash(el('splash'));
     }
     shownKey = s.key;
+    shownKind = s.kind;
     return;
   }
   if (splash) {
@@ -254,11 +256,55 @@ function renderSlide() {
   if (!view) return;
   stage.classList.toggle('full', s.kind === 'podium'); // the podium uses the whole width, no queue
   if (el('title').textContent !== view.title) el('title').textContent = view.title;
+  // A new slide (not a data update of the same one) slides in; not from the splash, not to or from the podium.
+  const slideIn = shownKey !== s.key && shownKind && !['splash', 'podium'].includes(shownKind) && s.kind !== 'podium';
+  const old = slideIn ? snapshotContent() : null;
   el('content').innerHTML = view.html;
   fitText(el('content'));
   alignGroupRows(el('content'));
   renderQueue();
+  if (old) slideTransition(old, el('content'));
   shownKey = s.key;
+  shownKind = s.kind;
+}
+
+// ---------- slide transition ----------
+// «Cartoon» push (tried in /lab/): the old and the new slide move as one strip, the new one exactly one width
+// to the right. Wind-up to the right, whoosh to the left, overshoot past the place, small bounce back, settle.
+const SLIDE_MS = 1000;
+const SLIDE_TRACK = [ // strip position: px added to a share of the width (0 = old in place, -1 = new in place)
+  { share: 0, px: 0, offset: 0, easing: 'cubic-bezier(.3,0,.4,1)' },
+  { share: 0, px: 210, offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }, // wind-up to the right
+  { share: -1, px: -75, offset: 0.74, easing: 'cubic-bezier(.3,0,.5,1)' }, // whoosh, overshoot to the left
+  { share: -1, px: 12, offset: 0.88, easing: 'ease-in-out' }, // bounce back a little past the place
+  { share: -1, px: 0, offset: 1 }, // settle
+];
+let slideAnim = null; // { anims, old }
+
+function endSlideTransition() {
+  if (!slideAnim) return;
+  slideAnim.anims.forEach((a) => a.cancel());
+  slideAnim.old.remove();
+  slideAnim = null;
+}
+
+/** Frozen copy of the current slide, laid over #content, to slide out while the new one slides in. */
+function snapshotContent() {
+  endSlideTransition();
+  const c = el('content');
+  const copy = c.cloneNode(true);
+  copy.removeAttribute('id');
+  Object.assign(copy.style, { position: 'absolute', left: `${c.offsetLeft}px`, top: `${c.offsetTop}px`, width: `${c.offsetWidth}px`, height: `${c.offsetHeight}px` });
+  c.before(copy);
+  return copy;
+}
+
+function slideTransition(old, cur) {
+  const w = cur.offsetWidth;
+  const frames = (shift) => SLIDE_TRACK.map((k) => ({ transform: `translateX(${Math.round((k.share + shift) * w + k.px)}px)`, offset: k.offset, easing: k.easing ?? 'linear' }));
+  const anims = [old.animate(frames(0), { duration: SLIDE_MS }), cur.animate(frames(1), { duration: SLIDE_MS })];
+  slideAnim = { anims, old };
+  anims[1].finished.then(() => { if (slideAnim?.old === old) endSlideTransition(); }, () => {});
 }
 
 // Group slide: Standings and Results list the same players in the same order. Give every Standings row

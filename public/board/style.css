@@ -11,7 +11,7 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-se
   display: grid; grid-template-columns: 1fr 540px; overflow: hidden; }
 #stage.full { grid-template-columns: 1fr; }
 #stage.full aside.queue { display: none; }
-main { display: flex; flex-direction: column; min-width: 0; position: relative; }
+main { display: flex; flex-direction: column; min-width: 0; position: relative; overflow: hidden; } /* clips the slide transition, it never covers the queue */
 
 /* header */
 header.top { height: 120px; flex: none; display: flex; align-items: center; gap: 22px; padding: 0 28px; background: var(--card); border-bottom: 1px solid var(--line); position: relative; }

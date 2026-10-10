@@ -1,19 +1,15 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
 import { migrate } from './db.js';
 import { sseHandler, clientCount } from './events.js';
 import { authRoutes, requireAdminApi, requireAdminPage } from './auth.js';
 import { publicRoutes } from './routes/public.js';
 import { adminRoutes } from './routes/admin.js';
+import { COMMIT } from './version.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT) || 3000;
-
-// Deployed git commit, shown in /api/health to verify what is running.
-let COMMIT = 'unknown';
-try { COMMIT = execSync('git rev-parse --short HEAD', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch {}
 
 migrate();
 
@@ -29,9 +25,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/admin', requireAdminApi, adminRoutes);
 
+// Static files are always revalidated (ETag), so a reload after a deploy picks up new code.
+const staticOpts = { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') };
+
 // Static: / -> public/tv, /admin -> public/admin (login required, except the login page)
-app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin')));
-app.use('/', express.static(path.join(ROOT, 'public/tv')));
+app.use('/shared', express.static(path.join(ROOT, 'public/shared'), staticOpts));
+app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin'), staticOpts));
+app.use('/', express.static(path.join(ROOT, 'public/tv'), staticOpts));
 
 app.use((err, req, res, next) => {
   console.error(err);

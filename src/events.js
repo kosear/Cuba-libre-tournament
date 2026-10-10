@@ -4,6 +4,8 @@
 // connected client receives it instantly. EventSource in the browser
 // reconnects automatically if the server restarts.
 
+import { COMMIT } from './version.js';
+
 const clients = new Set();
 
 export function sseHandler(req, res) {
@@ -14,6 +16,8 @@ export function sseHandler(req, res) {
     'X-Accel-Buffering': 'no',
   });
   res.write('retry: 1000\n\n');
+  // First message: the running commit. Pages reload when it differs from the one they were loaded with.
+  res.write(`event: hello\ndata: ${JSON.stringify({ commit: COMMIT })}\n\n`);
   clients.add(res);
   req.on('close', () => clients.delete(res));
 }

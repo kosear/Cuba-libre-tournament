@@ -3,58 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cuba Libre · Slide lab</title>
-<!-- Animation playground, not part of the app: fake data, board styles only for the look. -->
-<link rel="stylesheet" href="/board/style.css">
+<title>Cuba Libre · Lab</title>
+<!-- Animation playground, not part of the app: fake data. Now: the «Now playing» call screen.
+     The slide transition tried here earlier is in git history and on the board (public/board/app.js). -->
 <style>
-  body { cursor: auto; }
-  #stage { grid-template-columns: 1fr 540px; }
-  .content { position: relative; }
-  .layer { position: absolute; inset: 40px 28px 32px; } /* same box as .content padding */
-  .lab-q { padding: 42px 30px 24px; }
-  .lab-row { font-size: 28px; padding: 12px 4px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
-  .lab-row i { color: var(--red); font-style: normal; font-weight: 700; font-size: .75em; }
-  .bk { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
-  .bk .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; }
-  .bk .p { font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); }
+  :root { --ink: #13213a; --muted: #6b7894; --blue: #2f6fcf; --red: #d21034; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
+  body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: #fff; overflow: hidden; }
+  .sub { position: absolute; left: 0; right: 0; top: 170px; text-align: center; font-size: 110px; line-height: 1; font-weight: 900; color: var(--blue); letter-spacing: 8px; text-transform: uppercase; }
+  .label { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 40px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; }
+  /* each name sits centred in its half; it is moved in with a transform from the other side of the screen */
+  .name { position: absolute; top: 520px; width: 840px; text-align: center; font-size: 140px; line-height: 1.1; font-weight: 800; text-transform: uppercase; white-space: nowrap; will-change: transform; }
+  .n1 { left: 60px; }
+  .n2 { right: 60px; }
+  .vs { position: absolute; left: 0; right: 0; top: 545px; text-align: center; font-size: 90px; font-weight: 900; color: var(--red); will-change: transform; }
 </style>
 </head>
 <body>
 <div id="stage">
-  <main>
-    <header class="top"><img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt=""><div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
-    <div class="content" id="content"></div>
-  </main>
-  <aside class="queue lab-q"><div class="qhead">Queue</div><div id="lab-queue"></div></aside>
+  <div class="sub">Now playing</div>
+  <div class="label" id="label"></div>
+  <div class="name n1" id="n1"></div>
+  <div class="vs" id="vs">VS</div>
+  <div class="name n2" id="n2"></div>
 </div>
-
 <script>
-// ---------- fake data ----------
-const NAMES = ['Andrei', 'Bobr', 'Kolya', 'Maxim Petrov', 'Sergey', 'Timur', 'Dima K.', 'Alexander the Great', 'Igor', 'Pasha', 'Lena', 'Oleg', 'Vova', 'Nastya', 'Rustam', 'Zhenya'];
-const groups = 'ABCD'.split('').map((g, i) => ({
-  name: `Group ${g}`,
-  rows: NAMES.slice(i * 4, i * 4 + 4).map((n, j) => ({ name: n, frames: 3 - (j % 2), wins: 3 - j, balls: 12 - j * 3 })),
-}));
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const table = (g) => `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${
-  g.rows.map((r, i) => `<tr class="${i ? '' : 'leader'}"><td class="name">${esc(r.name)}${i ? '' : ' 🏆'}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.balls}</td></tr>`).join('')}</tbody></table>`;
-const cross = (g) => `<table class="cross"><tr>${g.rows.map((r) => `<th>${esc(r.name.split(' ')[0])}</th>`).join('')}</tr>${
-  g.rows.map((r, i) => `<tr>${g.rows.map((c, j) => (i === j ? '<td class="diag"></td>' : i < j ? `<td class="win">${3 + i + j}</td>` : '<td class="loss">0</td>')).join('')}</tr>`).join('')}</table>`;
-
-const SLIDES = [
-  { title: 'Group stage', html: `<div class="groups n4">${groups.map((g) => `<div class="card"><h3>${g.name}</h3><div class="fit">${table(g)}</div></div>`).join('')}</div>` },
-  { title: 'Group A', html: `<div class="group-one"><div class="card"><h3>Standings</h3><div class="fit">${table(groups[0])}</div></div><div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${cross(groups[0])}</div></div></div>` },
-  { title: 'Group B', html: `<div class="group-one"><div class="card"><h3>Standings</h3><div class="fit">${table(groups[1])}</div></div><div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${cross(groups[1])}</div></div></div>` },
-  { title: 'Play-off', html: `<div style="position:relative;height:100%">
-      <div class="bk" style="left:0;top:105px;width:500px"><div class="t">Semi-final 1</div><div class="p">Andrei</div><div class="p">Sergey</div></div>
-      <div class="bk" style="left:0;top:465px;width:500px"><div class="t">Semi-final 2</div><div class="p">Timur</div><div class="p">Pasha</div></div>
-      <div class="bk" style="left:720px;top:285px;width:564px;border-color:var(--blue)"><div class="t">Final</div><div class="p">Winner SF1</div><div class="p">Winner SF2</div></div></div>` },
+const PAIRS = [
+  ['Andrei', 'Bobr', 'Group A'],
+  ['Maxim Petrov', 'Igor', 'Group B'],
+  ['Alexander the Great', 'Lena', 'Group C'],
+  ['Timur', 'Sergey', 'Semi-final 1'],
 ];
-document.getElementById('lab-queue').innerHTML = NAMES.slice(0, 10).map((n, i) => `<div class="lab-row"><span>${esc(n)}</span><i>vs</i><span>${esc(NAMES[15 - i])}</span></div>`).join('');
+const ENTER_MS = 1300; // names fly in
+const HOLD_MS = 4500; // then the screen stays
+const $ = (id) => document.getElementById(id);
 
-// ---------- stage scaling (as on the board) ----------
-const stage = document.getElementById('stage');
-// Same as public/board/app.js: TV browsers zoom pages, so fit into the visual viewport (what is really on screen).
+// Same as the board: fit the 1920×1080 stage into what is really visible (TV browsers zoom pages).
+const stage = $('stage');
 function fit() {
   const vv = window.visualViewport;
   const a = vv && vv.width > 0 ? { w: vv.width, h: vv.height, x: vv.pageLeft, y: vv.pageTop } : { w: innerWidth, h: innerHeight, x: 0, y: 0 };
@@ -63,108 +50,40 @@ function fit() {
 }
 addEventListener('resize', fit);
 window.visualViewport?.addEventListener('resize', fit);
-window.visualViewport?.addEventListener('scroll', fit);
 setInterval(fit, 2000);
 fit();
 
-// ---------- transitions: (oldEl, newEl, dir = 1 forward / -1 back, opts) -> Animation[] ----------
-const W = 1920 - 540 - 56; // content width
-const T = {
-  // Cartoon: wind up a little the other way (anticipation), whoosh, small overshoot and settle.
-  // One strip: both slides get the same keyframes, the new one is always exactly one width further.
-  'Cartoon': (o, n, d) => {
-    const track = [ // position of the strip, as a share of the way (0 = old in place, -1 = new in place)
-      { p: 0, offset: 0, easing: 'cubic-bezier(.3,0,.4,1)' },
-      { p: 210 / W, offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }, // wind-up to the right
-      { p: -1 - 75 / W, offset: 0.74, easing: 'cubic-bezier(.3,0,.5,1)' }, // whoosh, hits and overshoots to the left
-      { p: -1 + 12 / W, offset: 0.88, easing: 'ease-in-out' }, // bounces back a little past the place
-      { p: -1, offset: 1 }, // settle
-    ];
-    const frames = (shift) => track.map((k) => ({ transform: `translateX(${d * (k.p + shift) * W}px)`, offset: k.offset, easing: k.easing ?? 'linear' }));
-    const opt = { duration: DURATION, fill: 'forwards' };
-    return [o.animate(frames(0), opt), n.animate(frames(1), opt)];
-  },
-  'Push (both move)': (o, n, d) => [
-    o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W}px)` }], opts()),
-    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
-  ],
-  'Slide + fade (short)': (o, n, d) => [
-    o.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-d * 120}px)`, opacity: 0 }], opts()),
-    n.animate([{ transform: `translateX(${d * 120}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], opts()),
-  ],
-  'Cover (new slides over)': (o, n, d) => [
-    o.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(.85)' }], opts()),
-    n.animate([{ transform: `translateX(${d * W}px)`, boxShadow: '0 0 0 rgba(0,0,0,0)' }, { transform: 'none', boxShadow: '-30px 0 60px rgba(19,33,58,.15)' }], opts()),
-  ],
-  'Parallax': (o, n, d) => [
-    o.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-d * W * 0.3}px)`, opacity: 0.2 }], opts()),
-    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
-  ],
-  '3D cube': (o, n, d) => {
-    stage.querySelector('.content').style.perspective = '2400px';
-    return [
-      o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W / 2}px) rotateY(${-d * 80}deg) translateX(${-d * W / 2}px)` }], opts()),
-      n.animate([{ transform: `translateX(${d * W / 2}px) rotateY(${d * 80}deg) translateX(${d * W / 2}px)` }, { transform: 'none' }], opts()),
-    ];
-  },
-  'Zoom out, slide in': (o, n, d) => [
-    o.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.9)', opacity: 0 }], opts()),
-    n.animate([{ transform: `translateX(${d * W}px)` }, { transform: 'none' }], opts()),
-  ],
-  'Cards one by one': (o, n, d) => {
-    const cards = [...n.querySelectorAll('.card, .bk')];
-    return [
-      o.animate([{ opacity: 1 }, { opacity: 0 }], opts(0.6)),
-      ...cards.map((c, i) => c.animate([{ transform: `translateX(${d * 300}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
-        { ...opts(), delay: i * opts().duration * 0.15, fill: 'backwards' })),
-    ];
-  },
-};
-
-// One transition at a time, no controls: change these to try another.
-const KIND = 'Cartoon';
-const DURATION = 1000;
-const EASING = 'cubic-bezier(.22,.8,.24,1)';
-const AUTO_MS = 4000;
-const $ = (id) => document.getElementById(id);
-const opts = (f = 1) => ({ duration: DURATION * f, easing: EASING, fill: 'forwards' });
-
-// ---------- slide switching ----------
-const content = $('content');
-let index = 0;
-let current = null;
-let busy = false;
-
-function layer(i) {
-  const el = document.createElement('div');
-  el.className = 'layer';
-  el.innerHTML = SLIDES[i].html;
-  el.style.background = 'var(--bg)';
-  content.append(el);
-  return el;
+function setName(el, text) {
+  el.textContent = text;
+  el.style.fontSize = '';
+  let size = 140;
+  while (size > 50 && el.scrollWidth > el.clientWidth + 1) el.style.fontSize = `${(size -= 4)}px`;
 }
 
-function show(i, dir) {
-  if (busy) return;
-  const next = layer(i);
-  $('title').textContent = SLIDES[i].title;
-  if (!current) { current = next; return; }
-  busy = true;
-  const old = current;
-  current = next;
-  content.style.perspective = '';
-  const anims = T[KIND](old, next, dir);
-  Promise.all(anims.map((a) => a.finished)).then(() => {
-    old.remove();
-    anims.forEach((a) => a.cancel()); // drop fill: forwards, the layer stays in its final (natural) place
-    busy = false;
-  });
+let i = 0;
+function play() {
+  const [a, b, label] = PAIRS[i++ % PAIRS.length];
+  $('label').textContent = label;
+  setName($('n1'), a);
+  setName($('n2'), b);
+  // Player 1 comes from beyond the right edge and lands in the left half, player 2 the other way round.
+  // They cross in the middle; a small overshoot at the end, then settle.
+  const fly = (from, over) => [
+    { transform: `translateX(${from}px)`, easing: 'cubic-bezier(.2,.7,.3,1)' },
+    { transform: `translateX(${over}px)`, offset: 0.82, easing: 'ease-in-out' },
+    { transform: 'translateX(0)' },
+  ];
+  $('n1').animate(fly(1920, -40), { duration: ENTER_MS, fill: 'backwards' });
+  $('n2').animate(fly(-1920, 40), { duration: ENTER_MS, fill: 'backwards' });
+  // VS pops in once the names have landed.
+  $('vs').animate([
+    { transform: 'scale(0)', opacity: 0 },
+    { transform: 'scale(1.35)', opacity: 1, offset: 0.6 },
+    { transform: 'scale(1)', opacity: 1 },
+  ], { duration: 450, delay: ENTER_MS - 150, easing: 'ease-out', fill: 'backwards' });
+  setTimeout(play, ENTER_MS + HOLD_MS);
 }
-
-const go = (dir) => { if (busy) return; index = (index + dir + SLIDES.length) % SLIDES.length; show(index, dir); };
-addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); });
-setInterval(() => go(1), AUTO_MS);
-show(0, 1);
+play();
 </script>
 </body>
 </html>

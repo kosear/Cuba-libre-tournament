@@ -75,7 +75,7 @@ const T = {
   'Cartoon': (o, n, d) => {
     const track = [ // position of the strip, as a share of the way (0 = old in place, -1 = new in place)
       { p: 0, offset: 0, easing: 'cubic-bezier(.3,0,.4,1)' },
-      { p: 70 / W, offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }, // wind-up to the right
+      { p: 210 / W, offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }, // wind-up to the right
       { p: -1 - 24 / W, offset: 0.85, easing: 'ease-in-out' }, // whoosh, overshoot
       { p: -1, offset: 1 }, // settle
     ];
@@ -122,7 +122,7 @@ const T = {
 
 // One transition at a time, no controls: change these to try another.
 const KIND = 'Cartoon';
-const DURATION = 900;
+const DURATION = 1000;
 const EASING = 'cubic-bezier(.22,.8,.24,1)';
 const AUTO_MS = 4000;
 const $ = (id) => document.getElementById(id);

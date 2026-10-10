@@ -25,12 +25,13 @@
   .label { position: absolute; left: 0; right: 0; top: 262px; text-align: center; font-size: 38px; font-weight: 800; font-style: italic; color: #ffd400;
     text-transform: uppercase; letter-spacing: 6px; }
   /* names: different heights, they cross without touching */
-  .name { position: absolute; width: 860px; height: 170px; text-align: center; font-size: 150px; line-height: 170px; font-weight: 900; font-style: italic;
+  .name { position: absolute; z-index: 2; width: 760px; height: 170px; text-align: center; font-size: 150px; line-height: 170px; font-weight: 900; font-style: italic;
     text-transform: uppercase; white-space: nowrap; will-change: transform; text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
   .n1 { left: 70px; top: 420px; }
   .n2 { right: 70px; top: 640px; }
-  .vs { position: absolute; left: 0; right: 0; top: 548px; text-align: center; font-size: 120px; line-height: 1; font-weight: 900; font-style: italic;
-    color: #ffd400; -webkit-text-stroke: 4px #000; text-shadow: 0 8px 0 #000; will-change: transform; }
+  /* VS: on top of the stripes and the names' paths, between the two names (760 px each, 160 px free in the middle) */
+  .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 505px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
+    color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
 </style>
 </head>
 <body>

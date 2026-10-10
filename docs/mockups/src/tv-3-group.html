@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Group A</title><link rel="stylesheet" href="tv.css"><script src="data.js"></script></head><body><main><script>document.write(headerHtml('Group C'))</script>
+<div class="content"><div class="group-one">
+<div class="card"><h3>Standings</h3><script>document.write(tableHtml('C'))</script></div>
+<div class="card"><h3>Results</h3><script>
+const ps=GROUPS.C;
+document.write(`<table class="cross"><tr><th></th>${ps.map((p,i)=>`<th>${p.split(' ')[0]}</th>`).join('')}</tr>`+
+ps.map(a=>`<tr><th class="rowh">${a.split(' ')[0]}</th>${ps.map(b=>{if(a===b)return '<td class="diag"></td>';const c=cell('C',a,b);if(!c)return '<td></td>';return c.win?`<td class="win">${c.approx?'≈':''}${c.balls}</td>`:'<td class="loss">0</td>'}).join('')}</tr>`).join('')+'</table>')
+</script><div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>empty — not played</span><span>≈ average (withdrawn player)</span></div></div>
+</div></div></main><script>document.write(queueHtml())</script></body></html>

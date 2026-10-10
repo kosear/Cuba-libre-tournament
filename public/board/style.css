@@ -12,8 +12,8 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-se
 #stage.full { grid-template-columns: 1fr; }
 #stage.full aside.queue { display: none; }
 main { display: flex; flex-direction: column; min-width: 0; position: relative; overflow: hidden; } /* clips the slide transition, it never covers the queue */
-/* soft shade of the queue panel, only over the grey slide area (below the header divider), above the moving slides */
-main::after { content: ''; position: absolute; top: 123px; bottom: 0; right: 0; width: 36px; background: linear-gradient(to left, rgba(19,33,58,.10), rgba(19,33,58,0)); pointer-events: none; z-index: 3; }
+/* soft shade of the queue panel along the whole height (header too): the panel lies on top of everything; above the moving slides */
+main::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 36px; background: linear-gradient(to left, rgba(19,33,58,.11), rgba(19,33,58,0)); pointer-events: none; z-index: 3; }
 
 /* header */
 header.top { height: 120px; flex: none; display: flex; align-items: center; gap: 22px; padding: 0 28px; background: var(--card); border-bottom: 1px solid var(--line); position: relative; }

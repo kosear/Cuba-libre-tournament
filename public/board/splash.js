@@ -32,9 +32,9 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Background colour try-out (temporary, dev): the splash cycles through these, the number is shown top left.
-// On a dark colour the logo's lettering turns white. Pick one, then set SPLASH_DEMO = false.
+// Each colour twice: two lettering colours (the figure is never changed). Pick one, then set SPLASH_DEMO = false.
 const SPLASH_DEMO = true;
-const DEMO_MS = 6000;
+const DEMO_MS = 4000; // per lettering variant: every background is shown twice
 const DEMO_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
   ['Sky', '#d9ecfb'], ['Lavender', '#e7e0f6'], ['Blush', '#f8dfe2'], ['Peach', '#fbd9bf'], ['Lemon', '#fbf0a6'],
@@ -66,14 +66,19 @@ function isLettering(attrs) {
   return x1 < 1400 || x0 > 2500 || (y1 < 360 && x1 < 2050);
 }
 
-let lightLogoUrl = null; // made once
-async function lightLogo() {
-  if (!lightLogoUrl) {
-    const svg = await (await fetch(LOGO_SRC)).text();
-    const light = svg.replace(/<path [^>]*>/g, (tag) => (isLettering(tag) ? tag.replace(/fill="#[0-9A-Fa-f]{6}"/, 'fill="#FFFFFF"') : tag));
-    lightLogoUrl = URL.createObjectURL(new Blob([light], { type: 'image/svg+xml' }));
+// Lettering variants: on a light background black (as drawn) or the logo red; on a dark one white or the logo yellow.
+// The figure is never touched.
+const LETTERING = { light: [['black', null], ['red', '#C8102E']], dark: [['white', '#FFFFFF'], ['yellow', '#ECC430']] };
+const logoUrls = new Map(); // colour -> object URL, made once each
+let logoSvg = null;
+async function logoWithLettering(color) {
+  if (!color) return LOGO_SRC;
+  if (!logoUrls.has(color)) {
+    logoSvg ??= await (await fetch(LOGO_SRC)).text();
+    const svg = logoSvg.replace(/<path [^>]*>/g, (tag) => (isLettering(tag) ? tag.replace(/fill="#[0-9A-Fa-f]{6}"/, `fill="${color}"`) : tag));
+    logoUrls.set(color, URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })));
   }
-  return lightLogoUrl;
+  return logoUrls.get(color);
 }
 
 export function startSplash(root) {
@@ -654,15 +659,17 @@ export function startSplash(root) {
     const tag = document.createElement('div');
     tag.className = 'splash-tag';
     root.appendChild(tag);
-    let k = 0;
+    let step = 0; // background k = step / 2, lettering variant = step % 2
     const showColor = async () => {
+      const k = Math.floor(step / 2) % DEMO_COLORS.length;
       const [name, hex] = DEMO_COLORS[k];
       const dark = isDark(hex);
+      const [letterName, letterColor] = LETTERING[dark ? 'dark' : 'light'][step % 2];
+      step = (step + 1) % (DEMO_COLORS.length * 2);
       root.style.backgroundColor = hex;
       tag.style.color = dark ? '#fff' : '#111';
-      tag.innerHTML = `${k + 1} / ${DEMO_COLORS.length} · ${name}<small>${hex}</small>`;
-      k = (k + 1) % DEMO_COLORS.length;
-      const want = dark ? await lightLogo() : LOGO_SRC;
+      tag.innerHTML = `${k + 1}${step % 2 ? 'a' : 'b'} / ${DEMO_COLORS.length} · ${name}<small>${hex} · lettering: ${letterName}</small>`;
+      const want = await logoWithLettering(letterColor);
       if (!stopped && logo.getAttribute('src') !== want) logo.src = want; // same shape: the collision mask stays right
     };
     showColor();

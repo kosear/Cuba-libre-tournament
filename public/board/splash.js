@@ -33,16 +33,6 @@ const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
 // Every time a ball hits the logo the background turns a random other colour (it starts white). The logo's lettering
 // follows only when the colour needs it: black on light backgrounds, white on dark ones. The figure never changes.
-// The logo moves to another place every day of the week (Bali time): offsets picked at random once, then fixed,
-// small enough to keep it on screen with room for the balls.
-const DAY_OFFSETS = { Mon: [-160, -60], Tue: [180, 45], Wed: [-90, 95], Thu: [140, -85], Fri: [40, 80], Sat: [-195, 20], Sun: [95, -30] };
-function dayOffset() {
-  const day = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', weekday: 'short' }).format(new Date());
-  return DAY_OFFSETS[day] ?? [0, 0];
-}
-
-const DAY_DEMO_MS = 20000; // TEMPORARY dev presentation: every 20 s the logo moves to the next day's place. Remove after.
-
 const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
 const SPLASH_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
@@ -109,8 +99,7 @@ export function startSplash(root) {
     if (stopped) return;
     const h = LOGO_W * (logo.naturalHeight / logo.naturalWidth || 1147 / 2720);
     // Centre the screen on the bar name, not on the whole drawing (the figure's legs hang far below it).
-    const [dx, dy] = dayOffset();
-    logoBox = { x: (W - LOGO_W) / 2 + dx, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y + dy, w: LOGO_W, h };
+    logoBox = { x: (W - LOGO_W) / 2, y: H * TEXT_SCREEN_Y - h * LOGO_TEXT_Y, w: LOGO_W, h };
     logo.style.width = `${LOGO_W}px`;
     logo.style.left = `${logoBox.x}px`;
     logo.style.top = `${logoBox.y}px`;
@@ -662,29 +651,6 @@ export function startSplash(root) {
     logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
-  // ---------- TEMPORARY: presentation of the daily places ----------
-  const DAYS = Object.keys(DAY_OFFSETS);
-  const DAY_NAMES = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
-  const dayTag = document.createElement('div');
-  dayTag.style.cssText = 'position:absolute;left:40px;top:32px;z-index:20;font:800 40px/1.2 Inter,system-ui,sans-serif';
-  root.appendChild(dayTag);
-  let demoDay = 0;
-  function showDay() {
-    const day = DAYS[demoDay];
-    demoDay = (demoDay + 1) % DAYS.length;
-    dayTag.textContent = `Logo place: ${DAY_NAMES[day]}`;
-    dayTag.style.color = isDark(SPLASH_COLORS[colorIndex][1]) ? '#fff' : '#111';
-    if (!logoBox) return;
-    const [dx, dy] = DAY_OFFSETS[day];
-    logoBox.x = (W - LOGO_W) / 2 + dx; // the collision mask is relative to logoBox: it moves along
-    logoBox.y = H * TEXT_SCREEN_Y - logoBox.h * LOGO_TEXT_Y + dy;
-    logo.style.transition = 'left .8s ease-in-out, top .8s ease-in-out';
-    logo.style.left = `${logoBox.x}px`;
-    logo.style.top = `${logoBox.y}px`;
-  }
-  setTimeout(showDay, 1500);
-  const dayDemoTimer = setInterval(showDay, DAY_DEMO_MS);
-
   // ---------- colour changes on hits ----------
   let colorIndex = 0; // white
   let lastColorChange = 0;
@@ -706,7 +672,6 @@ export function startSplash(root) {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
-      clearInterval(dayDemoTimer);
       root.style.backgroundColor = '';
       root.innerHTML = '';
     },

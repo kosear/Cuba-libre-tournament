@@ -107,6 +107,8 @@ aside.queue { position: relative; background: var(--card); display: flex; flex-d
 .qhead .qtitle { font-size: 60px; line-height: 36px; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: 1px; }
 /* divider between the slide and the queue: the same line as under the header, its shade falls on the slide */
 aside.queue::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: #c3d1e8; box-shadow: -4px 0 10px rgba(19,33,58,.07); z-index: 2; }
+/* separator under «PLAY NEXT»: the header divider's line (120-123 px), only as wide as the cards */
+aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; right: 30px; height: 3px; background: #c3d1e8; }
 #qtop { display: flex; flex-direction: column; gap: 14px; margin-top: 64.5px; } /* the Next card top at 41.5+36+18+64.5 = 160 px, level with the slide cards on the left */ /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }
 /* Next stands out, After next is grey. The match being played is not shown. */

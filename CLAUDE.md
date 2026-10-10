@@ -82,8 +82,14 @@ src/routes/public.js   GET /api/state and getState(): everything the TV needs, o
 src/routes/admin.js    POST/PUT/DELETE under /api/admin/*, login required
 scripts/admin.js       CLI to add / remove admins and change passwords
 migrations/NNN_*.sql   schema, applied once in filename order at startup
-public/tv/             served at /        (TV page, public)
+src/domain/            tournament rules engine: state is rebuilt from the action log (pure functions, tested)
+src/tournament.js      action log storage: current tournament, undo/redo, journal
+test/                  `npm test`: rules engine tests (node:test)
+public/start/          served at /        (start screen: Scoreboard or Admin panel, public)
+public/board/          served at /board   (TV scoreboard, public)
 public/admin/          served at /admin   (admin page, login required; login.html/login.js/style.css are public)
+public/shared/         served at /shared  (live.js: SSE + auto-reload after a deploy)
+public/assets/         served at /assets  (bar logo)
 deploy/                Caddyfile, systemd units, setup and sync scripts
 ```
 
@@ -129,10 +135,8 @@ It runs unattended for hours: handle reconnects, never show raw errors.
 
 ## 8. Known gaps (worth solving early)
 
-- **The TV keeps old frontend code after a deploy.** SSE reconnects and data refreshes, but the page's JS and CSS stay old
-  until someone reloads the TV. Suggested fix: send the server commit (as in `/api/health`) in the first SSE message,
-  and call `location.reload()` on the TV when it differs from the commit the page loaded with.
-- Static files have no cache-busting. The same fix covers it.
+- ~~The TV keeps old frontend code after a deploy.~~ Solved: SSE sends `hello` with the commit, `public/shared/live.js`
+  reloads the page when it changes; static files are served with `Cache-Control: no-cache`.
 - No automated prod DB backups yet. This is on the infra owner's side, see `docs/infrastructure.md`.
 
 ## 9. People

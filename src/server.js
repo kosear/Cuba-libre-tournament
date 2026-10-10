@@ -28,10 +28,12 @@ app.use('/api/admin', requireAdminApi, adminRoutes);
 // Static files are always revalidated (ETag), so a reload after a deploy picks up new code.
 const staticOpts = { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') };
 
-// Static: / -> public/tv, /admin -> public/admin (login required, except the login page)
+// Static: / -> start screen, /board -> TV scoreboard, /admin -> admin panel (login required, except the login page)
 app.use('/shared', express.static(path.join(ROOT, 'public/shared'), staticOpts));
+app.use('/assets', express.static(path.join(ROOT, 'public/assets'), staticOpts));
 app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin'), staticOpts));
-app.use('/', express.static(path.join(ROOT, 'public/tv'), staticOpts));
+app.use('/board', express.static(path.join(ROOT, 'public/board'), staticOpts));
+app.use('/', express.static(path.join(ROOT, 'public/start'), staticOpts));
 
 app.use((err, req, res, next) => {
   console.error(err);

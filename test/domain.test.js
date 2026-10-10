@@ -104,6 +104,12 @@ test('result: current match leaves the queue, next one starts automatically', ()
   assert.ok(m);
 });
 
+test('trophy goes to the leader even when the first-added player has no wins', () => {
+  const t = tour().setup({ A: ['ann', 'bob', 'cid', 'dan'] }).start();
+  t.win('cid', 'ann').win('cid', 'bob');
+  assert.deepEqual(snapshot(t.s).groups[0].rows.filter((r) => r.leader).map((r) => r.name), ['cid']);
+});
+
 test('table: wins first, then balls; trophy for tied leaders', () => {
   const t = tour().setup({ A: ['ann', 'bob', 'cid', 'dan'] }).start();
   t.win('ann', 'bob', 2).win('cid', 'dan', 5);

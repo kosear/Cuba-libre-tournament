@@ -31,7 +31,7 @@ export function matchView(s, m) {
 
 /** Players tied for first place who can still go through get the trophy. */
 function leaders(s, groupId, active) {
-  if (!active.length || active[0].wins === 0) return new Set();
+  if (!active.some((r) => r.wins > 0)) return new Set();
   const first = rank(s, active, [1]).segments[0];
   return new Set(first.ids);
 }

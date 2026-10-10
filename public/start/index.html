@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuba Libre Pool Tournament</title>
+<style>
+  :root { --bg: #f3f6fb; --ink: #13213a; --muted: #6b7894; --line: #dde4ef; --blue: #2f6fcf; --red: #d21034; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); background: var(--bg); overflow: hidden; }
+  .stripes { position: fixed; inset: 0; background: repeating-linear-gradient(180deg, transparent 0 16vh, rgba(47,111,207,.09) 16vh 20vh); }
+  .flag { position: fixed; left: 0; top: 0; height: 100vh; width: 32vw; }
+  .star { position: fixed; left: 4.7vw; top: 40.7vh; width: 10.4vw; height: 18.5vh; }
+  .center { position: relative; min-height: 100%; display: grid; place-items: center; padding: 4vh 4vw 4vh 30vw; text-align: center; }
+  h1 { font-size: clamp(32px, 6.5vw, 120px); font-weight: 900; line-height: 1.05; }
+  .choose { display: flex; flex-wrap: wrap; gap: 3vw; justify-content: center; margin-top: 6vh; }
+  .opt { display: block; width: min(440px, 80vw); border-radius: 24px; padding: 34px 30px; text-align: center; background: #fff; border: 3px solid var(--line);
+    box-shadow: 0 6px 24px rgba(19,33,58,.08); text-decoration: none; color: inherit; }
+  .opt:focus, .opt:hover { outline: 4px solid #9db8e3; outline-offset: 3px; }
+  .ic { font-size: 64px; line-height: 1; }
+  .nm { font-size: 38px; font-weight: 800; margin-top: 16px; }
+  .ds { font-size: 22px; color: var(--muted); margin-top: 8px; }
+  .opt.tv { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .opt.tv .ds { color: #dce8fb; }
+  .opt.admin .nm { color: var(--red); }
+  @media (max-width: 800px), (orientation: portrait) {
+    .flag, .star { display: none; }
+    .center { padding: 6vh 6vw; }
+    .opt { padding: 24px; }
+    .nm { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+<svg class="flag" viewBox="0 0 100 174" preserveAspectRatio="none"><polygon points="0,0 100,87 0,174" fill="#D21034"/></svg>
+<svg class="star" viewBox="0 0 100 100"><polygon points="50,5 61.8,38.2 97.6,38.2 68.5,58.8 79.4,92.6 50,71.8 20.6,92.6 31.5,58.8 2.4,38.2 38.2,38.2" fill="#fff"/></svg>
+<div class="center">
+  <div>
+    <h1>Cuba Libre<br>Pool Tournament</h1>
+    <div class="choose">
+      <a class="opt tv" href="/board/" autofocus><div class="ic">📺</div><div class="nm">Scoreboard</div><div class="ds">Open on the TV</div></a>
+      <a class="opt admin" href="/admin/"><div class="ic">🔒</div><div class="nm">Admin panel</div><div class="ds">Password required</div></a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

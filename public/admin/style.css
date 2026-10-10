@@ -47,6 +47,10 @@ main.page { padding: 14px 14px 96px; display: grid; gap: 12px; max-width: 640px;
 .btn.dashed { border-style: dashed; color: var(--blue); }
 .btn.small { width: auto; display: inline-block; font-size: 13px; padding: 7px 10px; color: var(--blue); font-weight: 700; }
 
+textarea.text { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; font: inherit; font-size: 16px; background: #fff; resize: vertical; }
+.bulk { display: flex; flex-direction: column; gap: 10px; }
+.bulk-row { display: flex; gap: 10px; }
+.bulk-row label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 input.text, select.text { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; font-size: 16px; background: #fff; min-width: 0; }
 input.text:focus, select.text:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
 

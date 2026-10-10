@@ -113,8 +113,14 @@ export function redo() {
   db.prepare("UPDATE actions SET status = 'active' WHERE id = ?").run(next.id);
 }
 
-export function newTournament(adminId) {
-  db.prepare('INSERT INTO tournaments (created_by) VALUES (?)').run(adminId ?? null);
+/** Cancel the current tournament: delete it with its whole action log, start an empty one. Hourly backups stay. */
+export function cancelTournament(adminId) {
+  db.transaction(() => {
+    const tid = currentTournamentId();
+    db.prepare('DELETE FROM actions WHERE tournament_id = ?').run(tid);
+    db.prepare('DELETE FROM tournaments WHERE id = ?').run(tid);
+    db.prepare('INSERT INTO tournaments (created_by) VALUES (?)').run(adminId ?? null);
+  })();
 }
 
 /** Action log for the admin journal, newest first, plus names of every player and group ever mentioned. */

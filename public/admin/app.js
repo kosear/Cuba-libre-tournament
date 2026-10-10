@@ -347,9 +347,73 @@ function viewGroupsSetup() {
     const add = g ? `<form class="add" data-add-player="${g.id}"><input class="text" placeholder="${esc(t('groups.playerName'))}" maxlength="40" autocomplete="off"><button class="btn small">${esc(t('groups.addPlayer'))}</button></form>` : '';
     return `<div class="card grp">${head}${rows}${add}</div>`;
   };
-  return `<div class="card note">${esc(t('groups.setupHint'))}</div>${tr.groups.map(card).join('')}${card(null)}
+  // Quick setup, only before the first group: a list of names, shuffled into N groups (see bulkSetup()).
+  const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
+    <div class="muted">${esc(t('bulk.hint'))}</div>
+    <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}"></textarea>
+    <div class="bulk-row"><label>${esc(t('bulk.groups'))} <input class="text" id="bulk-groups" type="number" min="1" max="8" value="2" inputmode="numeric"></label>
+      <label>${esc(t('bulk.count'))} <input class="text" id="bulk-count" type="number" min="0" value="0" inputmode="numeric"></label></div>
+    <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
+  return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
     <button class="btn primary" data-start>${esc(t('groups.start'))}</button>`;
+}
+
+// ---------- quick setup: names shuffled into groups ----------
+
+const BYE = /^BYE( \d+)?$/; // filler players: withdrawn right at the start, their opponents win by walkover
+
+/** Names from the list: trimmed, empty lines and repeats (any case, or already in the tournament) skipped. */
+function bulkNames() {
+  const taken = new Set(T().players.map((p) => p.name.toLowerCase()));
+  const names = [];
+  const skipped = [];
+  for (const raw of $('bulk-names').value.split('\n')) {
+    const name = raw.trim().replace(/\s+/g, ' ');
+    if (!name) continue;
+    if (taken.has(name.toLowerCase()) || name.length > 40 || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
+    taken.add(name.toLowerCase());
+    names.push(name);
+  }
+  return { names, skipped };
+}
+
+// A series of actions in a row: compose after each one, so the next is checked against the state that includes it.
+async function step(type, payload) {
+  const ok = await act(type, payload);
+  if (ok) compose();
+  return ok;
+}
+
+async function bulkSetup() {
+  const { names, skipped } = bulkNames();
+  const groups = Math.round(Number($('bulk-groups').value));
+  if (!(groups >= 1 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
+  if (Number($('bulk-count').value) !== names.length) { toast(t('bulk.countMismatch', { n: names.length, count: $('bulk-count').value }), true); return; }
+  if (names.length < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
+  // Shuffle, deal round-robin: group sizes differ by at most one; the shorter groups get a BYE so all are equal.
+  for (let i = names.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+  const size = Math.ceil(names.length / groups);
+  let bye = 0;
+  for (let g = 0; g < groups; g++) {
+    const id = uuid();
+    if (!(await step('group.add', { id, name: nextGroupName() }))) return;
+    const members = names.filter((_, k) => k % groups === g);
+    while (members.length < size) members.push(++bye === 1 ? 'BYE' : `BYE ${bye}`);
+    for (const name of members) if (!(await step('player.add', { id: uuid(), name, groupId: id }))) return;
+  }
+  refresh();
+  toast(skipped.length ? t('bulk.doneSkipped', { names: skipped.join(', ') }) : t('bulk.done'));
+}
+
+/** Start the tournament, then withdraw the BYE fillers (withdrawing is only allowed once the groups are playing). */
+async function startTournament() {
+  if (!(await step('tournament.start', {}))) return;
+  for (const p of T().players) if (BYE.test(p.name) && !p.withdrawn) await step('player.withdraw', { id: p.id });
+  refresh();
 }
 
 function nextGroupName() {
@@ -589,7 +653,8 @@ document.addEventListener('click', async (e) => {
 
   // setup
   if (d.addGroup !== undefined) { act('group.add', { id: uuid(), name: nextGroupName() }); return; }
-  if (d.start !== undefined) { if (confirm(t('groups.startConfirm'))) act('tournament.start', {}); return; }
+  if (d.start !== undefined) { if (confirm(t('groups.startConfirm'))) startTournament(); return; }
+  if (d.bulk !== undefined) { bulkSetup(); return; }
 
   // match sheet
   if (d.shWinner) { sheet.winner = Number(d.shWinner); el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); return; }
@@ -652,6 +717,11 @@ document.addEventListener('submit', async (e) => {
   } else {
     input.focus();
   }
+});
+
+// Quick setup: the «players» field follows the number of names in the list (it can still be edited, it is checked).
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'bulk-names') $('bulk-count').value = bulkNames().names.length;
 });
 
 document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input')) render(); }, 0));

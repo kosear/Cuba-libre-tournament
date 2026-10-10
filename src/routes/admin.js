@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { broadcast } from '../events.js';
 import { getState } from './public.js';
 import { DomainError } from '../domain/engine.js';
-import { addAction, undo, redo, newTournament, journal, getTournamentState, currentTournamentId, logHead } from '../tournament.js';
+import { addAction, undo, redo, cancelTournament, journal, getTournamentState, currentTournamentId, logHead } from '../tournament.js';
 import { snapshot } from '../domain/view.js';
 
 export const adminRoutes = Router();
@@ -37,4 +37,5 @@ adminRoutes.post('/actions', (req, res) => {
 
 adminRoutes.post('/undo', (req, res) => run(res, () => { undo(); }));
 adminRoutes.post('/redo', (req, res) => run(res, () => { redo(); }));
-adminRoutes.post('/tournaments', (req, res) => run(res, () => { newTournament(req.admin.id); }));
+// Cancel the tournament: the current one is deleted completely, a new empty one starts.
+adminRoutes.post('/tournaments', (req, res) => run(res, () => { cancelTournament(req.admin.id); }));

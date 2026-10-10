@@ -64,15 +64,15 @@ test('a newer view of the change is not a conflict', () => {
   assert.equal(log.getTournamentState().matches[m].winner, 2);
 });
 
-test('actions made for a previous tournament are rejected', () => {
+test('actions made for a cancelled tournament are rejected', () => {
   const tid = log.currentTournamentId();
-  log.newTournament(ann);
+  log.cancelTournament(ann);
   fails('tournament_changed', () => add(bob, 'group.add', { id: 'X', name: 'X' }, { tournamentId: tid }));
   add(bob, 'group.add', { id: 'X', name: 'X' }, { tournamentId: log.currentTournamentId() });
 });
 
 test('an old action the rules no longer allow is skipped on replay, not fatal', () => {
-  log.newTournament(ann);
+  log.cancelTournament(ann);
   const tid = log.currentTournamentId();
   add(ann, 'group.add', { id: 'G', name: 'G' });
   // Stored directly, as if an older engine had accepted it.

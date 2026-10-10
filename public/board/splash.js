@@ -13,8 +13,8 @@ const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
 const LOGO_TEXT_Y = 0.38; // vertical centre of the «CUBA LIBRE» letters, as a share of the logo height
 const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share of its height (a bit above the middle)
-const SHADOW_DX = 12; // ball shadow offset: light from the top left
-const SHADOW_DY = 18;
+const SHADOW_DX = 9; // ball shadow offset: light from the top left
+const SHADOW_DY = 13;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
@@ -142,8 +142,10 @@ export function startSplash(root) {
     }
     const shadow = document.createElement('div');
     shadow.className = 'ball-shadow';
-    root.append(shadow, el);
-    const b = { num, el, shadow, x, y, vx, vy, friction, angle: rand(0, Math.PI * 2), resting: false, restAt: 0, entered: false };
+    const shine = document.createElement('div');
+    shine.className = 'ball-shine';
+    root.append(shadow, el, shine);
+    const b = { num, el, shadow, shine, x, y, vx, vy, friction, angle: rand(0, Math.PI * 2), resting: false, restAt: 0, entered: false };
     balls.push(b);
     place(b);
     return b;
@@ -152,11 +154,13 @@ export function startSplash(root) {
   function place(b) {
     b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px) rotate(${b.angle}rad)`;
     b.shadow.style.transform = `translate(${b.x - R + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px)`;
+    b.shine.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
   }
 
   function removeBall(b) {
     b.el.remove();
     b.shadow.remove();
+    b.shine.remove();
     balls = balls.filter((x) => x !== b);
   }
 

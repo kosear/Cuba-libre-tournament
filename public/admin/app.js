@@ -646,7 +646,7 @@ document.addEventListener('submit', async (e) => {
   const name = input.value;
   input.blur();
   if (await act('player.add', { id: uuid(), name, groupId: form.dataset.addPlayer })) {
-    render();
+    refresh(); // compose first: render() alone would draw the state without the new player, then defer while typing
     // keep typing names into the same group
     document.querySelector(`form[data-add-player="${form.dataset.addPlayer}"] input`)?.focus();
   } else {

@@ -11,6 +11,7 @@ const H = 1080;
 const R = 59; // ball radius (diameter 118 px on the 1920×1080 stage)
 const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
+const LOGO_TEXT_Y = 0.38; // vertical centre of the «CUBA LIBRE» letters, as a share of the logo height
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 const FRICTION_FAST = 50; // px/s², balls that roll by
 const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
@@ -46,7 +47,8 @@ export function startSplash(root) {
   logo.addEventListener('load', () => {
     if (stopped) return;
     const h = LOGO_W * (logo.naturalHeight / logo.naturalWidth || 1147 / 2720);
-    logoBox = { x: (W - LOGO_W) / 2, y: (H - h) / 2, w: LOGO_W, h };
+    // Centre the screen on the bar name, not on the whole drawing (the figure's legs hang far below it).
+    logoBox = { x: (W - LOGO_W) / 2, y: H / 2 - h * LOGO_TEXT_Y, w: LOGO_W, h };
     logo.style.width = `${LOGO_W}px`;
     logo.style.left = `${logoBox.x}px`;
     logo.style.top = `${logoBox.y}px`;

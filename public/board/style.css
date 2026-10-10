@@ -47,6 +47,7 @@ table.std tr.out td.name { text-decoration: line-through; }
 .group-one .fit { font-size: 50px; }
 .group-one table.std th { font-size: .48em; height: 3em; padding: 0 6px; }
 .group-one table.std td { padding: 0 8px; }
+.group-one table.std .name { width: 46%; } /* narrower card: Frames, Win, Balls get 18% each so the headers fit */
 table.cross { border-collapse: collapse; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
 table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 table.cross th { font-size: .58em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }

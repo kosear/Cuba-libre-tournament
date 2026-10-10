@@ -279,8 +279,9 @@ function schedule() {
 }
 
 // ---------- call screen ----------
-// When a result is entered and the next match starts, the whole screen shows who goes to the table, for CALL_MS.
-// Not on page load, undo or editing an old result: only when the previous current match has just got a winner.
+// Whenever the match being played changes (a result, the queue reordered, an undo), the whole screen shows
+// who goes to the table, for CALL_MS. Not on page load.
+let loaded = false;
 
 let prevCurrentId = null;
 let call = null; // { id, timer }
@@ -307,10 +308,11 @@ function hideCall() {
 
 function updateCall() {
   const cur = T.current;
-  const finished = prevCurrentId && cur?.id !== prevCurrentId && T.results.some((r) => r.id === prevCurrentId);
-  if (finished && cur?.p1 && cur?.p2) showCall(cur);
-  else if (call && call.id !== cur?.id) hideCall(); // undone, or the match left the queue
+  const changed = loaded && (cur?.id ?? null) !== prevCurrentId;
+  if (changed && cur?.p1 && cur?.p2) showCall(cur);
+  else if (call && call.id !== cur?.id) hideCall(); // the match left the queue, or the tournament is over
   prevCurrentId = cur?.id ?? null;
+  loaded = true;
 }
 
 function onState(state) {

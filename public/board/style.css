@@ -142,9 +142,9 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 aside.queue { background: var(--blue); }
 .qhead { color: rgba(255,255,255,.85); }
 .qhead .qtitle { color: #fff; }
-aside.queue::after { background: rgba(255,255,255,.45); }
-.qbig.next { background: #f47b20; color: #fff; } /* the orange of the call screen band */
-.qbig.next .qvs { color: #ffe3cc; }
+aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY NEXT» */
+.qbig.next { background: #f89a1c; color: #111; } /* a slightly more yellow orange than the call screen band, black text */
+.qbig.next .qvs { color: rgba(17,17,17,.6); }
 .qbig.after { background: rgba(255,255,255,.14); color: #fff; }
 .qbig.after .qvs { color: rgba(255,255,255,.7); }
 .qrow { border-bottom-color: rgba(255,255,255,.2); color: #fff; }

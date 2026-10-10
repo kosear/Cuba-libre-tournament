@@ -62,8 +62,10 @@ export function startSplash(root) {
     } catch {
       mask = null; // without a mask the balls only roll by
     }
-    last = performance.now();
-    raf = requestAnimationFrame(frame);
+    if (!raf) { // a second load (the image swapped) must not start a second animation loop
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
   });
 
   // ---------- logo mask ----------

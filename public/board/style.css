@@ -52,6 +52,7 @@ table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px
 table.cross th { font-size: .58em; height: 2.7em; color: var(--muted); font-weight: 600; background: #fafbfd; }
 table.cross td.diag { background: #d9dee7; }
 table.cross td.none { color: #c3cbd8; font-weight: 400; } /* not played yet */
+.hg { width: .7em; height: .7em; vertical-align: -.08em; color: #8a94a8; opacity: .45; }
 table.cross td.win { color: var(--green); font-weight: 800; }
 table.cross td.loss { color: #111; font-weight: 600; }
 .legend { margin-top: 16px; font-size: 19px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 28px; }

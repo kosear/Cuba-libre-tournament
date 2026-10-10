@@ -99,6 +99,9 @@ function shortNames(rows) {
   return rows.map((r, i) => (first.filter((f) => f === first[i]).length > 1 ? r.name : first[i]));
 }
 
+// Grey hourglass for a match that is still to be played.
+const HOURGLASS = '<svg class="hg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v2c0 3-2 5-4.3 6.5L12 12l1.7 1.5C16 15 18 17 18 20v2H6v-2c0-3 2-5 4.3-6.5L12 12l-1.7-1.5C8 9 6 7 6 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 20c0-1.6 1.3-2.8 3-3.6 1.7.8 3 2 3 3.6z" fill="currentColor"/></svg>';
+
 function crossTable(g) {
   const short = shortNames(g.rows);
   // No row names: the rows line up with the Standings table on the left (alignGroupRows), its names label them.
@@ -106,7 +109,7 @@ function crossTable(g) {
   const body = g.rows.map((r) => `<tr>${g.rows.map((c) => {
     if (c.id === r.id) return '<td class="diag"></td>';
     const x = g.cross[r.id]?.[c.id];
-    if (!x) return '<td class="none">—</td>';
+    if (!x) return r.out || c.out ? '<td class="none">—</td>' : `<td class="none">${HOURGLASS}</td>`; // dash: will not be played
     return x.win ? `<td class="win">${x.approx ? '≈' : ''}${x.balls}</td>` : '<td class="loss">0</td>';
   }).join('')}</tr>`).join('');
   return `<table class="cross">${head}${body}</table>`;
@@ -128,7 +131,7 @@ function slideGroup(s) {
     html: `<div class="group-one">
       <div class="card"><h3>Standings</h3><div class="fit">${groupTable(g)}</div></div>
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
-        <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>— not played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
+        <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>${HOURGLASS} to be played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
   };
 }

@@ -31,11 +31,10 @@ const len = (x, y) => Math.hypot(x, y);
 const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 
 /** Mounts the animation into `root` (a 1920×1080 box). Returns { stop }. */
-// Background colour try-out (temporary, dev): the splash cycles through these, the number is shown top left.
-// Each colour twice: two lettering colours (the figure is never changed). Pick one, then set SPLASH_DEMO = false.
-const SPLASH_DEMO = true;
-const DEMO_MS = 4000; // per lettering variant: every background is shown twice
-const DEMO_COLORS = [
+// Every time a ball hits the logo the background turns a random other colour (it starts white). The logo's lettering
+// follows only when the colour needs it: black on light backgrounds, white on dark ones. The figure never changes.
+const HIT_COLOR_GAP_MS = 700; // one hit can touch the logo over several frames: one change per hit
+const SPLASH_COLORS = [
   ['White', '#ffffff'], ['Ivory', '#fbf6ea'], ['Cream', '#f3e7c9'], ['Sand', '#e6d3a8'], ['Pale mint', '#dff3e8'],
   ['Sky', '#d9ecfb'], ['Lavender', '#e7e0f6'], ['Blush', '#f8dfe2'], ['Peach', '#fbd9bf'], ['Lemon', '#fbf0a6'],
   ['Honda Monkey orange', '#f47b20'], ['Coral', '#ff6f5e'], ['Cuba red', '#c8102e'], ['Brick', '#9c3b2b'], ['Burgundy', '#5e1224'],
@@ -66,9 +65,6 @@ function isLettering(attrs) {
   return x1 < 1400 || x0 > 2500 || (y1 < 360 && x1 < 2050);
 }
 
-// Lettering variants: on a light background black (as drawn) or the logo red; on a dark one white or the logo yellow.
-// The figure is never touched.
-const LETTERING = { light: [['black', null], ['red', '#C8102E']], dark: [['white', '#FFFFFF'], ['yellow', '#ECC430']] };
 const logoUrls = new Map(); // colour -> object URL, made once each
 let logoSvg = null;
 async function logoWithLettering(color) {
@@ -108,7 +104,7 @@ export function startSplash(root) {
     logo.style.left = `${logoBox.x}px`;
     logo.style.top = `${logoBox.y}px`;
     try {
-      mask = buildMask(logo, logoBox);
+      mask ??= buildMask(logo, logoBox); // the recoloured logo has the same shape: build once
     } catch {
       mask = null; // without a mask the balls only roll by
     }
@@ -524,6 +520,7 @@ export function startSplash(root) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
         wobble(n[0], n[1], -vn);
+        onLogoHit();
       }
       // Push out of the logo.
       for (let k = 0; k < 20 && logoContact(b.x, b.y); k++) {
@@ -654,33 +651,27 @@ export function startSplash(root) {
     logo.style.transform = `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`;
   }
 
-  let demoTimer = null;
-  if (SPLASH_DEMO) {
-    const tag = document.createElement('div');
-    tag.className = 'splash-tag';
-    root.appendChild(tag);
-    let step = 0; // background k = step / 2, lettering variant = step % 2
-    const showColor = async () => {
-      const k = Math.floor(step / 2) % DEMO_COLORS.length;
-      const [name, hex] = DEMO_COLORS[k];
-      const dark = isDark(hex);
-      const [letterName, letterColor] = LETTERING[dark ? 'dark' : 'light'][step % 2];
-      step = (step + 1) % (DEMO_COLORS.length * 2);
-      root.style.backgroundColor = hex;
-      tag.style.color = dark ? '#fff' : '#111';
-      tag.innerHTML = `${k + 1}${step % 2 ? 'a' : 'b'} / ${DEMO_COLORS.length} · ${name}<small>${hex} · lettering: ${letterName}</small>`;
-      const want = await logoWithLettering(letterColor);
-      if (!stopped && logo.getAttribute('src') !== want) logo.src = want; // same shape: the collision mask stays right
-    };
-    showColor();
-    demoTimer = setInterval(showColor, DEMO_MS);
+  // ---------- colour changes on hits ----------
+  let colorIndex = 0; // white
+  let lastColorChange = 0;
+  function onLogoHit() {
+    const now = performance.now();
+    if (now - lastColorChange < HIT_COLOR_GAP_MS) return;
+    lastColorChange = now;
+    let k;
+    do k = Math.floor(Math.random() * SPLASH_COLORS.length); while (k === colorIndex);
+    colorIndex = k;
+    const hex = SPLASH_COLORS[k][1];
+    root.style.backgroundColor = hex;
+    logoWithLettering(isDark(hex) ? '#FFFFFF' : null).then((url) => {
+      if (!stopped && colorIndex === k && logo.getAttribute('src') !== url) logo.src = url;
+    });
   }
 
   return {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
-      clearInterval(demoTimer);
       root.style.backgroundColor = '';
       root.innerHTML = '';
     },

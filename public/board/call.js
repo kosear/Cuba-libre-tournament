@@ -39,10 +39,11 @@ const CSS = `
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
 /* anime speed lines: bold spikes (SVG drawn once, see rays()); the whole fan turns slowly and jitters in small jerks.
    Outer box: slow rotation; inner svg: the jitter. Only transforms change, nothing is repainted. */
-.fight .rays { position: absolute; left: -240px; top: -300px; width: 2520px; height: 1800px; z-index: 1; pointer-events: none;
-  will-change: transform; animation: rays-turn 60s linear infinite; } /* bigger than the stage, centred on it (the ring overhangs by 60 px): corners stay covered while it turns */
-.fight .rays.r2 { animation-duration: 90s; animation-direction: reverse; opacity: .45; }
-.fight .rays svg { width: 100%; height: 100%; display: block; will-change: transform; animation: rays-jitter .32s infinite; }
+.fight .rays { position: absolute; left: -280px; top: -700px; width: 2600px; height: 2600px; z-index: 1; pointer-events: none;
+  will-change: transform; animation: rays-turn 60s linear infinite; } /* a square centred on the stage (the ring overhangs by 60 px), half-side 1300 > 1101 to the screen corner:
+     the rays' ends are always off screen, at any angle */
+.fight .rays.r2 { animation-duration: 90s; animation-direction: reverse; opacity: .6; }
+.fight .rays svg { width: 100%; height: 100%; display: block; overflow: visible; will-change: transform; animation: rays-jitter .32s infinite; }
 .fight .rays.r2 svg { animation-duration: .4s; animation-delay: -.15s; }
 @keyframes rays-turn { to { transform: rotate(360deg); } }
 @keyframes rays-jitter {
@@ -118,19 +119,19 @@ const CSS = `
 
 /** Bold white spikes pointing at the centre of the stage, random lengths and widths; the middle stays clear. */
 function rays(n) {
-  const cx = 1260; // centre of the 2520×1800 box = centre of the stage
-  const cy = 900;
-  const count = n === 1 ? 36 : 28;
+  const cx = 1300; // centre of the 2600×2600 box = centre of the stage
+  const cy = 1300;
+  const count = n === 1 ? 12 : 9;
   let d = '';
   for (let k = 0; k < count; k++) {
     const a = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
     const w = n === 1 ? 0.016 + Math.random() * 0.028 : 0.008 + Math.random() * 0.014; // half-width at the outer end, radians
     const r1 = 280 + Math.random() * 260; // the sharp tip
-    const r2 = 1600;
+    const r2 = 1700; // well past every screen corner
     const p = (r, t) => `${(cx + r * Math.cos(t)).toFixed(0)},${(cy + r * Math.sin(t)).toFixed(0)}`;
     d += `<polygon points="${p(r1, a)} ${p(r2, a - w)} ${p(r2, a + w)}"/>`;
   }
-  return `<div class="rays r${n}"><svg viewBox="0 0 2520 1800" aria-hidden="true"><g fill="#fff" fill-opacity=".9">${d}</g></svg></div>`;
+  return `<div class="rays r${n}"><svg viewBox="0 0 2600 2600" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
 }
 
 export function createCall(root) {

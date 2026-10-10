@@ -37,6 +37,20 @@ const CSS = `
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
 .fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
+/* anime speed lines: thin rays from the centre, empty middle; two layers grow from small to large and fade in to 90%,
+   half a cycle apart, so the rush never stops */
+.fight .rays { position: absolute; inset: -20%; z-index: 1; pointer-events: none; opacity: 0; will-change: transform, opacity;
+  background:
+    repeating-conic-gradient(from 3deg at 50% 50%, rgba(255,255,255,.9) 0 .35deg, transparent .35deg 4.1deg),
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.7) 0 .2deg, transparent .2deg 2.9deg);
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 55%); mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 55%);
+  animation: rush 1.2s linear infinite; }
+.fight .rays.r2 { animation-delay: -.6s; transform: rotate(2deg); }
+@keyframes rush {
+  0% { transform: scale(.55) rotate(0deg); opacity: 0; }
+  70% { opacity: .9; }
+  100% { transform: scale(1.5) rotate(1deg); opacity: .9; }
+}
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
 .p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;
@@ -108,7 +122,7 @@ export function createCall(root) {
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>
+      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div><div class="rays"></div><div class="rays r2"></div>
       <canvas class="fire" width="170" height="64"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div><div class="mname m1"></div><div class="mname m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>

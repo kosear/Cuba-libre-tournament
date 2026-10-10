@@ -21,6 +21,8 @@ const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
+const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
+const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
 
 const COLORS = ['#F2C200', '#1F4FBF', '#D21034', '#5B2A86', '#F07A1A', '#11804A', '#7A1F1F', '#111111'];
@@ -452,9 +454,10 @@ export function startSplash(root) {
       if (!hit && pathHitsLogo(sx, sy, sx + dx * 2600, sy + dy * 2600)) continue;
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
       const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
-      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760));
+      const rally = Math.random() < RALLY_CHANCE;
+      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * (rally ? RALLY_SPEED : 1);
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
-      b.cushions = Math.random() < CUSHION_CHANCE ? 1 : 0;
+      b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
     }
     return false;
@@ -588,22 +591,25 @@ export function startSplash(root) {
   }
 
   /**
-   * Screen edges are open, except once for a rolling ball or after the cue shot (b.cushions): the ball bounces off the edge it reaches,
-   * but only when the bounced path still takes it off screen (fast enough, clear of the logo). Otherwise it leaves.
+   * Screen edges are open, except for the bounces a ball has left (b.cushions: usually 0 or 1, 3-4 for a rally): it
+   * bounces off the edge it reaches only when it is fast enough to cross the screen again and the way is clear of the
+   * logo; otherwise it rolls off and has no bounces left.
    */
   function bounceOffEdge(b) {
     const nx = b.x < R && b.vx < 0 ? 1 : b.x > W - R && b.vx > 0 ? -1 : 0;
     const ny = b.y < R && b.vy < 0 ? 1 : b.y > H - R && b.vy > 0 ? -1 : 0;
     if (!nx && !ny) return;
-    b.cushions = 0; // one chance: bounce now or leave
     const vx = nx ? -b.vx * CUSHION : b.vx;
     const vy = ny ? -b.vy * CUSHION : b.vy;
     const sp = len(vx, vy);
     const dx = vx / sp;
     const dy = vy / sp;
     const dist = exitDistance(b.x, b.y, dx, dy);
-    if (b.friction && sp * sp < 2 * b.friction * (dist + 150)) return;
-    if (pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) return;
+    if ((b.friction && sp * sp < 2 * b.friction * (dist + 150)) || pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) {
+      b.cushions = 0; // no clean bounce: it leaves
+      return;
+    }
+    b.cushions--;
     b.vx = vx;
     b.vy = vy;
   }

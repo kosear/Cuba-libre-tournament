@@ -29,7 +29,7 @@ table.std { width: 100%; table-layout: fixed; border-collapse: collapse; font-va
 table.std th { font-size: .63em; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 6px; text-align: center; border-bottom: 2px solid var(--line); }
 table.std td { padding: .4em 6px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.std tr:last-child td { border-bottom: none; }
-table.std .name { text-align: left; width: 46%; /* Frames, Win, Balls get 18% each so the headers fit */ overflow: hidden; text-overflow: ellipsis; }
+table.std .name { text-align: left; width: 31%; /* Frames, Win, Balls get 23% each so the headers fit */ overflow: hidden; text-overflow: ellipsis; }
 table.std tr.leader td { font-weight: 800; }
 table.std tr.out td { color: #a8b2c4; }
 table.std tr.out td.name { text-decoration: line-through; }
@@ -45,7 +45,7 @@ table.std tr.out td.name { text-decoration: line-through; }
 .group-one { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.3fr); gap: 18px; height: 100%; }
 .group-one .fit > table { flex: 1; }
 .group-one .fit { font-size: 50px; }
-.group-one table.std th { font-size: .48em; height: 3em; padding: 0 6px; }
+.group-one table.std th { font-size: .48em; height: 3em; padding: 0 4px; letter-spacing: 0; } /* narrow card: no letter spacing in the headers */
 .group-one table.std td { padding: 0 8px; }
 table.cross { border-collapse: collapse; width: 100%; table-layout: fixed; font-variant-numeric: tabular-nums; }
 table.cross td, table.cross th { text-align: center; padding: 0 8px; border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

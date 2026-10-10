@@ -547,7 +547,7 @@ export function startSplash(root) {
   // ---------- physics ----------
 
   function wobble(nx, ny, strength) {
-    wobbles.push({ nx, ny, amp: Math.min(0.05, strength / 18000), t0: performance.now() });
+    wobbles.push({ nx, ny, amp: Math.min(0.13, strength / 18000), t0: performance.now() }); // ~0.05 for a usual hit, more for a heavy one
   }
 
   function step(b, dt) {

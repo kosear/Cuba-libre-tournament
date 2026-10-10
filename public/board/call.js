@@ -4,7 +4,7 @@
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
-  'halftone', 'carbon', 'chevron', 'checker', 'felt', 'sunburst', 'stripes',
+  'halftone', 'chevron', 'checker', 'felt', 'sunburst', 'stripes',
   'dots', 'crosshatch', 'zigzag', 'argyle', 'grid', 'plaid', 'triangles',
 ];
 const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
@@ -53,11 +53,6 @@ const CSS = `
 .fight .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 .fight .pattern { position: absolute; inset: 0; pointer-events: none; }
 .p-halftone { opacity: .25; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px; } /* no mask: masks are heavy on the TV */
-.p-carbon { opacity: .28; background:
-  linear-gradient(27deg, #000 5px, transparent 5px) 0 5px / 20px 20px, linear-gradient(207deg, #000 5px, transparent 5px) 10px 0 / 20px 20px,
-  linear-gradient(27deg, #222 5px, transparent 5px) 0 10px / 20px 20px, linear-gradient(207deg, #222 5px, transparent 5px) 10px 5px / 20px 20px,
-  linear-gradient(90deg, #1b1b1b 10px, transparent 10px) 0 0 / 20px 20px,
-  linear-gradient(#1d1d1d 25%, #1a1a1a 25%, #1a1a1a 50%, transparent 50%, transparent 75%, #242424 75%, #242424) 0 0 / 20px 20px; }
 .p-chevron { opacity: .16; background:
   linear-gradient(135deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px, linear-gradient(225deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px,
   linear-gradient(315deg, #fff 25%, transparent 25%) 0 0 / 120px 120px, linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 120px 120px; }

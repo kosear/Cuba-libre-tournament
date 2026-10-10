@@ -17,8 +17,26 @@
   .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 45%, transparent 45.1%); }
   .blue { background: linear-gradient(115deg, transparent 54.9%, #1d4fbf 55%, #0a1f5c 100%); }
   .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 45%, #0b0d14 45.1%, #0b0d14 54.9%, transparent 55%); }
-  /* speed lines */
-  .speed { position: absolute; inset: 0; opacity: .14; background: repeating-linear-gradient(115deg, transparent 0 46px, #fff 46px 50px); }
+  /* background patterns over the corners, pure CSS; the scene cycles through them (PATTERNS in the script) */
+  .pattern { position: absolute; inset: 0; pointer-events: none; }
+  .p-halftone { opacity: .35; background: radial-gradient(circle, #000 0 38%, transparent 40%) 0 0 / 22px 22px;
+    -webkit-mask: radial-gradient(ellipse at center, transparent 25%, #000 85%); mask: radial-gradient(ellipse at center, transparent 25%, #000 85%); }
+  .p-carbon { opacity: .28; background:
+    linear-gradient(27deg, #000 5px, transparent 5px) 0 5px / 20px 20px, linear-gradient(207deg, #000 5px, transparent 5px) 10px 0 / 20px 20px,
+    linear-gradient(27deg, #222 5px, transparent 5px) 0 10px / 20px 20px, linear-gradient(207deg, #222 5px, transparent 5px) 10px 5px / 20px 20px,
+    linear-gradient(90deg, #1b1b1b 10px, transparent 10px) 0 0 / 20px 20px,
+    linear-gradient(#1d1d1d 25%, #1a1a1a 25%, #1a1a1a 50%, transparent 50%, transparent 75%, #242424 75%, #242424) 0 0 / 20px 20px; }
+  .p-chevron { opacity: .16; background:
+    linear-gradient(135deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px, linear-gradient(225deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px,
+    linear-gradient(315deg, #fff 25%, transparent 25%) 0 0 / 120px 120px, linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 120px 120px; }
+  .p-ropes { background:
+    linear-gradient(transparent 0 calc(30% - 9px), rgba(255,255,255,.22) calc(30% - 9px) calc(30% + 9px), transparent 0),
+    linear-gradient(transparent 0 calc(52% - 9px), rgba(255,255,255,.22) calc(52% - 9px) calc(52% + 9px), transparent 0),
+    linear-gradient(transparent 0 calc(74% - 9px), rgba(255,255,255,.22) calc(74% - 9px) calc(74% + 9px), transparent 0); }
+  .p-checker { opacity: .08; background: repeating-conic-gradient(#fff 0 25%, transparent 0 50%) 0 0 / 90px 90px; transform: rotate(-25deg) scale(1.6); }
+  .p-felt { opacity: .22; background:
+    repeating-linear-gradient(45deg, rgba(0,0,0,.6) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,.25) 0 1px, transparent 1px 5px); }
+  .pname { position: absolute; left: 24px; bottom: 18px; z-index: 5; font-size: 22px; color: rgba(255,255,255,.6); letter-spacing: 2px; text-transform: uppercase; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   .sub { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 104px; line-height: 1; font-weight: 900; font-style: italic;
     letter-spacing: 6px; text-transform: uppercase; transform: skewX(-10deg); text-shadow: 0 6px 0 rgba(0,0,0,.45); }
@@ -41,7 +59,7 @@
 <body>
 <div id="stage">
   <div id="ring">
-    <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="speed"></div>
+    <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern" id="pattern"></div>
     <div class="sub">Now playing</div>
     <div class="label" id="label"></div>
     <div class="name n1" id="n1"></div>
@@ -49,6 +67,7 @@
     <div class="name n2" id="n2"></div>
   </div>
   <div class="flash" id="flash"></div>
+  <div class="pname" id="pname"></div>
 </div>
 <script>
 const PAIRS = [
@@ -61,6 +80,7 @@ const PAIRS = [
   ['Константинопольский', 'Alexander the Great', 'Final'],
 ];
 const HOLD_MS = 4500;
+const PATTERNS = ['halftone', 'carbon', 'chevron', 'ropes', 'checker', 'felt']; // a new one on every round
 const $ = (id) => document.getElementById(id);
 
 // Same as the board: fit the 1920×1080 stage into what is really visible (TV browsers zoom pages).
@@ -108,6 +128,9 @@ function play() {
   $('label').textContent = label;
   setName($('n1'), a);
   setName($('n2'), b);
+  const pat = PATTERNS[(i - 1) % PATTERNS.length];
+  $('pattern').className = `pattern p-${pat}`;
+  $('pname').textContent = `pattern: ${pat}`;
   const T1 = 120; // player 1 punches in
   const T2 = 420; // player 2 answers
   const TV = 820; // VS slams down

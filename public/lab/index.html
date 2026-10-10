@@ -4,31 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cuba Libre · Lab</title>
-<!-- Animation playground, not part of the app: fake data. Now: the «Now playing» call screen.
+<!-- Animation playground, not part of the app: fake data. Now: the «Now playing» call screen, fight-night style.
      The slide transition tried here earlier is in git history and on the board (public/board/app.js). -->
 <style>
-  :root { --ink: #13213a; --muted: #6b7894; --blue: #2f6fcf; --red: #d21034; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
-  body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); }
-  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: #fff; overflow: hidden; }
-  .sub { position: absolute; left: 0; right: 0; top: 170px; text-align: center; font-size: 110px; line-height: 1; font-weight: 900; color: var(--blue); letter-spacing: 8px; text-transform: uppercase; }
-  .label { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 40px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; }
-  /* each name sits centred in its half; it is moved in with a transform from the other side of the screen */
-  .name { position: absolute; width: 840px; height: 154px; text-align: center; font-size: 140px; line-height: 1.1; font-weight: 800; text-transform: uppercase; white-space: nowrap; will-change: transform; }
-  /* different heights: the names never overlap, even when they cross in the middle (154 px lines, 46 px apart) */
-  .n1 { left: 60px; top: 440px; }
-  .n2 { right: 60px; top: 640px; }
-  .vs { position: absolute; left: 0; right: 0; top: 563px; text-align: center; font-size: 90px; font-weight: 900; color: var(--red); will-change: transform; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #fff; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #0b0d14; }
+  #ring { position: absolute; inset: -60px; will-change: transform; } /* shaken on impacts; bigger than the stage so the edges never show */
+  /* red corner left, blue corner right, split on a diagonal */
+  .corner { position: absolute; inset: 0; }
+  .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 45%, transparent 45.1%); }
+  .blue { background: linear-gradient(115deg, transparent 54.9%, #1d4fbf 55%, #0a1f5c 100%); }
+  .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 45%, #0b0d14 45.1%, #0b0d14 54.9%, transparent 55%); }
+  /* speed lines */
+  .speed { position: absolute; inset: 0; opacity: .14; background: repeating-linear-gradient(115deg, transparent 0 46px, #fff 46px 50px); }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .sub { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 104px; line-height: 1; font-weight: 900; font-style: italic;
+    letter-spacing: 6px; text-transform: uppercase; transform: skewX(-10deg); text-shadow: 0 6px 0 rgba(0,0,0,.45); }
+  .label { position: absolute; left: 0; right: 0; top: 262px; text-align: center; font-size: 38px; font-weight: 800; font-style: italic; color: #ffd400;
+    text-transform: uppercase; letter-spacing: 6px; }
+  /* names: different heights, they cross without touching */
+  .name { position: absolute; width: 860px; height: 170px; text-align: center; font-size: 150px; line-height: 170px; font-weight: 900; font-style: italic;
+    text-transform: uppercase; white-space: nowrap; will-change: transform; text-shadow: 0 8px 0 rgba(0,0,0,.5), 0 0 40px rgba(0,0,0,.35); }
+  .n1 { left: 70px; top: 420px; }
+  .n2 { right: 70px; top: 640px; }
+  .vs { position: absolute; left: 0; right: 0; top: 548px; text-align: center; font-size: 120px; line-height: 1; font-weight: 900; font-style: italic;
+    color: #ffd400; -webkit-text-stroke: 4px #000; text-shadow: 0 8px 0 #000; will-change: transform; }
 </style>
 </head>
 <body>
 <div id="stage">
-  <div class="sub">Now playing</div>
-  <div class="label" id="label"></div>
-  <div class="name n1" id="n1"></div>
-  <div class="vs" id="vs">VS</div>
-  <div class="name n2" id="n2"></div>
+  <div id="ring">
+    <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="speed"></div>
+    <div class="sub">Now playing</div>
+    <div class="label" id="label"></div>
+    <div class="name n1" id="n1"></div>
+    <div class="vs" id="vs">VS</div>
+    <div class="name n2" id="n2"></div>
+  </div>
+  <div class="flash" id="flash"></div>
 </div>
 <script>
 const PAIRS = [
@@ -37,8 +52,7 @@ const PAIRS = [
   ['Alexander the Great', 'Lena', 'Group C'],
   ['Timur', 'Sergey', 'Semi-final 1'],
 ];
-const ENTER_MS = 1300; // names fly in
-const HOLD_MS = 4500; // then the screen stays
+const HOLD_MS = 4500;
 const $ = (id) => document.getElementById(id);
 
 // Same as the board: fit the 1920×1080 stage into what is really visible (TV browsers zoom pages).
@@ -57,8 +71,20 @@ fit();
 function setName(el, text) {
   el.textContent = text;
   el.style.fontSize = '';
-  let size = 140;
+  let size = 150;
   while (size > 50 && el.scrollWidth > el.clientWidth + 1) el.style.fontSize = `${(size -= 4)}px`;
+}
+
+// Impact: the whole ring jolts, a white flash.
+function impact(at, power) {
+  $('ring').animate([
+    { transform: 'none' },
+    { transform: `translate(${-power}px, ${power * 0.6}px) rotate(-.4deg)`, offset: 0.15 },
+    { transform: `translate(${power * 0.7}px, ${-power * 0.5}px) rotate(.3deg)`, offset: 0.35 },
+    { transform: `translate(${-power * 0.35}px, ${power * 0.25}px)`, offset: 0.6 },
+    { transform: 'none' },
+  ], { duration: 380, delay: at, easing: 'ease-out' });
+  $('flash').animate([{ opacity: power / 60 }, { opacity: 0 }], { duration: 260, delay: at, easing: 'ease-out' });
 }
 
 let i = 0;
@@ -67,22 +93,29 @@ function play() {
   $('label').textContent = label;
   setName($('n1'), a);
   setName($('n2'), b);
-  // Player 1 comes from beyond the right edge and lands in the left half, player 2 the other way round.
-  // They cross in the middle; a small overshoot at the end, then settle.
-  const fly = (from, over) => [
-    { transform: `translateX(${from}px)`, easing: 'cubic-bezier(.2,.7,.3,1)' },
-    { transform: `translateX(${over}px)`, offset: 0.82, easing: 'ease-in-out' },
-    { transform: 'translateX(0)' },
+  const T1 = 120; // player 1 punches in
+  const T2 = 420; // player 2 answers
+  const TV = 820; // VS slams down
+  const FLY = 330; // very fast flight
+  // From beyond the opposite edge, leaning into the move, slight stretch; lands with a hard stop and recoil.
+  const punch = (from, dir) => [
+    { transform: `translateX(${from}px) skewX(${-dir * 22}deg) scaleX(1.25)`, easing: 'cubic-bezier(.5,0,.9,.4)' },
+    { transform: `translateX(${-dir * 50}px) skewX(${dir * 10}deg) scaleX(.92)`, offset: 0.78, easing: 'ease-out' },
+    { transform: 'translateX(0) skewX(0) scaleX(1)' },
   ];
-  $('n1').animate(fly(1920, -40), { duration: ENTER_MS, fill: 'backwards' });
-  $('n2').animate(fly(-1920, 40), { duration: ENTER_MS, fill: 'backwards' });
-  // VS pops in once the names have landed.
+  $('n1').animate(punch(1920, 1), { duration: FLY, delay: T1, fill: 'backwards' });
+  $('n2').animate(punch(-1920, -1), { duration: FLY, delay: T2, fill: 'backwards' });
+  impact(T1 + FLY * 0.78, 22);
+  impact(T2 + FLY * 0.78, 22);
   $('vs').animate([
-    { transform: 'scale(0)', opacity: 0 },
-    { transform: 'scale(1.35)', opacity: 1, offset: 0.6 },
-    { transform: 'scale(1)', opacity: 1 },
-  ], { duration: 450, delay: ENTER_MS - 150, easing: 'ease-out', fill: 'backwards' });
-  setTimeout(play, ENTER_MS + HOLD_MS);
+    { transform: 'scale(6) rotate(-12deg)', opacity: 0, easing: 'cubic-bezier(.6,0,.9,.5)' },
+    { transform: 'scale(.85) rotate(4deg)', opacity: 1, offset: 0.7 },
+    { transform: 'scale(1) rotate(0)', opacity: 1 },
+  ], { duration: 340, delay: TV, fill: 'backwards' });
+  impact(TV + 240, 36);
+  // Header and label hit first.
+  $('label').animate([{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 250, fill: 'backwards' });
+  setTimeout(play, TV + 600 + HOLD_MS);
 }
 play();
 </script>

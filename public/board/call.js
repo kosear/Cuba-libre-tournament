@@ -4,7 +4,7 @@
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
-  'halftone', 'carbon', 'chevron', 'ropes', 'checker', 'felt', 'sunburst', 'stripes',
+  'halftone', 'carbon', 'chevron', 'checker', 'felt', 'sunburst', 'stripes',
   'dots', 'crosshatch', 'zigzag', 'argyle', 'grid', 'plaid', 'triangles',
 ];
 const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
@@ -61,10 +61,6 @@ const CSS = `
 .p-chevron { opacity: .16; background:
   linear-gradient(135deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px, linear-gradient(225deg, #fff 25%, transparent 25%) -60px 0 / 120px 120px,
   linear-gradient(315deg, #fff 25%, transparent 25%) 0 0 / 120px 120px, linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 120px 120px; }
-.p-ropes { background:
-  linear-gradient(transparent 0 calc(30% - 9px), rgba(255,255,255,.22) calc(30% - 9px) calc(30% + 9px), transparent 0),
-  linear-gradient(transparent 0 calc(52% - 9px), rgba(255,255,255,.22) calc(52% - 9px) calc(52% + 9px), transparent 0),
-  linear-gradient(transparent 0 calc(74% - 9px), rgba(255,255,255,.22) calc(74% - 9px) calc(74% + 9px), transparent 0); }
 .p-checker { opacity: .08; background: repeating-conic-gradient(#fff 0 25%, transparent 0 50%) 0 0 / 90px 90px; transform: rotate(-25deg) scale(1.6); }
 .p-felt { opacity: .22; background:
   repeating-linear-gradient(45deg, rgba(0,0,0,.6) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,.25) 0 1px, transparent 1px 5px); }

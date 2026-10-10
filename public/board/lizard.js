@@ -3,21 +3,44 @@
 // the body bends and the tail waves in step with a trot (diagonal legs together), feet stay planted while on the
 // ground. It runs in dashes with short stops, one of them a longer sit (1-45 s, mostly short), looks around while stopped, then leaves.
 // The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
+// Every run it comes in a different colour (the Bali one, blue, red, green...).
+// A sit over 4 s may turn into a hunt (70% catch, 15% a funny miss): a butterfly (butterfly.js) lands in front of
+// it, the gecko turns to it, freezes with a twitching tail tip, creeps closer in small steps and lunges. A catch:
+// the butterfly struggles in its jaws, a head shake tears a wing off (it flutters down and lies there), the gecko
+// works the prey in with a few bites, swallows with its eyes squeezed shut (lizards push food down with their eyes)
+// and licks its lips. A miss: a snap at the air, a look after the butterfly and a lick over the eye (geckos do that).
+// The butterfly also just flies by on its own now and then.
+
+import { createButterfly, drawButterfly } from '/board/butterfly.js';
 
 const W = 1920;
 const H = 1080;
 const PERIOD_MIN = 7 * 60 * 1000;
 const PERIOD_MAX = 13 * 60 * 1000;
+const BUTTERFLY_MIN = 3 * 60 * 1000; // a butterfly just flying by
+const BUTTERFLY_MAX = 8 * 60 * 1000;
+// TEMP demo for watching on the TV: a gecko every 10 s, every run a hunt, every second hunt a miss,
+// a butterfly flying by every 10 s. Set to false to get the normal intervals back.
+const DEMO = true;
+const REACH = 64; // px, how far the head shoots forward in a lunge
 const SEG = 12; // px between spine points
 const N = 26; // spine points: 0-3 head, 4 neck, 5 shoulders, 11 hips, 12-25 tail
 const SHOULDER = 5;
 const HIP = 11;
 const STRIDE = 100; // px travelled per full gait cycle
 const BOX = 600; // canvas size, the gecko is drawn around its middle
-const BODY = '#7d95b5';
-const OUTLINE = '#3e4f66';
-const SPOT = '#f07a3a';
-const LIGHT = '#c9d6e6';
+// colours: body, outline, spots, tail bands; the first is the real Bali tokay
+const COLORS = [
+  ['#7d95b5', '#3e4f66', '#f07a3a', '#c9d6e6'],
+  ['#2f6fd6', '#173a73', '#ffb13b', '#a9c9ff'], // blue
+  ['#c8372d', '#6e1813', '#ffd23f', '#f2a59c'], // red
+  ['#4f9a3a', '#24501a', '#f05a3a', '#bfe6a8'], // green
+  ['#7a4fc0', '#3d2366', '#f6c33a', '#cdb8f0'], // violet
+  ['#e0b52a', '#6f5510', '#d8432a', '#fff0b0'], // yellow
+  ['#3b3d44', '#141518', '#f07a3a', '#8e929c'], // black
+  ['#e9e3d4', '#8d8371', '#f08a3a', '#ffffff'], // albino
+  ['#1fa59c', '#0d524d', '#ff7a4a', '#a8ece6'], // turquoise
+];
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const smooth = (x) => x * x * (3 - 2 * x);
@@ -29,37 +52,63 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
   return 11 * (1 - (i - 12) / 14) ** 0.8 + 1.5;
 });
 
-/** Mounts the gecko layer into `root`. Returns { stop }. `?lizard` in the page address: every 15 s, for testing. */
+/**
+ * Mounts the gecko layer into `root`. Returns { stop }.
+ * Testing: `?lizard` in the page address runs the gecko every 15 s and a butterfly every 20 s;
+ * `?lizard=hunt` also makes every run a hunt.
+ */
 export function startLizard(root) {
-  const test = new URLSearchParams(location.search).has('lizard');
-  const period = () => (test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX)); // random, so it is never expected
+  const mode = new URLSearchParams(location.search).get('lizard');
+  const test = mode !== null;
+  const huntTest = mode === 'hunt';
+  const huntAll = huntTest || DEMO;
+  const period = () => (DEMO ? 10000 : test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX)); // random, so it is never expected
+  const bPeriod = () => (DEMO ? 10000 : test ? 20000 : rand(BUTTERFLY_MIN, BUTTERFLY_MAX));
   const el = document.createElement('canvas');
   el.className = 'lizard';
   el.width = el.height = BOX;
   el.hidden = true;
   root.append(el);
   const ctx = el.getContext('2d');
+  const bf = createButterfly(root);
   let timer = setTimeout(run, test ? 2000 : period());
+  let bTimer = setTimeout(flyBy, test ? 8000 : bPeriod());
   let raf = 0;
+  let last = 0;
+  let g = null; // the current run
+  let lastColor = -1;
+  let hunts = 0;
 
   function run() {
     timer = setTimeout(run, period());
-    if (raf) return;
-    const g = makeRun();
+    if (g) return;
+    g = makeRun();
     el.hidden = false;
-    let last = performance.now();
-    const frame = (now) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      if (!advance(g, dt)) {
-        el.hidden = true;
-        raf = 0;
-        return;
-      }
-      draw(g);
-      raf = requestAnimationFrame(frame);
-    };
+    wake();
+  }
+  function flyBy() {
+    bTimer = setTimeout(flyBy, bPeriod());
+    if (bf.active || g?.hunt) return;
+    bf.wander();
+    wake();
+  }
+  // one loop for both, running only while one of them is on screen
+  function wake() {
+    if (raf) return;
+    last = performance.now();
     raf = requestAnimationFrame(frame);
+  }
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (g && !advance(g, dt)) {
+      g = null;
+      el.hidden = true;
+    }
+    if (g) draw(g);
+    const flying = bf.update(dt);
+    if (flying) bf.draw();
+    raf = g || flying ? requestAnimationFrame(frame) : 0;
   }
 
   // ---------- the path: a cubic curve from one edge to the opposite one, sampled by arc length ----------
@@ -89,11 +138,13 @@ export function startLizard(root) {
     const spots = [];
     for (let i = SHOULDER; i < 22; i += rand(1.2, 2.2)) spots.push([i, rand(-0.6, 0.6), rand(3, 5.5) * (i < HIP + 2 ? 1 : 0.75)]);
     const stops = Math.floor(rand(1, 4));
+    lastColor = (lastColor + 1 + Math.floor(Math.random() * (COLORS.length - 1))) % COLORS.length; // never twice in a row
     return {
       pts, lens, total: lens[200], s: 0, v: 0,
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
-      sit: 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
-      t: 0, yaw: 0, yawTo: 0, spots,
+      col: COLORS[lastColor],
+      sit: huntAll ? stops : 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
+      t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
     };
   }
 
@@ -132,15 +183,145 @@ export function startLizard(root) {
       g.until = long ? 1 + 44 * Math.random() ** 4 : rand(0.7, 1.8);
       g.look = long ? g.until - rand(1, 2) : g.until * rand(0.3, 0.6); // when the head turns again
       g.yawTo = rand(-0.4, 0.4);
+      if (long && huntAll) g.until = rand(6, 10);
+      const r = Math.random();
+      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.7 : r < 0.7);
     } else if (g.mode === 'stop') {
-      if (g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
-      if (g.until <= 0) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = rand(550, 750); g.yawTo = 0; }
+      const busy = g.hunt && !['wait', 'call'].includes(g.hunt.phase); // eyes on the butterfly
+      if (!busy && g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
+      if (g.hunt) hunt(g, dt);
+      if (g.until <= 0 && !g.hunt) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = rand(550, 750); g.yawTo = 0; }
     }
-    const target = g.mode === 'run' ? g.top : 0;
+    const target = g.mode === 'run' ? g.top : g.creep;
     g.v += (target - g.v) * (1 - Math.exp(-dt * 14)); // geckos start and stop almost at once
     g.s += g.v * dt;
     g.yaw += (g.yawTo - g.yaw) * (1 - Math.exp(-dt * 10));
     return g.s < g.total + N * SEG + 60;
+  }
+
+  // ---------- the hunt ----------
+  const CREEP = 36; // px the gecko creeps up before the lunge
+  const clampYaw = (a) => Math.max(-0.6, Math.min(0.6, a));
+
+  /** Angle between where the unturned head points and `target`, seen from the neck. */
+  function aim(g, target, s = g.s) {
+    const [nx, ny] = at(g, s - 4 * SEG);
+    const [hx, hy] = at(g, s);
+    const [fx, fy] = unit(hx - nx, hy - ny);
+    const [tx, ty] = unit(target[0] - nx, target[1] - ny);
+    return Math.atan2(fx * ty - fy * tx, fx * tx + fy * ty);
+  }
+
+  function startHunt(g, caught) {
+    // the butterfly sits a little to one side, just within reach of the nose once the gecko has crept up
+    const a = rand(-0.4, 0.4);
+    const s = g.s + CREEP;
+    const [nx, ny] = at(g, s - 4 * SEG);
+    const [hx, hy] = at(g, s);
+    const [fx, fy] = unit(hx - nx, hy - ny);
+    const d = 4 * SEG + 7 + REACH - 4;
+    const target = [nx + (fx * Math.cos(a) - fy * Math.sin(a)) * d, ny + (fx * Math.sin(a) + fy * Math.cos(a)) * d];
+    if (target[0] < 60 || target[0] > W - 60 || target[1] < 60 || target[1] > H - 60) return;
+    // a long sit: the butterfly comes later, so the hunt ends well before the sit does
+    g.hunt = { caught, target, phase: 'wait', t: 0, start: g.until > 12 ? rand(0, g.until - 9) : 0 };
+  }
+
+  function hunt(g, dt) {
+    const h = g.hunt;
+    h.t += dt;
+    const t = h.t;
+    const next = (phase) => { h.phase = phase; h.t = 0; };
+    if (h.phase === 'wait' && t >= h.start) {
+      next('call');
+      bf.summon(h.target, () => { next('watch'); h.watch = rand(0.8, 1.8); });
+    } else if (h.phase === 'watch') {
+      // head turned to it, frozen, only the tail tip twitches
+      g.yawTo = clampYaw(aim(g, h.target));
+      g.twitch = 1;
+      if (t > h.watch) { next('creep'); h.s0 = g.s; }
+    } else if (h.phase === 'creep') {
+      // slow steps with pauses, head locked on the butterfly
+      g.yawTo = clampYaw(aim(g, h.target));
+      const done = g.s - h.s0 >= CREEP;
+      g.creep = done ? 0 : Math.sin(t * 3.5) > -0.2 ? 40 : 0;
+      if (done && g.v < 2 && Math.abs(g.yaw - g.yawTo) < 0.04) {
+        next('lunge');
+        if (!h.caught) bf.flee(at(g, g.s - 4 * SEG)); // it takes off just as the gecko moves
+      }
+    } else if (h.phase === 'lunge') {
+      g.reach = t < 0.08 ? smooth(t / 0.08) : t < 0.16 ? 1 : t < 0.5 ? 1 - smooth((t - 0.16) / 0.34) : 0;
+      if (h.caught && !h.prey && t >= 0.08) {
+        h.prey = bf.grab();
+        if (!h.prey) h.caught = false;
+        else Object.assign(h.prey, { depth: 0, span: 1, crumple: 0, torn: 0 });
+      }
+      if (t >= 0.5) { g.twitch = 0; h.base = g.yaw; next('after'); }
+    } else if (h.phase !== 'after') {
+      // waiting for the butterfly to come
+    } else if (h.caught) {
+      eat(g, h, t);
+    } else {
+      // missed: freeze, look after it, lick the eye
+      const p = bf.pos;
+      if (p && t > 0.25) g.yawTo = clampYaw(aim(g, p));
+      g.lick = t > 1 && t < 1.6 ? Math.sin(((t - 1) / 0.6) * Math.PI) : 0;
+      if (t >= 2.2) { g.hunt = null; g.look = g.until - rand(1, 2); }
+    }
+  }
+
+  /** The catch, `t` seconds after the lunge. */
+  function eat(g, h, t) {
+    const prey = h.prey;
+    g.chew = 0;
+    g.reach = 0;
+    if (t < 1) {
+      // the butterfly beats its wings in the jaws, the gecko whips its head side to side to stun it
+      g.yaw = g.yawTo = h.base + 0.4 * Math.sin(t * 26) * (1 - t) ** 0.6;
+      prey.span = 0.2 + 0.8 * Math.abs(Math.sin(t * 43 + Math.sin(t * 11)));
+      if (t > 0.55 && !prey.torn) {
+        // a whip tears one wing off: it flies off to the side the head is swinging to
+        prey.torn = Math.cos(t * 26) > 0 ? 1 : -1;
+        const [x, y, heading, s] = preyPlace(g, prey);
+        const [sx, sy] = [-Math.sin(heading) * prey.torn, Math.cos(heading) * prey.torn]; // that wing's side
+        bf.dropWing(x + sx * 24 * s, y + sy * 24 * s, heading, prey.kind, prey.torn, [sx * 190, sy * 190]);
+      }
+    } else if (t < 1.6) {
+      // a pause: the prey still twitches now and then
+      g.yawTo = h.base * 0.5;
+      prey.span = 0.6 + 0.4 * Math.max(0, Math.sin(t * 34)) * (Math.sin(t * 5) > 0.3 ? 1 : 0);
+    } else if (t < 4) {
+      // four bites, each one jerks the prey further in; the wings crumple and fold
+      const k = Math.floor((t - 1.6) / 0.6);
+      const u = (t - 1.6) / 0.6 - k;
+      g.chew = u < 0.3 ? Math.sin((u / 0.3) * Math.PI) : 0;
+      g.reach = 0.08 * g.chew;
+      prey.depth = (k + smooth(Math.min(1, u / 0.25))) / 4;
+      prey.crumple = prey.depth;
+      prey.span = (0.65 + 0.3 * Math.max(0, Math.sin(t * 27)) * (1 - prey.depth)) * (1 - prey.depth * 0.5);
+    } else {
+      h.prey = null;
+      g.yawTo = 0;
+      // swallowing: a bulge goes down the throat, the eyes squeezed shut push the food down
+      g.gulp = t < 4.9 ? 3 + ((t - 4) / 0.9) * 6 : 0;
+      g.squint = t < 5 ? Math.sin(Math.min(1, (t - 4) / 1) * Math.PI) : 0;
+      // then the tongue flicks over the lips, left and right
+      g.lips = t > 5.1 && t < 6 ? (t - 5.1) / 0.9 : 0;
+      if (t >= 6.3) { g.hunt = null; g.look = g.until - rand(1, 2); }
+    }
+  }
+
+  /** Where the prey is drawn: centre, heading (pointing out of the mouth), scale. */
+  function preyPlace(g, prey, p = spine(g)) {
+    const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
+    // held by the thorax, the abdomen in the mouth, head and wings outside; each bite pulls it in under the head
+    const s = 0.85 * (1 - 0.35 * prey.depth);
+    const out = 6 + 2 - 3 * s - prey.depth * 40;
+    return [p[0][0] + hx * out, p[0][1] + hy * out, Math.atan2(hy, hx), s];
+  }
+
+  function unit(x, y) {
+    const d = Math.hypot(x, y) || 1;
+    return [x / d, y / d];
   }
 
   // ---------- drawing ----------
@@ -153,6 +334,7 @@ export function startLizard(root) {
       let off = 0;
       if (i >= 3 && i <= 13) off = 13 * pace * Math.sin(phi) * Math.sin((Math.PI * (i - 3)) / 10); // the body's S-bend
       if (i > 13) off = (18 * pace + 5) * Math.sin(phi - (i - 13) * 0.45 + g.t * (1 - pace) * 2) * ((i - 13) / 12);
+      if (i > 20 && g.twitch) off += 5 * Math.sin(g.t * 16) * ((i - 20) / 5); // the tail tip twitches while it stalks
       p.push([x - dy * off, y + dx * off]);
     }
     // looking around: the head turns on the neck
@@ -163,6 +345,14 @@ export function startLizard(root) {
       const rx = p[i][0] - nx;
       const ry = p[i][1] - ny;
       p[i] = [nx + rx * c - ry * sn, ny + rx * sn + ry * c];
+    }
+    // the lunge: the head shoots forward, the neck stretches
+    if (g.reach) {
+      const [hx, hy] = unit(p[0][0] - p[4][0], p[0][1] - p[4][1]);
+      for (let i = 0; i < 6; i++) {
+        const k = g.reach * REACH * Math.min(1, (6 - i) / 2.5);
+        p[i] = [p[i][0] + hx * k, p[i][1] + hy * k];
+      }
     }
     return p;
   }
@@ -200,12 +390,20 @@ export function startLizard(root) {
     return out;
   }
 
-  function outline(p) {
+  /** Half-width at point i: chewing works the jaws, a gulp is a bulge going down the throat. */
+  function width(g, i) {
+    let w = WIDTH[i];
+    if (g.chew && i <= 3) w *= 1 + 0.1 * g.chew; // the jaws open for a bite
+    if (g.gulp) w += 5 * Math.exp(-((i - g.gulp) ** 2) / 1.2);
+    return w;
+  }
+
+  function outline(g, p) {
     const left = [];
     const right = [];
     for (let i = 0; i < N; i++) {
       const [, , nx, ny] = frameAt(p, i);
-      const w = WIDTH[i];
+      const w = width(g, i);
       left.push([p[i][0] + nx * w, p[i][1] + ny * w]);
       right.push([p[i][0] - nx * w, p[i][1] - ny * w]);
     }
@@ -263,9 +461,10 @@ export function startLizard(root) {
   }
 
   function draw(g) {
+    const [BODY, OUTLINE, SPOT, LIGHT] = g.col;
     const p = spine(g);
     const ls = legs(g, p);
-    const body = outline(p);
+    const body = outline(g, p);
     const cx = Math.round(p[8][0]);
     const cy = Math.round(p[8][1]);
     el.style.transform = `translate(${cx - BOX / 2}px, ${cy - BOX / 2}px)`;
@@ -281,6 +480,15 @@ export function startLizard(root) {
     ctx.fillStyle = 'rgba(0,0,0,0.16)';
     ctx.fill();
     ctx.restore();
+
+    // the prey in the jaws, drawn under the head so the part already inside is hidden
+    const prey = g.hunt?.prey;
+    if (prey) {
+      const [x, y, heading, s] = preyPlace(g, prey, p);
+      const o = { missing: prey.torn, crumple: prey.crumple };
+      drawButterfly(ctx, x + 5, y + 7, heading, s, prey.span, null, o);
+      drawButterfly(ctx, x, y, heading, s, prey.span, prey.kind, o);
+    }
 
     drawLegs(ls, OUTLINE, 3);
     drawLegs(ls, BODY, 0);
@@ -319,21 +527,55 @@ export function startLizard(root) {
     const [dx, dy, nx, ny] = frameAt(p, 1);
     const ex = (p[1][0] + p[2][0]) / 2;
     const ey = (p[1][1] + p[2][1]) / 2;
+    // swallowing, they are squeezed shut and pulled into the head
+    const open = 1 - 0.9 * g.squint;
+    const ang = Math.atan2(dy, dx);
     for (const side of [1, -1]) {
-      const x = ex + nx * side * 15;
-      const y = ey + ny * side * 15;
+      const x = ex + nx * side * (15 - 3 * g.squint);
+      const y = ey + ny * side * (15 - 3 * g.squint);
       ctx.beginPath();
-      ctx.arc(x, y, 6.5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#d9c94a';
+      ctx.ellipse(x, y, 6.5, 6.5 * open, ang, 0, 2 * Math.PI);
+      ctx.fillStyle = open > 0.3 ? '#d9c94a' : BODY;
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = OUTLINE;
       ctx.stroke();
+      if (open > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(x - dx * 4.5 * open, y - dy * 4.5 * open);
+        ctx.lineTo(x + dx * 4.5 * open, y + dy * 4.5 * open);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#111';
+        ctx.stroke();
+      }
+    }
+
+    const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
+    const nose = [p[0][0] + hx * 6, p[0][1] + hy * 6];
+    // after eating: the tongue flicks out and sweeps over the lips, left and right
+    if (g.lips > 0) {
+      const len = 16 * Math.sin(g.lips * Math.PI);
+      const sw = Math.sin(g.lips * 2 * Math.PI) * 0.9;
+      const tx = hx * Math.cos(sw) - hy * Math.sin(sw);
+      const ty = hx * Math.sin(sw) + hy * Math.cos(sw);
       ctx.beginPath();
-      ctx.moveTo(x - dx * 4.5, y - dy * 4.5);
-      ctx.lineTo(x + dx * 4.5, y + dy * 4.5);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#111';
+      ctx.moveTo(nose[0] - hx * 4, nose[1] - hy * 4);
+      ctx.lineTo(nose[0] + tx * len, nose[1] + ty * len);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#e8708f';
+      ctx.stroke();
+    }
+    // after a miss: the tongue comes out and wipes over the eye
+    if (g.lick > 0) {
+      const eye = [ex + nx * 15, ey + ny * 15];
+      const tip = [nose[0] + (eye[0] - nose[0]) * g.lick, nose[1] + (eye[1] - nose[1]) * g.lick];
+      ctx.beginPath();
+      ctx.moveTo(nose[0], nose[1]);
+      ctx.quadraticCurveTo(nose[0] + nx * 14 * g.lick + hx * 8, nose[1] + ny * 14 * g.lick + hy * 8, tip[0], tip[1]);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#e8708f';
       ctx.stroke();
     }
   }
@@ -341,6 +583,8 @@ export function startLizard(root) {
   return {
     stop() {
       clearTimeout(timer);
+      clearTimeout(bTimer);
+      bf.eaten();
       cancelAnimationFrame(raf);
       raf = 0;
       el.remove();

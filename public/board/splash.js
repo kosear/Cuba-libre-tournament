@@ -688,7 +688,9 @@ export function startSplash(root) {
   function schedule(now) {
     // The cue comes for a resting ball once its wait is over, whatever else is rolling; one cue per wait.
     const resting = balls.find((b) => b.resting);
-    if (resting && !resting.cueSent && now - resting.restAt > resting.restDelay && balls.length < MAX_BALLS) {
+    // Never two identical balls on screen: numbers are unique (freeNumber), and a new cue waits until the last one is gone.
+    const cueOnScreen = balls.some((b) => b.num === 0);
+    if (resting && !resting.cueSent && !cueOnScreen && now - resting.restAt > resting.restDelay && balls.length < MAX_BALLS) {
       const tries = resting.cueTries;
       spawnCue(resting);
       if (resting.cueTries === tries) resting.cueSent = true; // a cue is on its way (a retry only resets the wait)

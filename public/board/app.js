@@ -43,12 +43,11 @@ fitStage();
 // ---------- helpers ----------
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const FLAG = '<svg class="flag" viewBox="0 0 100 100"><polygon points="0,0 100,50 0,100" fill="#D21034"/><polygon points="30.0,35.0 33.5,45.1 44.3,45.4 35.7,51.9 38.8,62.1 30.0,56.0 21.2,62.1 24.3,51.9 15.7,45.4 26.5,45.1" fill="#fff"/></svg>';
 
 // ---------- layout: built once ----------
 // The header and the queue panel are not part of a slide: a slide change only swaps #content and the title,
 // so the header never blinks and the queue keeps scrolling. The splash is a layer on top of everything.
-stage.innerHTML = `<main><header class="top">${FLAG}<img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre">
+stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre">
   <div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
   <div class="content" id="content"></div></main>
   <aside class="queue" id="queue"><div class="qhead">Queue</div><div id="qtop"></div>

@@ -105,11 +105,7 @@ aside.queue { background: var(--card); border-left: 1px solid var(--line); displ
 .qhead { font-size: 30px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--blue); }
 #qtop { display: flex; flex-direction: column; gap: 14px; } /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }
-/* Now playing is low-key (people at the table know it), Next stands out, After next is grey. */
-.qbig.now { background: #f3f5f8; color: #8a94a8; padding: 12px 20px; }
-.qbig.now .qlabel { font-size: 15px; margin-bottom: 4px; }
-.qbig.now .qp { font-size: 26px; }
-.qbig.now .qvs { font-size: 15px; margin: 0; }
+/* Next stands out, After next is grey. The match being played is not shown. */
 .qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
 .qbig.after { background: #eef1f6; color: #5d6779; }
 .qbig.after .qp { font-size: 34px; }

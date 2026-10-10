@@ -1,7 +1,7 @@
 // A tokay gecko (the Bali one: blue-grey with orange spots) darts across the splash now and then.
 // Drawn procedurally on a small canvas that moves with a CSS transform: a spine of points follows a curved path,
 // the body bends and the tail waves in step with a trot (diagonal legs together), feet stay planted while on the
-// ground. It runs in dashes with short stops, looks around while stopped, then leaves the screen.
+// ground. It runs in dashes with short stops, one of them a longer sit (1-7 s), looks around while stopped, then leaves.
 // The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
 
 const W = 1920;
@@ -88,9 +88,11 @@ export function startLizard(root) {
     }
     const spots = [];
     for (let i = SHOULDER; i < 22; i += rand(1.2, 2.2)) spots.push([i, rand(-0.6, 0.6), rand(3, 5.5) * (i < HIP + 2 ? 1 : 0.75)]);
+    const stops = Math.floor(rand(1, 4));
     return {
       pts, lens, total: lens[200], s: 0, v: 0,
-      mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops: Math.floor(rand(1, 4)),
+      mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
+      sit: 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
       t: 0, yaw: 0, yawTo: 0, spots,
     };
   }
@@ -124,12 +126,13 @@ export function startLizard(root) {
     const inside = hx > 250 && hx < W - 250 && hy > 200 && hy < H - 200;
     if (g.mode === 'run' && g.until <= 0 && g.stops > 0 && inside) {
       g.mode = 'stop';
+      const long = g.stops === g.sit;
       g.stops--;
-      g.until = rand(0.7, 1.8);
-      g.look = g.until * rand(0.3, 0.6); // turns the head once more halfway through
+      g.until = long ? rand(1, 7) : rand(0.7, 1.8);
+      g.look = long ? g.until - rand(1, 2) : g.until * rand(0.3, 0.6); // when the head turns again
       g.yawTo = rand(-0.4, 0.4);
     } else if (g.mode === 'stop') {
-      if (g.look && g.until < g.look) { g.look = 0; g.yawTo = rand(-0.4, 0.4); }
+      if (g.look > 0 && g.until < g.look) { g.look -= rand(1.2, 2.5); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
       if (g.until <= 0) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = rand(550, 750); g.yawTo = 0; }
     }
     const target = g.mode === 'run' ? g.top : 0;

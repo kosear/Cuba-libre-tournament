@@ -64,8 +64,8 @@
   .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
     color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
   /* fire round: flames along the bottom, embers, a dragon behind each name */
-  #fire, .dragon { display: none; }
-  #ring.fire #fire, #ring.fire .dragon { display: block; }
+  #fire { display: none; }
+  #ring.fire #fire { display: block; }
   #ring.fire.real #fire { display: none; }
   /* realistic fire: a small canvas simulated pixel by pixel, stretched and smoothed */
   #realfire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 460px; z-index: 1; display: none; pointer-events: none; }
@@ -85,9 +85,16 @@
     10% { opacity: 1; }
     100% { transform: translate(var(--dx), -700px); opacity: 0; }
   }
-  .dragon { position: absolute; z-index: 1; font-size: 380px; line-height: 1; opacity: .9; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
-  .dragon.d1 { left: 40px; top: 230px; }
-  .dragon.d2 { right: 40px; top: 520px; }
+  /* mascots: an emoji animal or thing with a hat and something in hand, one per player, behind the names */
+  .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
+  .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
+  .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
+  .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
+  .mascot.m1 { left: 70px; top: 170px; }
+  .mascot.m2 { right: 70px; top: 700px; }
+  .mname { position: absolute; z-index: 1; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); }
+  .mname.m1 { left: 80px; top: 120px; }
+  .mname.m2 { right: 80px; bottom: 120px; }
 </style>
 </head>
 <body>
@@ -99,7 +106,8 @@
     </svg>
     <div id="fire"></div>
     <canvas id="realfire" width="170" height="64"></canvas>
-    <div class="dragon d1" id="d1">🐉</div><div class="dragon d2" id="d2">🐉</div>
+    <div class="mascot m1" id="d1"></div><div class="mascot m2" id="d2"></div>
+    <div class="mname m1" id="mn1"></div><div class="mname m2" id="mn2"></div>
     <div class="sub">Now playing</div>
     <div class="label" id="label"></div>
     <div class="name n1" id="n1"></div>
@@ -190,6 +198,22 @@ const realFire = (() => {
     stop() { running = false; },
   };
 })();
+
+// ---------- mascots: [body, hat, item, name] ----------
+const MASCOTS = [
+  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐱', '👑', '🥊', 'King Cat'], ['🐸', '🕶️', '', 'Cool Frog'],
+  ['🐷', '🎓', '📚', 'Professor Pig'], ['🐔', '🪖', '🥊', 'Army Chicken'], ['🦆', '🧢', '', 'Duck in a Cap'],
+  ['🐻', '🤠', '🌵', 'Cowboy Bear'], ['🦜', '🏴‍☠️', '⚔️', 'Pirate Parrot'], ['🐵', '', '🍌', 'Banana Monkey'],
+  ['🐼', '🎀', '🎋', 'Panda with a Bow'], ['🦖', '', '🥊', 'Tiny-arms T-Rex'], ['🐙', '🎩', '🎱', 'Octopus Hustler'],
+  ['🦈', '🕶️', '🎱', 'Pool Shark'], ['🐢', '⛑️', '', 'Safety Turtle'], ['🦄', '', '🎸', 'Rock Unicorn'],
+  ['🐧', '🎩', '🌹', 'Penguin in a Tux'], ['🐮', '🤠', '🥛', 'Cowboy Cow'], ['🦊', '🕶️', '💰', 'Sly Fox'],
+  ['🐭', '', '🧀', 'Mouse with Cheese'], ['🐉', '', '🔥', 'Dragon'], ['🥔', '🕶️', '🍟', 'Cool Potato'],
+];
+function setMascot(n, m) {
+  const [body, hat, item, title] = m;
+  $(`d${n}`).innerHTML = `${body}${hat ? `<span class="hat">${hat}</span>` : ''}${item ? `<span class="item">${item}</span>` : ''}`;
+  $(`mn${n}`).textContent = title;
+}
 
 // ---------- idle motion after the names have landed: one variant per round ----------
 const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
@@ -285,13 +309,19 @@ function play() {
   const idle = IDLES[(i - 1) % IDLES.length];
   idleAnims.forEach((x) => x.cancel());
   idleAnims = [];
-  $('pname').textContent = `pattern: ${pat} · divider: ${bolt ? 'lightning' : 'band'} · idle: ${idle}${fire ? ` · fire: ${real ? 'real' : 'cartoon'}` : ''}`;
-  if (fire) {
-    // Dragons swoop in from the edges right behind the names; the left one faces the middle.
-    $('d1').animate([{ transform: 'translateX(-700px) scaleX(-1) rotate(-12deg)' }, { transform: 'translateX(0) scaleX(-1) rotate(0)' }],
-      { duration: 500, delay: 60, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' });
-    $('d2').animate([{ transform: 'translateX(700px) rotate(12deg)' }, { transform: 'translateX(0) rotate(0)' }],
-      { duration: 500, delay: 360, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' });
+  $('pname').textContent = `pattern: ${pat} · divider: ${bolt ? 'lightning' : 'band'} · idle: ${idle}${fire ? ` · fire: ${real ? 'real' : 'cartoon'}` : ''}`; // mascot names are on screen
+  // Two different random mascots swoop in from the edges right behind the names, then bob a little.
+  const m1 = MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
+  let m2;
+  do m2 = MASCOTS[Math.floor(Math.random() * MASCOTS.length)]; while (m2 === m1);
+  setMascot(1, m1);
+  setMascot(2, m2);
+  for (const [n, from, delay] of [[1, -700, 60], [2, 700, 360]]) {
+    $(`d${n}`).animate([{ transform: `translateX(${from}px) rotate(${from > 0 ? 14 : -14}deg)` }, { transform: 'translateX(0) rotate(0)' }],
+      { duration: 500, delay, easing: 'cubic-bezier(.2,.8,.3,1.4)', fill: 'backwards' });
+    $(`mn${n}`).animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: delay + 400, fill: 'backwards' });
+    idleAnims.push($(`d${n}`).animate([{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(-16px) rotate(${n === 1 ? 4 : -4}deg)` }, { transform: 'translateY(0) rotate(0)' }],
+      { duration: 900 + n * 120, delay: delay + 500, iterations: Infinity, easing: 'ease-in-out' }));
   }
   const T1 = 120; // player 1 punches in
   const T2 = 420; // player 2 answers

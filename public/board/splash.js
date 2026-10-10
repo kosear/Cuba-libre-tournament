@@ -703,7 +703,7 @@ export function startSplash(root) {
     if (!slowBusy && r < 0.25) ok = spawnSlow();
     else if (r < 0.65) ok = spawnRoll(true);
     else ok = spawnRoll(false);
-    nextSpawn = now + (ok ? rand(800, 2500) : 400);
+    nextSpawn = now + (ok ? rand(1500, 5000) : 500); // the pace keeps it to 1-2 balls on screen; MAX_BALLS is only a safety ceiling
   }
 
   // Elastic squash of the logo: squeezed along the hit direction, stretched across, damped spring back.

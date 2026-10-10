@@ -1,0 +1,19 @@
+{
+  "name": "cubalibre",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bar TV display + admin panel. Node + Express + SQLite + SSE.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch --env-file=.env src/server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,7 @@
+# Pull latest code for instance %i from GitHub (one shot, fired by the timer).
+[Unit]
+Description=Cuba Libre git sync (%i)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /srv/cubalibre/%i/deploy/sync.sh %i

@@ -1,0 +1,17 @@
+# Installed to /etc/caddy/Caddyfile by deploy/setup.sh.
+# Caddy obtains and renews Let's Encrypt certificates automatically.
+# flush_interval -1: do not buffer responses, required for SSE.
+
+cubalibre.su, www.cubalibre.su {
+	encode gzip
+	reverse_proxy 127.0.0.1:3000 {
+		flush_interval -1
+	}
+}
+
+dev.cubalibre.su {
+	encode gzip
+	reverse_proxy 127.0.0.1:3001 {
+		flush_interval -1
+	}
+}

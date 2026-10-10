@@ -1,0 +1,17 @@
+# App instance. %i = prod | dev, code in /srv/cubalibre/%i.
+# --watch restarts the process when a source file changes.
+[Unit]
+Description=Cuba Libre app (%i)
+After=network.target
+
+[Service]
+User=cubalibre
+Group=cubalibre
+WorkingDirectory=/srv/cubalibre/%i
+ExecStart=/usr/bin/node --watch --env-file=.env src/server.js
+Restart=always
+RestartSec=1
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

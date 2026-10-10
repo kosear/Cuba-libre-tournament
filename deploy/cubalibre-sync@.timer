@@ -1,0 +1,11 @@
+# Check GitHub every 15 seconds.
+[Unit]
+Description=Cuba Libre git sync timer (%i)
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=15s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

@@ -21,8 +21,8 @@ const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
-const HEAVY_CHANCE = 0.05; // one ball in 20 hits the logo 3 times harder (push, spin, squash)
-const HEAVY_POWER = 3;
+const FAST_CHANCE = 0.05; // one rolling ball in 20 is shot 3 times faster: it hits the logo 3 times harder (push,
+const FAST_SPEED = 3; // spin and squash all follow the speed of the hit)
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
@@ -379,7 +379,6 @@ export function startSplash(root) {
     const q = unit(cross(n, randomDir()));
     const t = num > 8 ? q : unit(cross(n, randomDir()));
     const b = {
-      power: num && Math.random() < HEAVY_CHANCE ? HEAVY_POWER : 1,
       num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
       x, y, vx, vy, friction, resting: false, restAt: 0, entered: false,
@@ -459,7 +458,8 @@ export function startSplash(root) {
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
       const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
       const rally = Math.random() < RALLY_CHANCE;
-      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * (rally ? RALLY_SPEED : 1);
+      const fast = Math.random() < FAST_CHANCE;
+      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * (fast ? FAST_SPEED : rally ? RALLY_SPEED : 1);
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
       b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
@@ -547,7 +547,7 @@ export function startSplash(root) {
   // ---------- physics ----------
 
   function wobble(nx, ny, strength) {
-    wobbles.push({ nx, ny, amp: Math.min(0.13, strength / 18000), t0: performance.now() }); // ~0.05 for a usual hit, more for a heavy one
+    wobbles.push({ nx, ny, amp: Math.min(0.13, strength / 18000), t0: performance.now() }); // ~0.05 for a usual hit, more for a fast one
   }
 
   function step(b, dt) {
@@ -586,7 +586,7 @@ export function startSplash(root) {
       if (vn < 0) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
-        const hit = -vn * b.power; // a heavy ball hits harder
+        const hit = -vn; // speed into the logo: everything below follows it
         wobble(n[0], n[1], hit);
         drift.vx -= n[0] * hit * LOGO_PUSH; // n points out of the logo, the push goes the other way
         drift.vy -= n[1] * hit * LOGO_PUSH;

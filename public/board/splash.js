@@ -23,6 +23,8 @@ const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
 const FAST_CHANCE = 0.05; // one rolling ball in 20 is shot 3 times faster: it hits the logo 3 times harder (push,
 const FAST_SPEED = 3; // spin and squash all follow the speed of the hit)
+const ROCKET_CHANCE = 0.01; // and one in 100 is a rocket: 10 times faster, 10 times harder
+const ROCKET_SPEED = 10;
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
@@ -458,8 +460,9 @@ export function startSplash(root) {
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
       const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
       const rally = Math.random() < RALLY_CHANCE;
-      const fast = Math.random() < FAST_CHANCE;
-      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * (fast ? FAST_SPEED : rally ? RALLY_SPEED : 1);
+      const luck = Math.random();
+      const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : rally ? RALLY_SPEED : 1;
+      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * boost;
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
       b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;

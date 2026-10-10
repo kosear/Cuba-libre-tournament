@@ -2,11 +2,13 @@
 // Drawn procedurally on a small canvas that moves with a CSS transform: a spine of points follows a curved path,
 // the body bends and the tail waves in step with a trot (diagonal legs together), feet stay planted while on the
 // ground. It runs in dashes with short stops, looks around while stopped, then leaves the screen.
-// The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MS).
+// The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
 
 const W = 1920;
 const H = 1080;
-const PERIOD_MS = 10 * 60 * 1000;
+// TEMPORARY while testing on the TV: about once a minute; back to 7-13 minutes afterwards.
+const PERIOD_MIN = 50 * 1000; // 7 * 60 * 1000
+const PERIOD_MAX = 70 * 1000; // 13 * 60 * 1000
 const SEG = 12; // px between spine points
 const N = 26; // spine points: 0-3 head, 4 neck, 5 shoulders, 11 hips, 12-25 tail
 const SHOULDER = 5;
@@ -31,18 +33,18 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
 /** Mounts the gecko layer into `root`. Returns { stop }. `?lizard` in the page address: every 15 s, for testing. */
 export function startLizard(root) {
   const test = new URLSearchParams(location.search).has('lizard');
-  const period = test ? 15000 : PERIOD_MS;
+  const period = () => (test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX)); // random, so it is never expected
   const el = document.createElement('canvas');
   el.className = 'lizard';
   el.width = el.height = BOX;
   el.hidden = true;
   root.append(el);
   const ctx = el.getContext('2d');
-  let timer = setTimeout(run, test ? 2000 : period);
+  let timer = setTimeout(run, test ? 2000 : period());
   let raf = 0;
 
   function run() {
-    timer = setTimeout(run, period);
+    timer = setTimeout(run, period());
     if (raf) return;
     const g = makeRun();
     el.hidden = false;

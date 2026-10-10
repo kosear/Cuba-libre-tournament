@@ -71,16 +71,17 @@ fit();
 const W = 1920 - 540 - 56; // content width
 const T = {
   // Cartoon: wind up a little the other way (anticipation), whoosh, small overshoot and settle.
+  // One strip: both slides get the same keyframes, the new one is always exactly one width further.
   'Cartoon': (o, n, d) => {
-    const back = 70 * d; // wind-up distance
-    const x = (v) => ({ transform: `translateX(${v}px)` });
-    const o1 = { ...x(back), offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }; // slow start of the whoosh
-    const n1 = { ...x(d * W + back), offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' };
-    const opt = { duration: DURATION, fill: 'forwards' };
-    return [
-      o.animate([{ ...x(0), easing: 'cubic-bezier(.3,0,.4,1)' }, o1, x(-d * W)], opt),
-      n.animate([{ ...x(d * W), easing: 'cubic-bezier(.3,0,.4,1)' }, n1, { ...x(-d * 24), offset: 0.85, easing: 'ease-in-out' }, x(0)], opt),
+    const track = [ // position of the strip, as a share of the way (0 = old in place, -1 = new in place)
+      { p: 0, offset: 0, easing: 'cubic-bezier(.3,0,.4,1)' },
+      { p: 70 / W, offset: 0.3, easing: 'cubic-bezier(.55,0,.75,.2)' }, // wind-up to the right
+      { p: -1 - 24 / W, offset: 0.85, easing: 'ease-in-out' }, // whoosh, overshoot
+      { p: -1, offset: 1 }, // settle
     ];
+    const frames = (shift) => track.map((k) => ({ transform: `translateX(${d * (k.p + shift) * W}px)`, offset: k.offset, easing: k.easing ?? 'linear' }));
+    const opt = { duration: DURATION, fill: 'forwards' };
+    return [o.animate(frames(0), opt), n.animate(frames(1), opt)];
   },
   'Push (both move)': (o, n, d) => [
     o.animate([{ transform: 'none' }, { transform: `translateX(${-d * W}px)` }], opts()),

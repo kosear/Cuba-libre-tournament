@@ -85,17 +85,22 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .duel .stats { margin-top: 30px; font-size: 34px; color: var(--muted); line-height: 1.6; font-variant-numeric: tabular-nums; }
 .duel .stats b { color: var(--ink); }
 .duel .vs { font-size: 64px; font-weight: 900; color: var(--red); }
-.duel .sub { grid-column: 1 / -1; text-align: center; font-size: 34px; color: var(--blue); font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
-.duel.next .pname { font-size: 96px; }
+.duel .sub { grid-column: 1 / -1; text-align: center; font-size: 110px; line-height: 1; color: var(--blue); font-weight: 900; letter-spacing: 6px; text-transform: uppercase; }
+.duel .pname { text-transform: uppercase; letter-spacing: 1px; }
+.duel .pname { font-size: 76px; }
+.duel.next .pname { font-size: 84px; }
 
-/* Плей-офф */
-.bracket { height: 100%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 40px 90px; align-items: center; }
-.bm { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 30px; }
-.bm .t { font-size: 20px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
-.bm .p { font-size: 36px; font-weight: 700; padding: 8px 0; color: #a8b2c4; font-style: italic; border-top: 1px solid var(--line); }
-.bm .p:first-of-type { border-top: none; }
-.bm.final { border-color: var(--red); }
+/* Плей-офф: турнирная сетка */
+.bracket { position: relative; height: 100%; }
+.bracket svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bracket .col-t { position: absolute; top: 0; font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.bm { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+.bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; }
+.bm .p { display: flex; justify-content: space-between; align-items: center; font-size: 32px; font-weight: 700; padding: 14px 22px; color: #a8b2c4; font-style: italic; border-top: 1px solid var(--line); }
+.bm .p span.s { font-style: normal; font-size: 18px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 10px; }
+.bm.final { border-color: var(--red); border-width: 3px; }
 .bm.final .t { color: var(--red); }
+.bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
 
 /* Блок очереди (справа, всегда виден) */
@@ -133,3 +138,13 @@ body.splash { grid-template-columns: 1fr; }
 .splash-wrap .video { margin-top: 40px; font-size: 22px; color: #a8b2c4; }
 
 .mock-note { position: absolute; left: 48px; bottom: 12px; font-size: 15px; color: #a8b2c4; }
+
+/* Стартовый экран */
+.choose { display: flex; gap: 36px; justify-content: center; margin-top: 56px; }
+.choose .opt { width: 440px; border-radius: 24px; padding: 34px 30px; text-align: center; background: #fff; border: 3px solid var(--line); box-shadow: 0 6px 24px rgba(19,33,58,.08); }
+.choose .opt .ic { font-size: 64px; line-height: 1; }
+.choose .opt .nm { font-size: 38px; font-weight: 800; margin-top: 16px; }
+.choose .opt .ds { font-size: 22px; color: var(--muted); margin-top: 8px; }
+.choose .opt.tv { background: var(--blue); border-color: var(--blue); color: #fff; }
+.choose .opt.tv .ds { color: #dce8fb; }
+.choose .opt.admin .nm { color: var(--red); }

@@ -1,7 +1,13 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Play-off</title><link rel="stylesheet" href="tv.css"><script src="data.js"></script></head><body><main><script>document.write(headerHtml('Play-off'))</script>
 <div class="content"><div class="bracket">
-<div class="bm"><div class="t">Semi-final 1</div><div class="p">Seed 1 — TBD</div><div class="p">Seed 4 — TBD</div></div>
-<div class="bm third"><div class="t">3rd place</div><div class="p">Loser SF1</div><div class="p">Loser SF2</div></div>
-<div class="bm"><div class="t">Semi-final 2</div><div class="p">Seed 2 — TBD</div><div class="p">Seed 3 — TBD</div></div>
-<div class="bm final"><div class="t">Final</div><div class="p">Winner SF1</div><div class="p">Winner SF2</div></div>
+<div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:760px">Final</div>
+<svg class="lines" viewBox="0 0 1324 888" preserveAspectRatio="none">
+<path d="M520 205 H640 V385 H760" fill="none" stroke="#9db8e3" stroke-width="4"/>
+<path d="M520 565 H640 V385" fill="none" stroke="#9db8e3" stroke-width="4"/>
+<path d="M640 475 V700 H760" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
+</svg>
+<div class="bm" style="left:0;top:105px;width:520px"><div class="t">Semi-final 1</div><div class="p">TBD <span class="s">Seed 1</span></div><div class="p">TBD <span class="s">Seed 4</span></div></div>
+<div class="bm" style="left:0;top:465px;width:520px"><div class="t">Semi-final 2</div><div class="p">TBD <span class="s">Seed 2</span></div><div class="p">TBD <span class="s">Seed 3</span></div></div>
+<div class="bm final" style="left:760px;top:285px;width:564px"><div class="t">Final</div><div class="p">Winner SF1</div><div class="p">Winner SF2</div></div>
+<div class="bm third" style="left:760px;top:610px;width:564px"><div class="t">3rd place · played before the final</div><div class="p">Loser SF1</div><div class="p">Loser SF2</div></div>
 </div></div></main><script>document.write(queueHtml())</script></body></html>

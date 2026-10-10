@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Now playing</title><link rel="stylesheet" href="tv.css"><script src="data.js"></script></head><body><main><script>document.write(headerHtml('Now playing'))</script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Now playing</title><link rel="stylesheet" href="tv.css"><script src="data.js"></script></head><body><main><script>document.write(headerHtml('Group A'))</script>
 <div class="content"><div class="duel" id="d"></div></div></main><script>document.write(queueHtml())</script>
 <script>const [g,a,b]=QUEUE[0];const st=(n)=>{const s=statsOf(n);return `<div class="side"><div class="pname">${n.replace(' ','<br>')}</div><div class="stats">Frames: <b>${s.frames}</b><br>Win: <b>${s.win}</b><br>Balls: <b>+${s.balls}</b></div></div>`};
-document.getElementById('d').innerHTML=`<div class="sub">Group ${g}</div>`+st(a)+'<div class="vs">VS</div>'+st(b)</script></body></html>
+document.getElementById('d').innerHTML='<div class="sub">Now playing</div>'+st(a)+'<div class="vs">VS</div>'+st(b)</script></body></html>

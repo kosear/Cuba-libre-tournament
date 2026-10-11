@@ -128,7 +128,7 @@ const CSS = `
 .fight .tape { position: absolute; left: -240px; width: 2400px; height: 100px; z-index: 5; pointer-events: none; display: none; overflow: hidden;
   background: #ff2d95; box-shadow: 0 8px 24px rgba(0,0,0,.45), 0 0 28px rgba(255,45,149,.55); /* neon pink */
   border-top: 15px solid transparent; border-bottom: 15px solid transparent;
-  border-image: repeating-linear-gradient(45deg, #111 0 18px, #ff2d95 18px 36px) 15; }
+  border-image: repeating-linear-gradient(45deg, #ffd400 0 18px, #ff2d95 18px 36px) 15; } /* yellow stripes along the edges */
 .fight.important .tape { display: block; }
 .fight .tape.t1 { top: -9px; transform: rotate(-1deg); } /* its top stripes just off screen, the words whole */
 .fight.important .sub { top: 152px; } .fight.important .label { top: 284px; } /* room under the top tape */

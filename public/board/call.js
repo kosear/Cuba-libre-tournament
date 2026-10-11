@@ -51,13 +51,13 @@ const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
 .fight .ring { position: absolute; inset: -60px; will-change: transform; } /* bigger than the stage: shaking never shows the edges */
 .fight .corner { position: absolute; inset: 0; }
-/* everything but the two halves: one group, so the way out fades it as a single layer */
-.fight .stuff { position: absolute; inset: 0; }
+/* everything but the background (halves, pattern, orange band): one group above it, so the way out fades it as a single layer */
+.fight .stuff { position: absolute; inset: 0; z-index: 1; }
 .fight.leaving .rays, .fight.leaving .rays svg { animation-play-state: paused; } /* frozen on the way out */
 .fight .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 49%, transparent 49.1%); }
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
-.fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
+.fight .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
 /* anime speed lines: 12 SVG triangles in ONE layer just a bit bigger than the stage (2112×1188, centred), so the TV's
    graphics chip keeps a single small texture. The fan sways ±1.5° (never a full turn: the rays' ends stay off screen)
    and jitters in small jerks. Only transforms change, nothing is repainted. */
@@ -208,9 +208,9 @@ function mascotFor(p, players = []) {
 
 // The slow way out at the end of the screen: the action slows down to a stop, all but the background fades out,
 // then the two halves part. LEAVE_SLOW ms in all, taken from the end of the screen's time (app.js).
-const SLOWDOWN = 2000; // seconds 14-16 of the 20 s screen
-const FADE = 2000; // 16-18
-const PART = 2000; // 18-20
+const SLOWDOWN = 1000; // seconds 17-18 of the 20 s screen
+const FADE = 1000; // 18-19
+const PART = 1000; // 19-20
 export const LEAVE_SLOW = SLOWDOWN + FADE + PART;
 
 export function createCall(root) {
@@ -219,8 +219,8 @@ export function createCall(root) {
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div>
-      <div class="stuff"><div class="gap"></div><div class="pattern"></div>${rays()}
+      <div class="corner red"></div><div class="corner blue"></div><div class="pattern"></div><div class="gap"></div>
+      <div class="stuff">${rays()}
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div></div>
@@ -393,7 +393,7 @@ export function createCall(root) {
     },
     /**
      * The way out, then done(). slow (at the end of the screen, LEAVE_SLOW ms): the action slows down to a stop
-     * (SLOWDOWN), all but the background fades out as one layer (FADE), then the red and blue halves part to the sides
+     * (SLOWDOWN), all but the background (halves, pattern, orange band) fades out (FADE), then the red and blue halves part to the sides
      * like doors and show the board underneath (PART); the countdown runs to the end. Fast (~0.8 s, the match left the
      * queue early): the same, at once. Few layers move: a heavier way out (names, VS, tapes flying off one by one) was
      * too much for the TV.
@@ -421,12 +421,13 @@ export function createCall(root) {
         atRest = true;
         moving().forEach((a) => a.pause()); // at rest
         fight.classList.add('leaving');
-        for (const el of [q('.stuff'), q('.tape.t1'), q('.tape.t2')]) go(el, [{ opacity: 1 }, { opacity: 0 }], fade, 0, 'ease-in-out');
+        for (const el of [q('.stuff'), q('.pattern'), q('.tape.t1'), q('.tape.t2')]) go(el, [{ opacity: 1 }, { opacity: 0 }], fade, 0, 'ease-in-out');
         // the halves still cover it; once they part, the board shows (the call box in app.js has a dark background too)
         fight.style.background = 'transparent';
         root.style.background = 'transparent';
         const ease = slow ? 'cubic-bezier(.6,0,.4,1)' : 'cubic-bezier(.5,0,.8,.5)';
-        go(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], part, fade + (slow ? 0 : 50), ease);
+        // the orange band leaves with the red half
+        for (const el of [q('.red'), q('.gap')]) go(el, [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], part, fade + (slow ? 0 : 50), ease);
         go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], part, fade + (slow ? 0 : 50), ease);
         go(q('.bar'), [{ opacity: 1 }, { opacity: 0 }], slow ? 400 : 150, slow ? fade + part - 400 : 0, 'ease-out');
         later(() => {

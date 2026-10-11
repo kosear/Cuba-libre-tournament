@@ -92,11 +92,11 @@ export function createPoster(root) {
       <div class="pz-caption">Cuba Libre · Pool Tournament · ${eveningDate()}</div>
       <div class="pz-flash"></div>`;
     fitName();
-    // 2nd and 3rd: one line each, 76 px down to 36, within their side of the trophy
+    // 2nd and 3rd: one line each, 95 px down to 40, within their side of the trophy
     root.querySelectorAll('.pz-sname span').forEach((node) => {
-      let size = 76;
+      let size = 95;
       node.style.fontSize = `${size}px`;
-      while (size > 36 && node.offsetWidth > 600) node.style.fontSize = `${(size -= 2)}px`;
+      while (size > 40 && node.offsetWidth > 660) node.style.fontSize = `${(size -= 2)}px`;
     });
   }
 

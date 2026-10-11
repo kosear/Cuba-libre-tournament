@@ -35,7 +35,7 @@
 //   the robbed one looks after it, licks its eye and gives chase;
 // - fight: slow dashes towards each other with freezes, a frozen stare (only the tail tips curl), then at once:
 //   of two sizes the small one wins in SMALL_WINS (the other turns and flees, the winner snaps after it and chases
-//   it off), of one size both dart at each other and... nuzzle, snout against snout, comic hearts floating up,
+//   it off), of one size both dart at each other and... nuzzle, snout against snout, one slow rub, comic hearts,
 //   then walk off to opposite sides;
 // - family: a mother and her baby of the same colour, the baby trotting after her on her path; she catches a butterfly,
 //   the baby runs up alongside, tears off a wing for itself and eats it.
@@ -1144,7 +1144,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           if (!sc.base) {
             sc.base = [a.yaw, b.yaw];
             sc.first = Math.random() < 0.5 ? a : b;
-            sc.len = rand(1.6, 2.2);
+            sc.len = rand(2.1, 2.6); // the rub (0.6-1.9 s), then a moment still, snout to snout
             sc.hearts = { t: 0, n: 1 + Math.floor(Math.random() * 3), at: null };
           }
           sc.hearts.t += dt;
@@ -1153,7 +1153,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const o = other(f);
           // the necks stretch out slowly, one a little before the other, until the nose tips meet; worked out every
           // frame, so the snouts stay together while the heads sway
-          const tw = 0.3 * Math.sin(Math.max(0, u - 0.6) * 5) * smooth(Math.min(1, Math.max(0, u - 0.6) / 0.5));
+          // one slow rub, cheek along cheek: the heads glide to one side together and back, once
+          const tw = 0.2 * Math.sin(Math.PI * smooth(Math.min(1, Math.max(0, u - 0.6) / 1.3)));
           a.yaw = a.yawTo = sc.base[0] + tw;
           b.yaw = b.yawTo = sc.base[1] - tw; // facing each other: both heads swing to the same side
           const ra = a.reach;

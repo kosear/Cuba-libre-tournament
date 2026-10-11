@@ -20,13 +20,13 @@ const MASCOTS = [
   ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
   ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
-  ['🦊', '', '💋', 'Foxy Lady'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
+  ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
-  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐻', '', '🍯', 'Honey Bear'], ['🦜', '', '⚔️', 'Pirate Parrot'],
-  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Octopus Hustler'], ['🐢', ['⛑️', -0.74, 0.8, -20], '', 'Safety Turtle'],
+  ['🐶', ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '📉', 'Bear Market'], ['🦜', '', '⚔️', 'Pirate Parrot'],
+  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', ['⛑️', -0.74, 0.8, -20], '', 'Safety Turtle'],
   ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🥊', 'Boxing Kangaroo'],
   ['🐐', '🎓', '🎺', 'Jazz Goat'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🍹', 'Party Flamingo'], ['🐊', '', '🦷', 'Smiley Croc'],
-  ['🦔', '', '🎈', 'Birthday Hedgehog'], ['🐳', ['🎩', -0.44, 0.36, -10], '🎻', 'Whale Maestro'], ['🐌', ['⛑️', -0.33, 0.18, -15], '🏎️', 'Racing Snail'],
+  ['🦔', '', '🎈', 'Birthday Hedgehog'], ['🐋', '', '🎱', 'Killer Whale'], ['🐌', '', '✉️', 'Snail Mail'],
   ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
   ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],

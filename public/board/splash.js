@@ -155,6 +155,12 @@ async function logoWithLettering(color) {
   return logoUrls.get(color);
 }
 
+// Diagnostics for a TV (address parameters): ?fps shows frames per second and the ms our code takes per frame;
+// light=flat lights every ball from one fixed direction (no lamp), shadow=flat keeps one plain shadow per ball.
+const DIAG = new URLSearchParams(location.search);
+const FLAT_LIGHT = DIAG.get('light') === 'flat';
+const FLAT_SHADOW = DIAG.get('shadow') === 'flat';
+
 export function startSplash(root) {
   root.innerHTML = '';
   root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
@@ -394,7 +400,13 @@ export function startSplash(root) {
    * has turned, so it is kept and recomputed only after the ball has moved LIGHT_STEP px (a TV has a slow CPU).
    */
   const LIGHT_STEP = 30;
+  // the highlight as a table over N·H from 0.6 to 1: no pow per pixel
+  const SPEC_LUT = Float32Array.from({ length: 1025 }, (_, i) => {
+    const h = 0.6 + (0.4 * i) / 1024;
+    return Math.pow(h, 140) * 0.55 + Math.pow(h, 16) * 0.07;
+  });
   function lightAt(x, y) {
+    if (FLAT_LIGHT) { x = LAMP[0] + 600; y = LAMP[1] + 400; } // one fixed direction for every ball
     const L = lampDir(x, y);
     const Hk = Math.hypot(L[0], L[1], L[2] + 1);
     const H = [L[0] / Hk, L[1] / Hk, (L[2] + 1) / Hk]; // half-way between the light and the viewer
@@ -406,7 +418,7 @@ export function startSplash(root) {
       const ndl = p.x * L[0] + p.y * L[1] + p.z * L[2];
       const ndh = p.x * H[0] + p.y * H[1] + p.z * H[2];
       lit[j] = (0.58 + 0.45 * Math.max(0, ndl)) * bright; // soft: the dark side stays fairly light
-      sp[j] = ndh > 0.6 ? (Math.pow(ndh, 140) * 0.55 + Math.pow(ndh, 16) * 0.07) * bright * 255 : 0; // nothing below
+      sp[j] = ndh > 0.6 ? SPEC_LUT[((ndh - 0.6) * 2560) | 0] * bright * 255 : 0; // nothing below 0.6
     }
     return { x, y, lit, sp };
   }
@@ -414,7 +426,7 @@ export function startSplash(root) {
   function drawBall(b) {
     if (!b.dirty) return;
     b.dirty = false;
-    if (!b.light || Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.light = lightAt(b.x, b.y);
+    if (!b.light || (!FLAT_LIGHT && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP)) b.light = lightAt(b.x, b.y);
     const { lit: LIT, sp: SP } = b.light;
     const out = b.img.data;
     const [nx, ny, nz] = b.n;
@@ -471,6 +483,7 @@ export function startSplash(root) {
     shadow.className = 'ball-shadow';
     const contact = document.createElement('div');
     contact.className = 'ball-contact';
+    if (FLAT_SHADOW) contact.hidden = true;
     root.append(shadow, contact, el);
     const ctx = el.getContext('2d');
     // The number sits on the stripe: q ⟂ n, and the digit reads along the stripe (t = q).
@@ -497,11 +510,15 @@ export function startSplash(root) {
     const ang = Math.atan2(dy, dx);
     const t = far / LAMP[2]; // tan of the light's angle from the vertical
     const [ux, uy] = far ? [dx / far, dy / far] : [0, 0];
-    b.contact.style.transform = `translate(${b.x - R + ux * R * 0.1}px, ${b.y - R + uy * R * 0.1}px)`;
-    const off = R * (0.15 + 0.9 * t);
-    b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.6 * t})`;
+    if (FLAT_SHADOW) {
+      b.shadow.style.transform = `translate(${b.x - R + 24}px, ${b.y - R + 32}px)`;
+    } else {
+      b.contact.style.transform = `translate(${b.x - R + ux * R * 0.1}px, ${b.y - R + uy * R * 0.1}px)`;
+      const off = R * (0.15 + 0.9 * t);
+      b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.6 * t})`;
+    }
     // the light moves over the ball as it travels, even when it slides without turning
-    if (!b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;
+    if (!FLAT_LIGHT && !b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;
     drawBall(b);
   }
 
@@ -793,8 +810,20 @@ export function startSplash(root) {
     }
   }
 
+  const fpsEl = DIAG.has('fps') ? Object.assign(document.createElement('div'), { className: 'fps' }) : null;
+  if (fpsEl) { fpsEl.style.cssText = 'position:absolute;left:12px;top:12px;z-index:9;font:bold 28px monospace;color:#fff;background:rgba(0,0,0,.6);padding:6px 10px'; root.append(fpsEl); }
+  const fpsLog = { n: 0, t0: 0, work: 0 };
   function frame(now) {
     if (stopped) return;
+    const t1 = fpsEl ? performance.now() : 0;
+    if (fpsEl) setTimeout(() => {
+      fpsLog.n++;
+      fpsLog.work += performance.now() - t1;
+      if (now - fpsLog.t0 > 1000) {
+        fpsEl.textContent = `${Math.round((fpsLog.n * 1000) / (now - fpsLog.t0))} fps · ${(fpsLog.work / fpsLog.n).toFixed(1)} ms · ${balls.length} balls${FLAT_LIGHT ? ' · light flat' : ''}${FLAT_SHADOW ? ' · shadow flat' : ''}`;
+        fpsLog.n = 0; fpsLog.work = 0; fpsLog.t0 = now;
+      }
+    }, 0);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
 

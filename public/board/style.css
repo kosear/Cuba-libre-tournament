@@ -159,7 +159,7 @@ aside.queue { background: var(--blue); }
 .qhead { color: rgba(255,255,255,.85); }
 .qhead .qtitle { color: #fff; }
 aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY NEXT» */
-.qbig.next { background: #ff9500; color: #111; box-shadow: 0 6px 18px rgba(10,30,70,.28); } /* a vivid yellow-orange, black text, lifted off the blue */
+.qbig.next { background: #ffc21a; color: #111; box-shadow: 0 6px 18px rgba(10,30,70,.28); } /* bright amber-yellow, black text reads best on it, lifted off the blue */
 .qbig.next .qvs { color: rgba(17,17,17,.6); }
 .qbig.after { background: rgba(255,255,255,.14); color: #fff; }
 .qbig.after .qvs { color: rgba(255,255,255,.7); }

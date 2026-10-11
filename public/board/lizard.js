@@ -34,8 +34,8 @@
 // - steal: one catches a butterfly, another dashes in from the side, snatches it from its jaws and runs off with it,
 //   the robbed one looks after it, licks its eye and gives chase;
 // - fight: they meet head-on, puff up, open their mouths, lash their tails and bob their heads; of two sizes the
-//   small one wins in SMALL_WINS (the other flees, the winner chases it off), of one size it is a scuffle in a cloud
-//   of dust and both run off;
+//   small one wins in SMALL_WINS (the other flees, the winner chases it off), of one size it is a scuffle and both
+//   run off;
 // - family: a mother and her baby of the same colour, the baby trotting after her on her path; she catches a butterfly,
 //   the baby runs up alongside, tears off a wing for itself and eats it.
 // The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
@@ -1118,9 +1118,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const [pa, pb] = [headW(a), headW(b)];
           const near = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) < 85;
           for (const g of [a, b]) g.creep = near ? 0 : 160 / g.k;
-          if (near || u > 2) { sc.step = 'scuffle'; sc.t0 = sc.t; sc.dust = { at: [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2], t: 0 }; sc.base = [a.yaw, b.yaw]; }
+          if (near || u > 2) { sc.step = 'scuffle'; sc.t0 = sc.t; sc.base = [a.yaw, b.yaw]; }
         } else if (sc.step === 'scuffle') {
-          sc.dust.t += dt;
           [a, b].forEach((g, i) => {
             g.creep = 0;
             g.reach = 0.45 * Math.abs(Math.sin(u * 13 + ph[i]));
@@ -1129,7 +1128,6 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           });
           if (u > 1.8) {
             sc.step = 'gone';
-            sc.dust = null;
             // nose to nose: each turns well round, away from the other, one a moment after the other
             const sides = apart(a, b);
             const off = (g, i) => turnOff(g, sides[i] * rand(1.9, 2.2), 1100, true);
@@ -1344,24 +1342,6 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     }
   }
 
-  /** A cartoon cloud of a scuffle at `d.at` (screen px). */
-  function dust(g, d) {
-    const k = g.k;
-    for (let i = 0; i < 10; i++) {
-      const a = i * 0.63 + d.t * 2.5;
-      const r = (16 + 7 * Math.sin(d.t * 11 + i * 1.7)) / k;
-      const x = d.at[0] / k + (Math.cos(a) * (30 + 10 * Math.sin(d.t * 7 + i))) / k;
-      const y = d.at[1] / k + (Math.sin(a) * (24 + 8 * Math.cos(d.t * 9 + i))) / k;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(240,234,222,0.92)';
-      ctx.fill();
-      ctx.lineWidth = 2 / k;
-      ctx.strokeStyle = 'rgba(120,108,90,0.55)';
-      ctx.stroke();
-    }
-  }
-
   function draw(g) {
     ctx = g.cv.ctx;
     const el = g.cv.el;
@@ -1484,7 +1464,6 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       ctx.strokeStyle = OUTLINE;
       ctx.stroke();
     }
-    if (g.scene?.dust && g === g.scene.a) dust(g, g.scene.dust);
     // after eating: the tongue flicks out and sweeps over the lips, left and right
     if (g.lips > 0) {
       const len = 16 * Math.sin(g.lips * Math.PI);

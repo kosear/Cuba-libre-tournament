@@ -1419,6 +1419,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     if (g.puff && i > 4 && i <= HIP) w *= 1 + 0.16 * g.puff; // the body puffed up to look bigger, never the head
     if (g.fat && i > 4 && i < 12) w *= 1 + g.fat * Math.sin((Math.PI * (i - 4)) / 8); // the full belly, widest mid-body
     const t = g.tail;
+    if (t && i > t.end) return 0; // no tail there
     if (t && i > t.cut) w = WIDTH[t.cut] * (1 - (i - t.cut) / (t.end - t.cut + 1)) ** 0.7; // grown back: thick, then a quick taper
     return w;
   }

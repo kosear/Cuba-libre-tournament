@@ -1115,16 +1115,11 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           for (const g of both) { g.creep = 0; g.curl = 1; g.puffTo = 0.7; look(g); }
           if (u > sc.len) next(even ? 'rush' : 'break');
         } else if (sc.step === 'rush') {
-          // one size: out of the stillness both dart at each other at once
-          // they stop a neck's length apart: room for the feet to swing past the other's snout when they turn off;
-          // the jaws meet with the necks stretched
-          const far = gap() > touch + 34 * (ka + kb) + 10;
-          for (const g of both) { g.creep = far ? 600 / g.k : 0; g.curl = 0; }
-          if (!far || u > 1) {
-            for (const g of both) { g.creep = 0; g.v = 0; }
-            sc.neck = Math.max(0, (gap() - 12 * (ka + kb)) / 2); // the nose tips meet
-            next('lock');
-          }
+          // one size: out of the stillness both go at each other, quick at first, easing off as they come close;
+          // they stop a neck's length apart: room for the feet to swing past the other's snout when they turn off
+          const left = gap() - (touch + 20 * (ka + kb) + 10);
+          for (const g of both) { g.creep = Math.max(0, Math.min(450, left * 4 + 20)) / g.k; g.curl = 0; }
+          if (left < 2 || u > 2.5) { for (const g of both) g.creep = 0; next('lock'); }
         } else if (sc.step === 'break') {
           // out of the stillness the loser turns and flees; the winner snaps after it, well short, and gives chase
           if (!sc.fled) {
@@ -1156,25 +1151,37 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           if (!sc.hearts.at && u > 0.3) { const p = headW(a); const q = headW(b); sc.hearts.at = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; }
           const f = sc.first;
           const o = other(f);
-          const r = (g) => sc.neck / (REACH * g.k); // each neck covers half the gap
-          f.reach = u < 0.12 ? 1.3 * r(f) * smooth(u / 0.12) : r(f);
-          o.reach = u < 0.15 ? 0 : r(o) * smooth(Math.min(1, (u - 0.15) / 0.1));
-          const tw = u > 0.3 ? 0.3 * Math.sin((u - 0.3) * 6) : 0;
+          // the necks stretch out slowly, one a little before the other, until the nose tips meet; worked out every
+          // frame, so the snouts stay together while the heads sway
+          const tw = 0.3 * Math.sin(Math.max(0, u - 0.6) * 5) * smooth(Math.min(1, Math.max(0, u - 0.6) / 0.5));
           a.yaw = a.yawTo = sc.base[0] + tw;
           b.yaw = b.yawTo = sc.base[1] - tw; // facing each other: both heads swing to the same side
+          const ra = a.reach;
+          const rb = b.reach;
+          a.reach = b.reach = 0;
+          const pa = headW(a);
+          const pb = headW(b);
+          a.reach = ra;
+          b.reach = rb;
+          const half = Math.max(0, Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) - 6 * (ka + kb)) / 2; // the nose tips just meet
+          f.reach = (half / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
+          o.reach = (half / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
           for (const g of both) g.curl = 1;
           if (u > sc.len + 0.3) next('part');
         } else if (sc.step === 'part') {
           // they let go and walk off to opposite sides, one a moment after the other (no backing off: lizards don't)
           if (!sc.parted) {
             sc.parted = true;
-            for (const g of both) Object.assign(g, { reach: 0, waveTo: 0, puffTo: 0, curl: 0 });
-            sc.later = [0.3, () => {
+            sc.necks = [a.reach, b.reach];
+            for (const g of both) Object.assign(g, { waveTo: 0, puffTo: 0, curl: 0 });
+            sc.later = [0.4, () => {
               const sides = apart(a, b, true);
               turnOff(a, sides[0] * rand(1.9, 2.2), 650, true);
               sc.later = [0.6, () => turnOff(b, sides[1] * rand(1.9, 2.2), 650, true)];
             }];
           }
+          if (u < 0.4) { const e = 1 - smooth(u / 0.4); a.reach = sc.necks[0] * e; b.reach = sc.necks[1] * e; } // the necks draw back
+          else if (a.mode === 'stop' || b.mode === 'stop') { a.reach = b.reach = 0; }
           if (sc.hearts) sc.hearts.t += dt;
         }
       };
@@ -1317,7 +1324,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     let w = WIDTH[i];
     if (g.chew && i <= 3) w *= 1 + 0.1 * g.chew; // the jaws open for a bite
     if (g.gulp) w += 5 * Math.exp(-((i - g.gulp) ** 2) / 1.2);
-    if (g.puff && i <= HIP) w *= 1 + 0.16 * g.puff; // puffed up to look bigger
+    if (g.puff && i > 4 && i <= HIP) w *= 1 + 0.16 * g.puff; // the body puffed up to look bigger, never the head
     if (g.fat && i > 4 && i < 12) w *= 1 + g.fat * Math.sin((Math.PI * (i - 4)) / 8); // the full belly, widest mid-body
     return w;
   }
@@ -1409,14 +1416,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       ctx.bezierCurveTo(10, -15, 16, -11, 16, -4);
       ctx.bezierCurveTo(16, 4, 4, 9, 0, 14);
       ctx.closePath();
-      ctx.fillStyle = '#ff3d68';
-      ctx.fill();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#7a0f2e';
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(-8, -8, 3.5, 2.2, -0.6, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = '#ff3d68'; // flat, like a comic
       ctx.fill();
       ctx.restore();
     }

@@ -19,6 +19,8 @@
 // - run-off: the gecko dashes off with the butterfly flapping in its mouth.
 // A miss: a snap at the air, a look after the butterfly and a lick over the eye (geckos do that).
 // A wing left lying brings the next gecko within a minute: it comes to eat the wing.
+// «Gecko hour»: once in every two hours, at a random minute, for RUSH_MS the geckos come one after another (as in the
+// fast mode). The minute comes from the clock, so all screens in the bar start together and a reload changes nothing.
 // The butterfly also just flies by on its own now and then.
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
 // it, snaps it up and eats it.
@@ -43,6 +45,20 @@ const HIP = 11;
 const STRIDE = 100; // px travelled per full gait cycle
 const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
 // size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
+const SLOT_MS = 2 * 60 * 60 * 1000; // one gecko hour in every slot
+const RUSH_MS = 3 * 60 * 1000;
+const RUSH = 40; // how many times more often during it
+/** Is a gecko hour on now? Its start in each slot is a hash of the slot number: random, but the same on every screen. */
+function rushOn(now = Date.now()) {
+  const slot = Math.floor(now / SLOT_MS);
+  let x = (slot * 2654435761) >>> 0; // integer hash (xorshift-multiply)
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
+  x = (x ^ (x >>> 16)) >>> 0;
+  const start = slot * SLOT_MS + (x % (SLOT_MS - RUSH_MS));
+  return now >= start && now < start + RUSH_MS;
+}
+
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
 const SIZES = [[0.6, 0.15], [0.8, 0.25], [1, 0.3], [1.2, 0.2], [1.5, 0.1]];
 function pickSize() {
@@ -84,12 +100,14 @@ export function startLizard(root) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const fast = mode === 'fast' ? 40 : 1;
   const test = mode !== null && fast === 1;
-  const ESCAPE = fast > 1 ? 0 : 0.8; // after slipping out of the jaws, the share that gets away at the second snap
-  const CATCH = fast > 1 ? 0.7 : 0.15; // share of long sits that end in a catch; in the fast mode catches are the rule
+  // the fast mode and a gecko hour: many geckos, catches are the rule
+  const often = () => (fast > 1 ? fast : !test && !DEMO && rushOn() ? RUSH : 1);
+  const escapeP = () => (often() > 1 ? 0 : 0.8); // after slipping out of the jaws, the share that gets away at the second snap
+  const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
   const huntTest = mode === 'hunt';
   const huntAll = huntTest || DEMO;
-  const period = () => (DEMO ? 10000 : test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX) / fast); // random, so it is never expected
-  const bPeriod = () => (DEMO ? 10000 : test ? 20000 : rand(BUTTERFLY_MIN, BUTTERFLY_MAX) / fast);
+  const period = () => (DEMO ? 10000 : test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX) / often()); // random, so it is never expected
+  const bPeriod = () => (DEMO ? 10000 : test ? 20000 : rand(BUTTERFLY_MIN, BUTTERFLY_MAX) / often());
   const el = document.createElement('canvas');
   el.className = 'lizard';
   el.width = el.height = BOX;
@@ -99,6 +117,18 @@ export function startLizard(root) {
   const bf = createButterfly(root);
   let timer = setTimeout(run, test ? 2000 : period());
   let bTimer = setTimeout(flyBy, test ? 8000 : bPeriod());
+  // a gecko hour starting: the long waits of the normal pace are cut short
+  let rushing = false;
+  const rushCheck = setInterval(() => {
+    const on = often() > 1 && fast === 1;
+    if (on && !rushing) {
+      clearTimeout(timer);
+      timer = setTimeout(run, rand(1000, 5000));
+      clearTimeout(bTimer);
+      bTimer = setTimeout(flyBy, bPeriod());
+    }
+    rushing = on;
+  }, 10000);
   let raf = 0;
   let last = 0;
   let g = null; // the current run
@@ -251,7 +281,7 @@ export function startLizard(root) {
       g.yawTo = rand(-0.4, 0.4);
       if (long && huntAll) g.until = rand(6, 10);
       const r = Math.random();
-      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < CATCH);
+      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < catchP());
     } else if (g.mode === 'stop') {
       const busy = g.hunt && !['wait', 'call'].includes(g.hunt.phase); // eyes on the butterfly
       if (!busy && g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
@@ -455,7 +485,7 @@ export function startLizard(root) {
       h.k = Math.max(0.3, Math.min(1.8, (d - 6) / REACH));
       h.phase = 'lunge2';
       h.t = 0;
-      if (Math.random() < ESCAPE) { // off just in time: the snap closes on air
+      if (Math.random() < escapeP()) { // off just in time: the snap closes on air
         h.escaped = true;
         const [nx, ny] = at(g, g.s - 4 * SEG);
         bf.flee([nx * g.k, ny * g.k]);
@@ -858,6 +888,7 @@ export function startLizard(root) {
 
   return {
     stop() {
+      clearInterval(rushCheck);
       clearTimeout(timer);
       clearTimeout(bTimer);
       bf.eaten();

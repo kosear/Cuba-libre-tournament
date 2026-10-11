@@ -17,10 +17,11 @@ const PUG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 10 120 120" widt
 // Cuban Pete («They call me Cuban Pete, I'm the king of the rumba beat»): the frog with the green face of «The Mask»,
 // a Cuban straw fedora and maracas, both drawn (no straw-hat emoji, and the maracas emoji is too new for the TV).
 const PETE_HAT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.45em" height="1.45em" style="display:block"><ellipse cx="60" cy="84" rx="58" ry="17" fill="#c9a861"/><ellipse cx="60" cy="81" rx="56" ry="15" fill="#e9cf8c"/><path d="M8 80 Q60 92 112 80" fill="none" stroke="#c9a861" stroke-width="2"/><path d="M28 80 C26 58 30 36 40 30 C48 26 54 32 60 32 C66 32 72 26 80 30 C90 36 94 58 92 80 Q60 90 28 80z" fill="#e3c57f"/><path d="M40 30 C48 26 54 32 60 32 C66 32 72 26 80 30 C76 40 70 44 60 44 C50 44 44 40 40 30z" fill="#d6b56c"/><path d="M34 52 Q60 60 86 52 M31 62 Q60 71 89 62" fill="none" stroke="#caa962" stroke-width="1.6"/><path d="M29 68 Q60 79 91 68 L92 79 Q60 90 28 79z" fill="#2c211b"/><path d="M29 68 Q60 79 91 68" fill="none" stroke="#4a3a2e" stroke-width="1.5"/></svg>`;
-const MARACAS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.25em" height="1.25em" style="display:block"><g transform="rotate(-24 60 60)"><rect x="30" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="30" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="34.5" cy="38" rx="21" ry="26" fill="#e23b2e"/><path d="M15 32 Q34.5 42 54 32 M14 44 Q34.5 54 55 44" fill="none" stroke="#ffd23f" stroke-width="5"/><path d="M19 22 Q34.5 28 50 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="27" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g><g transform="rotate(22 60 60)"><rect x="80" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="80" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="84.5" cy="38" rx="21" ry="26" fill="#ffc21f"/><path d="M65 32 Q84.5 42 104 32 M64 44 Q84.5 54 105 44" fill="none" stroke="#e23b2e" stroke-width="5"/><path d="M69 22 Q84.5 28 100 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="77" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g></svg>`;
-const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.06, -8], MARACAS, 'Cuban Pete'];
+const MARACAS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.6em" height="1.6em" style="display:block"><g transform="rotate(-24 60 60)"><rect x="30" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="30" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="34.5" cy="38" rx="21" ry="26" fill="#e23b2e"/><path d="M15 32 Q34.5 42 54 32 M14 44 Q34.5 54 55 44" fill="none" stroke="#ffd23f" stroke-width="5"/><path d="M19 22 Q34.5 28 50 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="27" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g><g transform="rotate(22 60 60)"><rect x="80" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="80" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="84.5" cy="38" rx="21" ry="26" fill="#ffc21f"/><path d="M65 32 Q84.5 42 104 32 M64 44 Q84.5 54 105 44" fill="none" stroke="#e23b2e" stroke-width="5"/><path d="M69 22 Q84.5 28 100 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="77" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g></svg>`;
+const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.32, -8], [MARACAS, 0.75, -0.1, 16], 'Cuban Pete', 0.95]; // the hat above the eyes, the maracas off the body
 
-// [body, hat, prop, name]; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
+// [body, hat, prop, name, scale]; scale (optional) makes the whole mascot a little smaller or bigger; the prop can be
+// [prop, dx, dy, deg] (em of the prop) to move it off the body; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
 // whose head is not in the middle (checked against the Noto emoji the TV uses)
 const MASCOTS = [
   // nicknames with a joke, like a boxer's
@@ -245,14 +246,22 @@ export function createCall(root) {
     }
   }
 
-  function setMascot(n, [body, hat, item]) {
+  function setMascot(n, [body, hat, item, , scale = 1]) {
     const box = q(`.mascot.m${n}`);
+    // a mascot a little smaller or bigger than the rest: the font size (hat and prop follow), kept centred
+    box.style.fontSize = scale === 1 ? '' : `${300 * scale}px`;
+    box.style.marginLeft = scale === 1 ? '' : `${-150 * scale}px`;
     if (body.startsWith('<')) box.innerHTML = body; else box.textContent = body;
     if (Array.isArray(hat)) {
       const [h, dx, dy, deg] = hat;
       box.insertAdjacentHTML('beforeend', `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`);
     } else if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
-    if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);
+    if (Array.isArray(item)) {
+      // [prop, dx, dy, deg] (em of the prop): moved off the body; mirrored for the right mascot, whose prop is on its left
+      const [it, dx, dy, deg] = item;
+      const m = n === 2 ? -1 : 1;
+      box.insertAdjacentHTML('beforeend', `<span class="item" style="transform: translate(${m * dx}em, ${dy}em) rotate(${m * deg}deg)">${it}</span>`);
+    } else if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);
   }
 
   // The whole ring jolts, a white flash.

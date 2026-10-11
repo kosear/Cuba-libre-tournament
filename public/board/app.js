@@ -92,8 +92,13 @@ function fitLive(root) {
 /** Names in the big final box (play-offs): as big as fits on one line, down to 60 px. */
 function fitFinal(root) {
   root.querySelectorAll('.bm.big .p > span').forEach((name) => {
+    // room in the row: its width less the padding and whatever else stands in it (a WINNER label), with a little margin
+    const row = name.parentElement;
+    const cs = getComputedStyle(row);
+    const others = [...row.children].filter((c) => c !== name).reduce((w, c) => w + c.offsetWidth + parseFloat(cs.columnGap || 0), 0);
+    const room = row.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - others - 8;
     let size = parseFloat(getComputedStyle(name).fontSize);
-    while (size > 60 && name.scrollWidth > name.clientWidth + 1) name.style.fontSize = `${(size -= 4)}px`;
+    while (size > 60 && name.scrollWidth > room) name.style.fontSize = `${(size -= 4)}px`;
   });
 }
 
@@ -211,7 +216,9 @@ function slidePlayoff() {
     title: 'Play-off',
     // left, spread over the whole height: the semi-finals and the 3rd place match; right: only the final.
     // The lines (from the semi-finals to the final, dashed to the 3rd place match) are drawn after layout, drawBracket().
-    html: `<div class="bracket${big ? ' big' : ''}">
+    // While the semi-finals and the 3rd place match are on, the left column is wide with big names and the final gets
+    // the rest; once the final is being played, the left column goes back to normal and the final takes the room.
+    html: `<div class="bracket${big ? ' big' : ''}${big && T.current?.id !== 'final' ? ' wide' : ''}">
       <svg class="lines" aria-hidden="true"></svg>
       <div class="bcol">
         ${box('sf1', 'Semi-final 1', '')}

@@ -81,6 +81,12 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bracket .bfin { flex: none; width: 500px; }
 .bracket.big .bfin { flex: 1; width: auto; min-width: 0; display: flex; } /* never wider than the room left: a long name shrinks instead */
 .bracket.big .bfin > .bm { flex: 1; min-width: 0; }
+/* play-offs before the final: the left column takes more room, bigger names; the final shrinks to what is left */
+.bracket.wide .bcol { width: 840px; }
+.bracket.wide .bcol .bm .t { font-size: 23px; padding: 14px 30px 8px; }
+.bracket.wide .bcol .bm .t .live-tag { font-size: 60px; right: 26px; }
+.bracket.wide .bcol .bm .p { font-size: 60px; padding: 14px 30px; }
+.bracket.wide .bcol .bm .p .win-tag { font-size: 26px; padding: 5px 11px 4px; border-radius: 5px; }
 .bm { position: relative; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
 .bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; display: flex; justify-content: space-between; }
 .bm .p { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }

@@ -25,7 +25,7 @@ const MASCOTS = [
   ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', '🍔', 'Bald Eagle'],
   // more puns
   ['🐆', '', '🃏', 'Cheetah'], ['🦓', '', '🎱', 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
-  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
+  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Dragon Breath'],
   ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],

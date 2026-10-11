@@ -59,12 +59,12 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * Mounts the gecko layer into `root`. Returns { stop }.
  * Testing: `?lizard` in the page address runs the gecko every 15 s and a butterfly every 20 s;
  * `?lizard=hunt` also makes every run a hunt.
- * `?lizard=fast`: the normal behaviour, only 10 times more often (a gecko about once a minute) and with 70% catches
+ * `?lizard=fast`: the normal behaviour, only 20 times more often (a gecko about every 30 s) and with 70% catches
  *   instead of 15%, for one screen.
  */
 export function startLizard(root) {
   const mode = new URLSearchParams(location.search).get('lizard');
-  const fast = mode === 'fast' ? 10 : 1;
+  const fast = mode === 'fast' ? 20 : 1;
   const test = mode !== null && fast === 1;
   const CATCH = fast > 1 ? 0.7 : 0.15; // share of long sits that end in a catch; in the fast mode catches are the rule
   const huntTest = mode === 'hunt';

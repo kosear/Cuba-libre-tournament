@@ -30,6 +30,13 @@ const CUE_CREEP = 120; // px/s, the cue ball never stops on screen: it creeps of
 // the wrong way. Hits exchange velocities but not spin, so follow, stun and draw come out by themselves.
 const SLIDE = 600; // px/s², sliding friction on the cloth: low enough for the cue to keep its spin from the screen edge
 const CUE_SHOTS = [['follow', 1.5, 0.4], ['stun', 0, 0.3], ['draw', -0.9, 0.3]]; // cue spin at the hit as u/v, chance
+// Side spin («English»): w, rad/s around the vertical axis. The number turns on the spot like a top, the cloth slows
+// it down (even on a ball that has stopped), and at an edge or the logo it bends the bounce: the surface rubs along
+// the cushion and pushes the ball sideways (SPIN_KICK), giving up half of the spin.
+const SPIN_DECAY = 3; // rad/s²
+const SPIN_KICK = 0.25;
+const CUE_SIDE = 0.5; // share of cue shots with side spin, 15-30 rad/s
+const ROLL_SIDE = 0.2; // share of rolling balls with a little, 5-15 rad/s
 /** Distance a ball rolls from speed v until it stops. */
 const rollDistance = (v) => v / DRAG_K - (DRAG_A / DRAG_K ** 2) * Math.log(1 + (DRAG_K * v) / DRAG_A);
 /** Start speed that rolls exactly `d` px. */
@@ -312,6 +319,26 @@ export function startSplash(root) {
     return [p[0] * c + kp[0] * s + k[0] * d, p[1] * c + kp[1] * s + k[1] * d, p[2] * c + kp[2] * s + k[2] * d];
   }
 
+  /** Side spin: the ball turns on the spot around the axis pointing at the viewer. */
+  function twist(b, a) {
+    const k = [0, 0, 1];
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    b.n = unit(rotate(b.n, k, c, s));
+    b.t = unit(rotate(b.t, k, c, s));
+    b.q = unit(rotate(b.q, k, c, s));
+    b.dirty = true;
+  }
+
+  /** At a bounce with normal n (pointing back into the table): side spin pushes the ball along the cushion. */
+  function spinKick(b, nx, ny) {
+    if (!b.w) return;
+    // surface speed where the ball touches the cushion (offset -n·R), the cushion pushes against it
+    b.vx -= SPIN_KICK * b.w * ny * R;
+    b.vy += SPIN_KICK * b.w * nx * R;
+    b.w *= 0.5;
+  }
+
   function roll(b, dx, dy) {
     const d = Math.hypot(dx, dy);
     if (!d) return;
@@ -430,7 +457,7 @@ export function startSplash(root) {
     const b = {
       num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
-      x, y, vx, vy, ux: vx, uy: vy, friction, resting: false, restAt: 0, entered: false,
+      x, y, vx, vy, ux: vx, uy: vy, w: 0, friction, resting: false, restAt: 0, entered: false,
     };
     balls.push(b);
     place(b);
@@ -514,6 +541,7 @@ export function startSplash(root) {
       const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : 1;
       const v = Math.max(vMin, hit ? rand(1100, 1500) : rand(900, 1300)) * boost;
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION);
+      if (Math.random() < ROLL_SIDE) b.w = (Math.random() < 0.5 ? -1 : 1) * rand(5, 15);
       b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
     }
@@ -585,6 +613,7 @@ export function startSplash(root) {
       const q = cueSpin(v, way - 2 * R, ratio);
       cue.ux = cue.vx * q;
       cue.uy = cue.vy * q;
+      if (Math.random() < CUE_SIDE) cue.w = (Math.random() < 0.5 ? -1 : 1) * rand(15, 30);
       return true;
     }
     // No clean shot this time (the search is random): wait a little and try again, up to 3 times.
@@ -614,6 +643,10 @@ export function startSplash(root) {
 
   function step(b, dt) {
     if (b.settle) settle(b, dt);
+    if (b.w) { // side spin dies down, also on a ball that has stopped
+      twist(b, b.w * dt);
+      b.w = Math.sign(b.w) * Math.max(0, Math.abs(b.w) - SPIN_DECAY * dt);
+    }
     if (b.resting) return;
     // sliding: the cloth works on the slip between velocity and spin until the ball rolls
     const slx = b.vx - b.ux;
@@ -665,6 +698,7 @@ export function startSplash(root) {
       if (vn < 0) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
+        spinKick(b, n[0], n[1]);
         rollOn(b);
         const hit = -vn; // speed into the logo: everything below follows it
         wobble(n[0], n[1], hit);
@@ -706,6 +740,7 @@ export function startSplash(root) {
     b.cushions--;
     b.vx = vx;
     b.vy = vy;
+    spinKick(b, nx, ny);
     rollOn(b);
   }
 

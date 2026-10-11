@@ -24,6 +24,9 @@
 // The butterfly also just flies by on its own now and then.
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
 // it, snaps it up and eats it.
+// A glutton (GLUTTON of the geckos) does not stop at one: after a catch it sits on and hunts again, 2-3 butterflies
+// in all. Every butterfly eaten makes the belly visibly rounder (FAT, a cartoonish bit more than real).
+// A wing torn off and left lying: WING_EAT of the time the same gecko eats it itself, walking over to it.
 // The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
 // screen), never touching what is shown. A gecko hour happens only when `rush()` allows (not during a tournament).
 
@@ -59,6 +62,11 @@ function rushOn(now = Date.now()) {
   const start = slot * SLOT_MS + (x % (SLOT_MS - RUSH_MS));
   return now >= start && now < start + RUSH_MS;
 }
+
+const GLUTTON = 0.25; // share of geckos that eat 2-3 butterflies in a row
+const WING_EAT = 0.2; // a wing torn off during the meal, within reach: share eaten by the same gecko at once
+const FAT = 0.22; // how much rounder the belly gets per butterfly
+const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
 const SIZES = [[0.6, 0.15], [0.8, 0.25], [1, 0.3], [1.2, 0.2], [1.5, 0.1]];
@@ -96,10 +104,12 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * `?lizard=hunt` also makes every run a hunt.
  * `?lizard=fast`: the normal behaviour, only 40 times more often (a gecko every 10-20 s) and with 70% catches
  *   instead of 15%, for one screen.
+ * `?lizard=glutton`: the fast mode where every gecko is a glutton and eats every wing within its reach.
  */
 export function startLizard(root, { rush = () => true, swarm = () => false } = {}) {
   const mode = new URLSearchParams(location.search).get('lizard');
-  const fast = mode === 'fast' ? 40 : 1;
+  const glutton = mode === 'glutton'; // the fast mode with every gecko a glutton that always eats the wing it can reach
+  const fast = mode === 'fast' || glutton ? 40 : 1;
   const test = mode !== null && fast === 1;
   // the fast mode and a gecko hour: many geckos, catches are the rule
   // ?lizard=fast, «lots of geckos» from the admin page (as often as the fast mode), or a gecko hour
@@ -236,6 +246,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
       col: COLORS[lastColor],
       sit: huntAll ? stops : 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
+      limit: glutton || Math.random() < GLUTTON ? 2 + (Math.random() < 0.5 ? 1 : 0) : 1, eaten: 0, fat: 0, fatTo: 0,
       t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
     };
   }
@@ -243,7 +254,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   /** Point and unit direction at arc length s; straight lines continue past both ends. */
   function at(g, s) {
     const { pts, lens, total } = g;
-    const k0 = s <= 0 ? 0 : s >= total ? 199 : Math.min(199, lowerIndex(lens, s));
+    const last = pts.length - 2;
+    const k0 = s <= 0 ? 0 : s >= total ? last : Math.min(last, lowerIndex(lens, s));
     const [p, q] = [pts[k0], pts[k0 + 1]];
     const d = lens[k0 + 1] - lens[k0] || 1;
     const dx = (q[0] - p[0]) / d;
@@ -295,6 +307,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     g.v += (target - g.v) * (1 - Math.exp(-dt * 14)); // geckos start and stop almost at once
     g.s += g.v * dt;
     g.yaw += (g.yawTo - g.yaw) * (1 - Math.exp(-dt * 10));
+    g.fat += (g.fatTo - g.fat) * (1 - Math.exp(-dt * 1.5)); // the belly fills out over a second or two
     return g.s < g.total + N * SEG + 60;
   }
 
@@ -311,7 +324,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     return Math.atan2(fx * ty - fy * tx, fx * tx + fy * ty);
   }
 
-  function startHunt(g, caught) {
+  function startHunt(g, caught, delay = null) {
     // the butterfly sits a little to one side, just within reach of the nose once the gecko has crept up
     const a = rand(-0.4, 0.4);
     const s = g.s + CREEP;
@@ -324,7 +337,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     if (wx < 60 || wx > W - 60 || wy < 60 || wy > H - 60) return;
     // a long sit: the butterfly comes later, so the hunt ends well before the sit does
     lastStyle = (lastStyle + 1 + Math.floor(Math.random() * (STYLES.length - 1))) % STYLES.length; // never twice in a row
-    g.hunt = { caught, style: STYLES[lastStyle], target, phase: 'wait', t: 0, start: g.until > 12 ? rand(0, g.until - 9) : 0 };
+    const start = delay ?? (g.until > 12 ? rand(0, g.until - 9) : 0);
+    g.hunt = { caught, style: STYLES[lastStyle], target, phase: 'wait', t: 0, start };
   }
 
   function hunt(g, dt) {
@@ -438,7 +452,77 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     return u >= 2.3;
   }
 
-  function finish(g) { g.hunt = null; g.look = g.until - rand(1, 2); g.lick = 0; g.squint = 0; g.gulp = 0; g.lips = 0; }
+  /** A catch eaten: rounder; then the wing it dropped, another hunt for a glutton, or on with the sit. */
+  function finish(g) {
+    g.hunt = null; g.lick = 0; g.squint = 0; g.gulp = 0; g.lips = 0;
+    g.eaten++;
+    g.fatTo = Math.min(FAT * 3, g.fatTo + FAT);
+    if (bf.wing && toWing(g, bf.wing, glutton ? 1 : WING_EAT)) return;
+    if (!huntMore(g)) g.look = g.until - rand(1, 2);
+  }
+
+  /** A glutton with room left: sits on and calls the next butterfly. */
+  function huntMore(g) {
+    if (g.eaten >= g.limit) return false;
+    g.mode = 'stop';
+    g.until = Math.max(g.until, rand(8, 11));
+    g.look = g.until - rand(0.5, 1);
+    startHunt(g, Math.random() < NEXT_CATCH, rand(1, 2.5));
+    return !!g.hunt;
+  }
+
+  /**
+   * Turns the gecko towards a wing lying nearby: a new path from where it is, through the wing, on to the edge.
+   * The body behind keeps the old path. Goes only with `chance`, and only for a wing it can reach without
+   * turning round; false otherwise.
+   */
+  function toWing(g, wing, chance) {
+    const w = [wing[0] / g.k, wing[1] / g.k];
+    const [hx, hy, dx, dy] = at(g, g.s);
+    const D = Math.hypot(w[0] - hx, w[1] - hy);
+    const [ux, uy] = unit(w[0] - hx, w[1] - hy);
+    const ahead = dx * ux + dy * uy;
+    const near = D < 100 && ahead > 0.55;
+    if (!near && (ahead < -0.2 || D < 100)) return false; // behind it: a U-turn folds the body, leave it
+    if (Math.random() >= chance) return false;
+    if (near) {
+      // right in front of the nose: no walk, just turn the head and snap it up
+      g.mode = 'stop';
+      g.hunt = { meal: true, target: w, phase: 'spot', t: 0, watch: rand(0.5, 1) };
+      return true;
+    }
+    // the last stretch before the wing is straight, so the head points at it when it stops
+    // its direction there: between where it looks now and the wing, a gentle bend
+    const [ex, ey] = unit(ux + dx * 0.6, uy + dy * 0.6);
+    const run = Math.min(REACH + 40, D * 0.5);
+    const p = [w[0] - ex * run, w[1] - ey * run];
+    const R = Math.hypot(p[0] - hx, p[1] - hy);
+    const back = N * SEG + 60;
+    const pts = [];
+    for (let s = g.s - back; s < g.s; s += 4) pts.push(at(g, s).slice(0, 2));
+    const head = pts.length; // index of the point where the head is now
+    const c1 = [hx + dx * R * 0.6, hy + dy * R * 0.6];
+    const c2 = [p[0] - ex * R * 0.4, p[1] - ey * R * 0.4];
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      const u = 1 - t;
+      pts.push([0, 1].map((j) => u * u * u * [hx, hy][j] + 3 * u * u * t * c1[j] + 3 * u * t * t * c2[j] + t * t * t * p[j]));
+    }
+    // straight on through the wing and off the screen
+    const far = (Math.hypot(W, H) + 400) / g.k;
+    for (let i = 1; i <= 40; i++) pts.push([p[0] + ex * far * (i / 40), p[1] + ey * far * (i / 40)]);
+    const lens = [0];
+    for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const sP = lens[lens.length - 41];
+    Object.assign(g, { pts, lens, total: lens[lens.length - 1], s: lens[head] });
+    g.meal = { at: w, s: sP + run };
+    g.mode = 'run';
+    g.until = 99;
+    g.stops = 0;
+    g.top = rand(300, 420); // a few unhurried steps
+    g.yawTo = 0;
+    return true;
+  }
 
   function gulp(g, h, t) {
     const prey = h.prey;
@@ -599,7 +683,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         g.gulp = t < 2.2 ? 3 + ((t - 1.4) / 0.8) * 6 : 0;
         g.squint = t < 2.3 ? Math.sin(Math.min(1, (t - 1.4) / 0.9) * Math.PI) : 0;
         g.lips = t > 2.4 && t < 3.3 ? (t - 2.4) / 0.9 : 0;
-        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); }
+        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); g.fatTo = Math.min(FAT * 3, g.fatTo + FAT / 3); huntMore(g); }
       }
     }
   }
@@ -689,6 +773,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     let w = WIDTH[i];
     if (g.chew && i <= 3) w *= 1 + 0.1 * g.chew; // the jaws open for a bite
     if (g.gulp) w += 5 * Math.exp(-((i - g.gulp) ** 2) / 1.2);
+    if (g.fat && i > 4 && i < 12) w *= 1 + g.fat * Math.sin((Math.PI * (i - 4)) / 8); // the full belly, widest mid-body
     return w;
   }
 
@@ -824,8 +909,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       const i = Math.floor(fi);
       const f = fi - i;
       const [, , nx, ny] = frameAt(p, i);
-      const x = p[i][0] + (p[i + 1][0] - p[i][0]) * f + nx * side * WIDTH[i];
-      const y = p[i][1] + (p[i + 1][1] - p[i][1]) * f + ny * side * WIDTH[i];
+      const x = p[i][0] + (p[i + 1][0] - p[i][0]) * f + nx * side * width(g, i);
+      const y = p[i][1] + (p[i + 1][1] - p[i][1]) * f + ny * side * width(g, i);
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       ctx.fill();

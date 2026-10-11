@@ -126,7 +126,7 @@ function rays() {
   return `<div class="rays"><svg viewBox="0 0 2112 1188" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
 }
 
-// Classic «Doom fire» (170×64 cells): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
+// Classic «Doom fire» (85×32 cells, big pixels): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
 function makeFire(cv) {
   const ctx = cv.getContext('2d');
   const FW = cv.width;
@@ -153,7 +153,7 @@ function makeFire(cv) {
         const src = y * FW + x;
         const r = (Math.random() * 3.6) | 0;
         const dst = src - FW - (r & 1) + ((Math.random() * 1.6) | 0);
-        if (dst >= 0) heat[dst] = Math.max(0, heat[src] - (r > 2 ? 2 : r & 1));
+        if (dst >= 0) heat[dst] = Math.max(0, heat[src] - (r > 2 ? 3 : (r & 1) * 2)); // ~1.25 a row: dies out before the top
       }
     }
     const d = img.data;
@@ -182,7 +182,7 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <canvas class="fire" width="170" height="64"></canvas>
+      <canvas class="fire" width="85" height="32"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>

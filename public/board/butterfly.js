@@ -1,6 +1,7 @@
 // A tropical butterfly over the splash, seen from above like the gecko: it flutters along in a bobbing zigzag, now and
 // then lands and slowly opens and closes its wings, then flies off. The gecko (lizard.js) may call it over to hunt,
-// grab it (it then draws the prey itself with drawButterfly) and tear a wing off, which flutters down and lies a while.
+// grab it (it then draws the prey itself with drawButterfly) and tear a wing off, which flutters down and lies there
+// until the next gecko comes and eats it (takeWing).
 // One butterfly at a time, on a small canvas moved with a CSS transform; it flies above the balls (z-index in style.css).
 
 const W = 1920;
@@ -8,7 +9,7 @@ const H = 1080;
 const BOX = 180;
 const SPEED = 240; // px/s
 const SHADOW = 'rgba(0,0,0,0.15)';
-const WING_LIES = 30; // s a torn-off wing stays on the table after landing, the last WING_FADE of them fading
+const WING_LIES = 15 * 60; // s a torn-off wing stays after landing (the next gecko eats it long before), then fades
 const WING_FADE = 4;
 
 // species seen in Bali; each wing pair is a gradient from the base to the tip
@@ -163,6 +164,20 @@ export function drawButterfly(ctx, x, y, heading, s, span, kind, { missing = 0, 
   ctx.restore();
 }
 
+/**
+ * One torn-off forewing at (x, y), `side` 1 or -1, scale `s`, turned like a butterfly pointing along `heading`.
+ * `base`: (x, y) is where it was torn off (held in the gecko's mouth), otherwise its middle. `kind` null = shadow.
+ */
+export function drawWing(ctx, x, y, heading, s, kind, side, base = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(heading + Math.PI / 2);
+  ctx.scale(s * side, s);
+  if (!base) ctx.translate(-20, 14); // around the wing's middle, not the body
+  paintWing(ctx, FORE, FORE_VEINS, FORE_DOTS, kind?.fore, kind);
+  ctx.restore();
+}
+
 export function createButterfly(root) {
   const el = document.createElement('canvas');
   el.className = 'butterfly';
@@ -220,6 +235,16 @@ export function createButterfly(root) {
     get active() { return !!b; },
     get landed() { return b?.mode === 'sit'; },
     get pos() { return b && [b.x, b.y]; },
+    /** Where a torn-off wing lies on the table, once it has landed. */
+    get wing() { return w && !w.h ? [w.x, w.y] : null; },
+    /** The gecko picks the wing up: it draws it itself from now on. */
+    takeWing() {
+      if (!w) return null;
+      const piece = { kind: w.kind, side: w.side };
+      w = null;
+      wel.hidden = true;
+      return piece;
+    },
     /** Just flying by: across the middle, sometimes landing there for a while. */
     wander() {
       if (b) return;
@@ -299,7 +324,7 @@ export function createButterfly(root) {
       return true;
     },
     draw() {
-      if (w) drawWing();
+      if (w) drawFallen();
       if (!b) return;
       el.style.transform = `translate(${Math.round(b.x - BOX / 2)}px, ${Math.round(b.y - BOX / 2)}px)`;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -338,19 +363,19 @@ export function createButterfly(root) {
     }
   }
 
-  function drawWing() {
+  function drawFallen() {
     const fade = w.h ? 1 : Math.min(1, Math.max(0, (WING_LIES - (w.t - w.lay)) / WING_FADE));
     wel.style.transform = `translate(${Math.round(w.x - BOX / 2)}px, ${Math.round(w.y - BOX / 2)}px)`;
     wel.style.opacity = fade;
     wctx.setTransform(1, 0, 0, 1, 0, 0);
     wctx.clearRect(0, 0, BOX, BOX);
+    // while falling it tumbles: seen from above it narrows and widens
+    const tumble = 0.6 + 0.4 * Math.abs(Math.cos(w.t * 9 * Math.min(1, w.h * 3)));
     for (const kind of [null, w.kind]) {
       wctx.save();
       wctx.translate(BOX / 2 + (kind ? 0 : 3 + 40 * w.h), BOX / 2 + (kind ? 0 : 4 + 50 * w.h));
-      wctx.rotate(w.heading + Math.PI / 2);
-      wctx.scale(0.85 * w.side * (0.6 + 0.4 * Math.abs(Math.cos(w.t * 9 * Math.min(1, w.h * 3)))), 0.85);
-      wctx.translate(-20, 14); // around the wing's middle, not the body
-      paintWing(wctx, FORE, FORE_VEINS, FORE_DOTS, kind?.fore, kind);
+      wctx.scale(tumble, 1);
+      drawWing(wctx, 0, 0, w.heading, 0.85, kind, w.side);
       wctx.restore();
     }
   }

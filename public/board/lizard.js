@@ -10,8 +10,11 @@
 // works the prey in with a few bites, swallows with its eyes squeezed shut (lizards push food down with their eyes)
 // and licks its lips. A miss: a snap at the air, a look after the butterfly and a lick over the eye (geckos do that).
 // The butterfly also just flies by on its own now and then.
+// A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
+// it, snaps it up and eats it.
+// The gecko and the butterflies live «on the glass»: above the balls and the logo, never touching them.
 
-import { createButterfly, drawButterfly } from '/board/butterfly.js';
+import { createButterfly, drawButterfly, drawWing } from '/board/butterfly.js';
 
 const W = 1920;
 const H = 1080;
@@ -118,18 +121,35 @@ export function startLizard(root) {
   // ---------- the path: a cubic curve from one edge to the opposite one, sampled by arc length ----------
   function makeRun() {
     const m = 120;
+    const meal = bf.wing; // a wing left on the table: this run goes over it
     let a;
     let b;
-    if (Math.random() < 0.7) { // across, the long way
+    let c1;
+    let c2;
+    if (meal) {
+      // a straight-ish line through the wing, edge to edge; one control point for both makes the curve pass through
+      // the wing at t = 0.5: B(0.5) = (a + 6c + b) / 8
+      const th = rand(0, 2 * Math.PI);
+      const [dx, dy] = [Math.cos(th), Math.sin(th)];
+      const out = (sx, sy) => Math.min(...[[dx, -meal[0] - m, W + m - meal[0]], [dy, -meal[1] - m, H + m - meal[1]]]
+        .map(([d, lo, hi]) => (Math.abs(d) < 1e-6 ? Infinity : (d * sx > 0 ? hi : lo) / (d * sx))));
+      const ka = out(-1);
+      const kb = out(1);
+      a = [meal[0] - dx * ka, meal[1] - dy * ka];
+      b = [meal[0] + dx * kb, meal[1] + dy * kb];
+      c1 = c2 = [0, 1].map((j) => (8 * meal[j] - a[j] - b[j]) / 6);
+    } else if (Math.random() < 0.7) { // across, the long way
       a = [-m, rand(150, H - 150)];
       b = [W + m, rand(150, H - 150)];
     } else {
       a = [rand(300, W - 300), -m];
       b = [rand(300, W - 300), H + m];
     }
-    if (Math.random() < 0.5) [a, b] = [b, a];
-    const c1 = [rand(300, W - 300), rand(200, H - 200)];
-    const c2 = [rand(300, W - 300), rand(200, H - 200)];
+    if (!meal) {
+      if (Math.random() < 0.5) [a, b] = [b, a];
+      c1 = [rand(300, W - 300), rand(200, H - 200)];
+      c2 = [rand(300, W - 300), rand(200, H - 200)];
+    }
     const pts = [];
     const lens = [0];
     for (let k = 0; k <= 200; k++) {
@@ -141,10 +161,10 @@ export function startLizard(root) {
     }
     const spots = [];
     for (let i = SHOULDER; i < 22; i += rand(1.2, 2.2)) spots.push([i, rand(-0.6, 0.6), rand(3, 5.5) * (i < HIP + 2 ? 1 : 0.75)]);
-    const stops = Math.floor(rand(1, 4));
+    const stops = meal ? 0 : Math.floor(rand(1, 4)); // a wing run: its only stop is the meal
     lastColor = (lastColor + 1 + Math.floor(Math.random() * (COLORS.length - 1))) % COLORS.length; // never twice in a row
     return {
-      pts, lens, total: lens[200], s: 0, v: 0,
+      pts, lens, total: lens[200], s: 0, v: 0, meal: meal && { at: meal, s: lens[100] },
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
       col: COLORS[lastColor],
       sit: huntAll ? stops : 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
@@ -179,7 +199,13 @@ export function startLizard(root) {
     g.until -= dt;
     const [hx, hy] = at(g, g.s);
     const inside = hx > 250 && hx < W - 250 && hy > 200 && hy < H - 200;
-    if (g.mode === 'run' && g.until <= 0 && g.stops > 0 && inside) {
+    if (g.mode === 'run' && g.meal && !g.meal.done && g.s + g.v / 14 >= g.meal.s - REACH - 10) {
+      // the wing just ahead (it stops within ~v/14 px): stop, look, snap
+      g.meal.done = true;
+      g.mode = 'stop';
+      g.until = 0;
+      g.hunt = { meal: true, target: g.meal.at, phase: 'spot', t: 0, watch: rand(0.6, 1.3) };
+    } else if (g.mode === 'run' && g.until <= 0 && g.stops > 0 && inside) {
       g.mode = 'stop';
       const long = g.stops === g.sit;
       g.stops--;
@@ -234,6 +260,7 @@ export function startLizard(root) {
     const h = g.hunt;
     h.t += dt;
     const t = h.t;
+    if (h.meal) { meal(g, h, t); return; }
     const next = (phase) => { h.phase = phase; h.t = 0; };
     if (h.phase === 'wait' && t >= h.start) {
       next('call');
@@ -311,6 +338,52 @@ export function startLizard(root) {
       // then the tongue flicks over the lips, left and right
       g.lips = t > 5.1 && t < 6 ? (t - 5.1) / 0.9 : 0;
       if (t >= 6.3) { g.hunt = null; g.look = g.until - rand(1, 2); }
+    }
+  }
+
+  /** A wing left on the table: notice it, snap it up, two bites, swallow, lick the lips. */
+  function meal(g, h, t) {
+    const next = (phase) => { h.phase = phase; h.t = 0; };
+    if (h.phase === 'spot') {
+      g.yawTo = clampYaw(aim(g, h.target));
+      g.twitch = 1;
+      if (t > h.watch && g.v < 2 && Math.abs(g.yaw - g.yawTo) < 0.04) {
+        // how far the head has to shoot to get the nose onto the wing
+        const p = spine(g);
+        const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
+        h.k = Math.max(0.2, Math.min(1.5, (Math.hypot(h.target[0] - p[0][0], h.target[1] - p[0][1]) - 6) / REACH));
+        h.dir = [hx, hy];
+        next('lunge');
+      }
+    } else if (h.phase === 'lunge') {
+      g.reach = h.k * (t < 0.08 ? smooth(t / 0.08) : t < 0.16 ? 1 : t < 0.5 ? 1 - smooth((t - 0.16) / 0.34) : 0);
+      if (!h.piece && t >= 0.08) {
+        h.piece = bf.takeWing();
+        if (h.piece) h.piece.depth = 0;
+      }
+      if (t >= 0.5) {
+        g.twitch = 0;
+        if (!h.piece) { g.hunt = null; g.until = rand(0.3, 0.8); return; } // gone meanwhile: run on
+        next('after');
+      }
+    } else {
+      const piece = h.piece;
+      g.chew = 0;
+      g.reach = 0;
+      if (t < 1.4) {
+        // two bites, each pulls the wing further in
+        const k = Math.floor(t / 0.7);
+        const u = t / 0.7 - k;
+        g.chew = u < 0.3 ? Math.sin((u / 0.3) * Math.PI) : 0;
+        g.reach = 0.06 * g.chew;
+        if (piece) piece.depth = (k + smooth(Math.min(1, u / 0.25))) / 2;
+      } else {
+        h.piece = null;
+        g.gulp = t < 2.2 ? 3 + ((t - 1.4) / 0.8) * 6 : 0;
+        g.squint = t < 2.3 ? Math.sin(Math.min(1, (t - 1.4) / 0.9) * Math.PI) : 0;
+        g.lips = t > 2.4 && t < 3.3 ? (t - 2.4) / 0.9 : 0;
+        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); }
+      }
     }
   }
 
@@ -492,6 +565,18 @@ export function startLizard(root) {
       const o = { missing: prey.torn, crumple: prey.crumple };
       drawButterfly(ctx, x + 5, y + 7, heading, s, prey.span, null, o);
       drawButterfly(ctx, x, y, heading, s, prey.span, prey.kind, o);
+    }
+
+    // a wing picked up from the table, held by its torn end at the corner of the mouth
+    const piece = g.hunt?.piece;
+    if (piece) {
+      const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
+      const back = 2 + piece.depth * 26;
+      const x = p[0][0] + hx * (6 - back);
+      const y = p[0][1] + hy * (6 - back);
+      const sc = 0.85 * (1 - 0.45 * piece.depth);
+      drawWing(ctx, x + 5, y + 7, Math.atan2(hy, hx), sc, null, piece.side, true);
+      drawWing(ctx, x, y, Math.atan2(hy, hx), sc, piece.kind, piece.side, true);
     }
 
     drawLegs(ls, OUTLINE, 3);

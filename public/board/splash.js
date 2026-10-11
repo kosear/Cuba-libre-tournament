@@ -130,7 +130,7 @@ export function startSplash(root) {
   logoWithLettering('#FFFFFF').then((url) => { logoLight.src = url; });
   logoEl.append(logo, logoLight);
   root.append(bgBack, bgFront, logoEl);
-  const lizard = startLizard(root); // above the logo, under the balls (they are appended later)
+  const lizard = startLizard(root); // gecko and butterflies: above the logo and the balls (z-index in style.css)
 
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
   let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)

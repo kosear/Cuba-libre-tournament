@@ -101,21 +101,12 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-/* fire for important matches: a still glow plus 7 big flame tongues that only sway and stretch, and a few embers */
-.fight .fire { position: absolute; left: 0; right: 0; bottom: 60px; height: 420px; z-index: 1; pointer-events: none; display: none; }
-.fight.important .fire { display: block; }
-.fight .fire .glow { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; background: linear-gradient(transparent, rgba(255,90,0,.45) 60%, rgba(255,170,0,.7)); }
-.fight .fire .tongue { position: absolute; bottom: -30px; width: 420px; height: 400px; transform-origin: 50% 100%; will-change: transform;
-  animation: tongue var(--d) ease-in-out infinite alternate; }
-.fight .fire .tongue svg { width: 100%; height: 100%; display: block; }
-@keyframes tongue {
-  0% { transform: scaleY(.85) skewX(-5deg); }
-  50% { transform: scaleY(1.12) skewX(3deg); }
-  100% { transform: scaleY(.95) skewX(-2deg); }
-}
-.fight .fire .ember { position: absolute; bottom: 60px; width: 10px; height: 10px; border-radius: 50%; background: #ffd27a; will-change: transform, opacity;
-  animation: ember var(--d) linear infinite; animation-delay: var(--delay); opacity: 0; }
-@keyframes ember { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx), -600px); opacity: 0; } }
+/* fire for important matches: the classic pixel «Doom fire» on a tiny canvas, stretched over the bottom with crisp
+   pixels (cheaper for the TV than smoothing, and it looks like a game); its own layer, so redrawing it repaints nothing else.
+   Once replaced by SVG tongues because the TV choked; the culprit then was more likely the huge rotating ray layers. */
+.fight canvas.fire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 440px; z-index: 1; pointer-events: none; display: none;
+  image-rendering: pixelated; image-rendering: crisp-edges; will-change: transform; }
+.fight.important canvas.fire { display: block; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
@@ -135,19 +126,53 @@ function rays() {
   return `<div class="rays"><svg viewBox="0 0 2112 1188" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
 }
 
-/** Fire: a glow and 7 flame tongues (SVG, drawn once), 10 embers. */
-function fireMarkup() {
-  const tongue = (id) => `<svg viewBox="0 0 100 160" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0">
-    <stop offset="0" stop-color="#fff1a8"/><stop offset=".3" stop-color="#ffb000"/><stop offset=".65" stop-color="#ff4d00"/><stop offset="1" stop-color="#c8102e" stop-opacity="0"/></linearGradient></defs>
-    <path d="M50 0 C62 30 94 54 94 104 C94 138 74 160 50 160 C26 160 6 138 6 104 C6 72 30 58 34 30 C40 48 46 54 50 0z" fill="url(#${id})"/></svg>`;
-  let html = '<div class="glow"></div>';
-  for (let k = 0; k < 7; k++) {
-    html += `<div class="tongue" style="left:${k * 300 - 90}px;--d:${(0.7 + Math.random() * 0.5).toFixed(2)}s">${tongue(`ft${k}`)}</div>`;
+// Classic «Doom fire» (170×64 cells): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
+function makeFire(cv) {
+  const ctx = cv.getContext('2d');
+  const FW = cv.width;
+  const FH = cv.height;
+  const MAX = 36;
+  const heat = new Uint8Array(FW * FH);
+  const pal = []; // black -> red -> orange -> yellow -> white; low heat is transparent
+  for (let k = 0; k <= MAX; k++) {
+    const t = k / MAX;
+    pal.push([
+      Math.min(255, Math.round(255 * Math.min(1, t * 2.2))),
+      Math.round(255 * Math.max(0, Math.min(1, (t - 0.35) * 1.8))),
+      Math.round(255 * Math.max(0, (t - 0.8) * 4)),
+      Math.round(255 * Math.min(1, t * 3.5)),
+    ]);
   }
-  for (let k = 0; k < 10; k++) {
-    html += `<div class="ember" style="left:${Math.round(Math.random() * 2040)}px;--d:${(1.8 + Math.random() * 1.5).toFixed(2)}s;--delay:${(-Math.random() * 3).toFixed(2)}s;--dx:${Math.round(Math.random() * 140 - 70)}px"></div>`;
+  const img = ctx.createImageData(FW, FH);
+  for (let x = 0; x < FW; x++) heat[(FH - 1) * FW + x] = MAX;
+  let running = false;
+  let last = 0;
+  function step() {
+    for (let x = 0; x < FW; x++) {
+      for (let y = 1; y < FH; y++) {
+        const src = y * FW + x;
+        const r = (Math.random() * 3.6) | 0;
+        const dst = src - FW - (r & 1) + ((Math.random() * 1.6) | 0);
+        if (dst >= 0) heat[dst] = Math.max(0, heat[src] - (r > 2 ? 2 : r & 1));
+      }
+    }
+    const d = img.data;
+    for (let k = 0; k < heat.length; k++) {
+      const c = pal[heat[k]];
+      d[k * 4] = c[0]; d[k * 4 + 1] = c[1]; d[k * 4 + 2] = c[2]; d[k * 4 + 3] = c[3];
+    }
+    ctx.putImageData(img, 0, 0);
   }
-  return `<div class="fire">${html}</div>`;
+  function frame(now) {
+    if (!running) return;
+    if (cv.offsetParent === null) { running = false; return; } // hidden without stop(): nothing to burn for
+    if (now - last > 50) { step(); last = now; }
+    requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (!running) { running = true; requestAnimationFrame(frame); } },
+    stop() { running = false; },
+  };
 }
 
 export function createCall(root) {
@@ -157,7 +182,7 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      ${fireMarkup()}
+      <canvas class="fire" width="170" height="64"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
@@ -166,6 +191,7 @@ export function createCall(root) {
   const q = (sel) => root.querySelector(sel);
   const fight = q('.fight');
   const ring = q('.ring');
+  const fire = makeFire(q('canvas.fire'));
   let running = []; // animations of the current show, cancelled by the next one
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
@@ -251,6 +277,7 @@ export function createCall(root) {
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!important);
+      if (important) fire.start(); else fire.stop();
       const m1 = pick(MASCOTS);
       let m2;
       do m2 = pick(MASCOTS); while (m2 === m1);
@@ -294,6 +321,7 @@ export function createCall(root) {
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
+      fire.stop();
     },
   };
 }

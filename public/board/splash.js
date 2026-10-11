@@ -6,7 +6,6 @@
 // Light for a TV browser: two balls and the logo are DOM elements moved with CSS transforms, no canvas redraw.
 // Collisions with the logo use its alpha mask, so balls bounce off the drawing, not off its bounding box.
 
-import { startLizard } from '/board/lizard.js';
 
 const W = 1920;
 const H = 1080;
@@ -130,7 +129,6 @@ export function startSplash(root) {
   logoWithLettering('#FFFFFF').then((url) => { logoLight.src = url; });
   logoEl.append(logo, logoLight);
   root.append(bgBack, bgFront, logoEl);
-  const lizard = startLizard(root); // gecko and butterflies: above the logo and the balls (z-index in style.css)
 
   let mask = null; // { data: Uint8Array, w, h, x0, y0 } in stage pixels / MASK_SCALE
   let logoBox = null; // { x, y, w, h } on the stage (moves with the drift)
@@ -809,7 +807,6 @@ export function startSplash(root) {
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);
-      lizard.stop();
       root.innerHTML = '';
     },
   };

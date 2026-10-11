@@ -24,7 +24,8 @@
 // The butterfly also just flies by on its own now and then.
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
 // it, snaps it up and eats it.
-// The gecko and the butterflies live «on the glass»: above the balls and the logo, never touching them.
+// The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
+// screen), never touching what is shown. A gecko hour happens only when `rush()` allows (not during a tournament).
 
 import { createButterfly, drawButterfly, drawWing } from '/board/butterfly.js';
 
@@ -96,12 +97,12 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * `?lizard=fast`: the normal behaviour, only 40 times more often (a gecko every 10-20 s) and with 70% catches
  *   instead of 15%, for one screen.
  */
-export function startLizard(root) {
+export function startLizard(root, { rush = () => true } = {}) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const fast = mode === 'fast' ? 40 : 1;
   const test = mode !== null && fast === 1;
   // the fast mode and a gecko hour: many geckos, catches are the rule
-  const often = () => (fast > 1 ? fast : !test && !DEMO && rushOn() ? RUSH : 1);
+  const often = () => (fast > 1 ? fast : !test && !DEMO && rush() && rushOn() ? RUSH : 1);
   const escapeP = () => (often() > 1 ? 0 : 0.8); // after slipping out of the jaws, the share that gets away at the second snap
   const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
   const huntTest = mode === 'hunt';

@@ -3,6 +3,7 @@
 import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
 import { createCall } from '/board/call.js';
+import { startLizard } from '/board/lizard.js';
 
 const stage = document.getElementById('stage');
 const W = 1920;
@@ -50,13 +51,15 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 // ---------- layout: built once ----------
 // The header and the queue panel are not part of a slide: a slide change only swaps #content and the title,
 // so the header never blinks and the queue keeps scrolling. The splash is a layer on top of everything.
+// Above even that, the «glass»: geckos and butterflies run over whatever is shown, the splash or the tournament.
 stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/cuba-libre-logo.svg" alt="Cuba Libre">
   <div class="brand-sub">Pool<br>Tournament</div><div class="slide-title" id="title"></div></header>
   <div class="content" id="content"></div></main>
   <aside class="queue" id="queue"><div class="qhead"><span class="qtitle">Play Next</span><span id="clock"></span></div><div id="qtop"></div>
     <div class="qrest" id="qrest"><div class="qrest-inner" id="qinner"></div><div class="qfade" hidden></div></div></aside>
   <div class="splash" id="splash" hidden></div>
-  <div class="call" id="call" hidden></div>`;
+  <div class="call" id="call" hidden></div>
+  <div class="glass" id="glass"></div>`;
 const el = (id) => document.getElementById(id);
 
 // Clock next to «Play Next»: Bali time (WITA, UTC+8) whatever the TV is set to, 24 h. The DOM is touched only when the minute changes.
@@ -413,6 +416,7 @@ function onState(state) {
 
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
 live({ onState });
+startLizard(el('glass'), { rush: () => !T?.started }); // no gecko hour while a tournament is on
 
 // Debug hook for checking slides from the browser console.
 window.__board = {

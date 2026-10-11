@@ -25,17 +25,18 @@ const MASCOTS = [
   ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', '🍔', 'Bald Eagle'],
   // more puns
   ['🐆', '', '🃏', 'Cheetah'], ['🦓', '', '🎱', 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
-  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Dragon Breath'],
+  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
+  ['🐘', '', '🛋️', 'Elephant in the Room'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Dragon Breath'],
   ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '📉', 'Bear Market'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', '', '🌺', 'Pelan Pelan'],
-  ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
-  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🍹', 'Party Flamingo'], ['🐊', '', '🦷', 'Crikey!'],
+  ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
+  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', '🦷', 'Crikey!'],
   ['🦔', '', '🎈', 'Birthday Hedgehog'], ['🐋', '', '🎱', 'Killer Whale'], ['🐌', '', '✉️', 'Snail Mail'],
-  ['🐰', '🎩', '🪄', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
+  ['🐰', '🎩', '🪄', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🍺', 'Bender'],
   ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
 ];

@@ -211,4 +211,9 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
   align-items: center; justify-content: center; z-index: 4; box-shadow: -8px 0 24px rgba(19,33,58,.11); }
 #stage.po aside.queue::after, #stage.po .qtitle, #stage.po #qtop, #stage.po .qrest { display: none; }
 #stage.po .qhead { font-size: 44px; line-height: 1; color: #fff; letter-spacing: 3px; }
-#stage.po .bracket { width: 1284px; margin: 0 auto; }
+/* the big final of the play-offs: fills the right side, two tall rows with huge names */
+.bm.big { display: flex; flex-direction: column; }
+.bm.big .t { font-size: 26px; padding: 20px 32px 14px; }
+.bm.big .t .live-tag { font-size: 62px; right: 28px; }
+.bm.big .p { flex: 1; font-size: 120px; padding: 0 40px; gap: 28px; }
+.bm.big .p .win-tag { font-size: 30px; padding: 7px 14px 5px; border-radius: 6px; }

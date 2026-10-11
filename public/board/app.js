@@ -89,6 +89,14 @@ function fitLive(root) {
   });
 }
 
+/** Names in the big final box (play-offs): as big as fits on one line, down to 60 px. */
+function fitFinal(root) {
+  root.querySelectorAll('.bm.big .p > span').forEach((name) => {
+    let size = parseFloat(getComputedStyle(name).fontSize);
+    while (size > 60 && name.scrollWidth > name.clientWidth + 1) name.style.fontSize = `${(size -= 4)}px`;
+  });
+}
+
 /** Shrink the font of every .fit element until its content fits its box. */
 function fitText(root) {
   root.querySelectorAll('.fit').forEach((el) => {
@@ -193,13 +201,16 @@ function slidePlayoff() {
     // (the 3rd place match drops «played before the final» then, to make room for it)
     return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${side(2)}</div>`;
   };
+  // Play-offs on (no queue panel): the slide is 1864 px wide; the final grows to fill the right side, as tall as the
+  // left column. Before (contenders, the queue still on the right) the bracket is 1284 px and the final like a semi-final.
+  const big = T.phase === 'playoff';
   return {
     title: 'Play-off',
     // left: the semi-finals and under them the 3rd place match, the same step of 280 px; right: only the final.
     // Lines from the semi-finals to the final, a dashed one from them to the 3rd place match.
     html: `<div class="bracket">
       <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
-      <svg class="lines" viewBox="0 0 1284 888" preserveAspectRatio="none">
+      <svg class="lines" viewBox="0 0 ${big ? 1864 : 1284} 888" preserveAspectRatio="none">
         <path d="M500 150 H610 V290 H720" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M500 430 H610 V290" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M610 430 V710 H500" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
@@ -207,7 +218,7 @@ function slidePlayoff() {
       ${box('sf1', 'Semi-final 1', 'left:0;top:50px;width:500px')}
       ${box('sf2', 'Semi-final 2', 'left:0;top:330px;width:500px')}
       ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:0;top:610px;width:500px', 'third')}
-      ${box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
+      ${big ? box('final', 'Final', 'left:720px;top:50px;width:1144px;height:752px', 'final big') : box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
     </div>`,
   };
 }
@@ -304,6 +315,7 @@ function renderSlide() {
   el('content').innerHTML = view.html;
   fitText(el('content'));
   fitLive(el('content'));
+  fitFinal(el('content'));
   alignGroupRows(el('content'));
   renderQueue();
   if (old) slideTransition(old, el('content'));

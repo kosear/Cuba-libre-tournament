@@ -266,15 +266,13 @@ export function createCall(root) {
   }
 
   /** The tapes: the words repeated past twice the tape's width, the row runs by exactly one half, so it loops seamlessly. */
-  function tapes(text, at) {
+  function tapes(text) {
     const words = Array.from({ length: 16 }, () => `<span>${text.replace(/[&<>]/g, '')} ★</span>`).join('');
-    [['.t1', -1, -1], ['.t2', 1, 2]].forEach(([sel, dir, deg]) => {
+    [['.t1', -1], ['.t2', 1]].forEach(([sel, dir]) => {
       const tape = q(`.tape${sel}`);
       const row = tape.querySelector('.run');
       row.innerHTML = words + words;
-      // whips in from the side as VS lands, then the words keep running
-      anim(tape, [{ transform: `rotate(${deg}deg) translateX(${dir * -2600}px)` }, { transform: `rotate(${deg}deg) translateX(${dir * 40}px)`, offset: 0.8 },
-        { transform: `rotate(${deg}deg)` }], { duration: 420, delay: at, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+      // on screen from the first moment, with everything else (a whip-in came late on the TV); the words keep running
       const half = row.scrollWidth / 2;
       anim(row, dir < 0 ? [{ transform: 'translateX(0)' }, { transform: `translateX(${-half}px)` }] : [{ transform: `translateX(${-half}px)` }, { transform: 'translateX(0)' }],
         { duration: half * 9, iterations: Infinity, easing: 'linear' });
@@ -327,6 +325,7 @@ export function createCall(root) {
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       const important = !!hype;
       fight.classList.toggle('important', important);
+      if (important) tapes(hype);
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
       // tournament, so next time the same name most likely gets another one
       // no two players of the tournament share a mascot; each keeps theirs for the whole tournament
@@ -358,7 +357,6 @@ export function createCall(root) {
         { transform: 'scale(1) rotate(0)', opacity: 1 },
       ], { duration: 340, delay: TV, fill: 'backwards' });
       impact(TV + 240, 36);
-      if (important) tapes(hype, TV + 240); // the tapes whip in as VS lands
       anim(q('.label'), [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 250, fill: 'backwards' });
       // Mascots swoop in right behind the names, then bob.
       for (const [n, from, delay] of [[1, -700, 60], [2, 700, 360]]) {

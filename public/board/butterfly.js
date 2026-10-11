@@ -96,7 +96,7 @@ function paintWing(ctx, shape, veins, dots, colors, kind) {
 
 /**
  * Draws a butterfly at (x, y) pointing along `heading`, scale `s`, wings open by `span` (0 folded, 1 flat).
- * `kind` null draws its shadow. `missing`: 1 or -1, that side's wings are torn off. `crumple` 0..1 bends the wings in.
+ * `kind` null draws its shadow. `missing`: 1 or -1, that side's wings are torn off, 2 both. `crumple` 0..1 bends the wings in.
  */
 export function drawButterfly(ctx, x, y, heading, s, span, kind, { missing = 0, crumple = 0 } = {}) {
   ctx.save();
@@ -104,7 +104,7 @@ export function drawButterfly(ctx, x, y, heading, s, span, kind, { missing = 0, 
   ctx.rotate(heading + Math.PI / 2);
   ctx.scale(s, s);
   for (const side of [1, -1]) {
-    if (side === missing) continue;
+    if (side === missing || missing === 2) continue;
     ctx.save();
     // seen from above, a wing raised over the back is foreshortened; the hindwing lags a little behind the forewing
     ctx.scale(side * Math.max(0.06, span), 1);
@@ -185,15 +185,17 @@ export function createButterfly(root) {
   el.hidden = true;
   root.append(el);
   const ctx = el.getContext('2d');
-  // a torn-off wing has its own canvas: it is still lying there when the next butterfly comes
-  const wel = document.createElement('canvas');
-  wel.className = 'butterfly';
-  wel.width = wel.height = BOX;
-  wel.hidden = true;
-  root.append(wel);
-  const wctx = wel.getContext('2d');
+  // torn-off wings (up to two at once) have their own canvases: one may still lie there when the next butterfly comes
+  const pool = [0, 1].map(() => {
+    const c = document.createElement('canvas');
+    c.className = 'butterfly';
+    c.width = c.height = BOX;
+    c.hidden = true;
+    root.append(c);
+    return { el: c, ctx: c.getContext('2d'), w: null };
+  });
   let b = null;
-  let w = null;
+  const lying = () => pool.find((s) => s.w && !s.w.h && !s.w.away);
   let lastKind = -1;
 
   /** A point just off the screen; with `near`, the closest of a few random ones (a shorter way in). */
@@ -207,12 +209,12 @@ export function createButterfly(root) {
     return best;
   }
 
-  function spawn(near) {
-    const [x, y] = edgePoint(near);
+  function spawn(near, at, kind) {
+    const [x, y] = at || edgePoint(near);
     const a = Math.atan2(H / 2 - y, W / 2 - x);
     b = {
       x, y, vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED, h: 1, heading: a, t: rand(0, 10), flap: 0, beat: rand(8, 11),
-      kind: KINDS[lastKind = (lastKind + 1 + Math.floor(Math.random() * (KINDS.length - 1))) % KINDS.length], // never twice in a row
+      kind: kind || KINDS[lastKind = (lastKind + 1 + Math.floor(Math.random() * (KINDS.length - 1))) % KINDS.length], // never twice in a row
       mode: 'fly', goal: null, land: false, sitFor: 0, speed: SPEED,
       onLand: null, after: null, hops: 0,
     };
@@ -255,13 +257,14 @@ export function createButterfly(root) {
     get landed() { return b?.mode === 'sit'; },
     get pos() { return b && [b.x, b.y]; },
     /** Where a torn-off wing lies on the table, once it has landed. */
-    get wing() { return w && !w.h ? [w.x, w.y] : null; },
+    get wing() { const s = lying(); return s ? [s.w.x, s.w.y] : null; },
     /** The gecko picks the wing up: it draws it itself from now on. */
     takeWing() {
-      if (!w) return null;
-      const piece = { kind: w.kind, side: w.side };
-      w = null;
-      wel.hidden = true;
+      const s = lying();
+      if (!s) return null;
+      const piece = { kind: s.w.kind, side: s.w.side };
+      s.w = null;
+      s.el.hidden = true;
       return piece;
     },
     /** Just flying by: across the middle, sometimes landing there for a while, now and then two or three times. */
@@ -295,15 +298,28 @@ export function createButterfly(root) {
       remove();
       return prey;
     },
-    /** A wing torn off at (x, y), thrown off with velocity `v`: it flutters down, spinning, lies a while and fades. */
-    dropWing(x, y, heading, kind, side, v) {
-      w = { x, y, heading, kind, side, t: 0, h: 0.5, vx: v[0], vy: v[1], spin: rand(-6, 6) };
-      wel.hidden = false;
+    /**
+     * A wing torn off at (x, y), thrown off with velocity `v`: it flutters down, spinning, lies a while and fades.
+     * `away`: caught by the air instead, it keeps fluttering and drifts off the screen.
+     */
+    dropWing(x, y, heading, kind, side, v, away = false) {
+      const s = pool.find((p) => !p.w) || pool[0];
+      s.w = { x, y, heading, kind, side, t: 0, h: 0.5, vx: v[0], vy: v[1], spin: rand(-6, 6), away };
+      s.el.hidden = false;
     },
-    eaten() { remove(); w = null; wel.hidden = true; },
+    /** Slipped out of the gecko's jaws at (x, y): flutters up and lands again at `to`, `onLand` when it sits. */
+    release(x, y, heading, kind, to, onLand) {
+      spawn(null, [x, y], kind);
+      Object.assign(b, { heading, h: 0.6, mode: 'fly', goal: to, land: true, sitFor: Infinity, speed: 200, onLand });
+    },
+    eaten() {
+      remove();
+      for (const s of pool) { s.w = null; s.el.hidden = true; }
+    },
     update(dt) {
-      if (w) updateWing(dt);
-      if (!b) return !!w;
+      for (const s of pool) if (s.w) updateWing(s, dt);
+      const wings = pool.some((s) => s.w);
+      if (!b) return wings;
       b.t += dt;
       if (b.mode === 'fly') {
         const dx = b.goal[0] - b.x;
@@ -336,7 +352,7 @@ export function createButterfly(root) {
           b.after = null;
           next();
         }
-        if (!b.land && !b.after && (b.x < -100 || b.x > W + 100 || b.y < -100 || b.y > H + 100)) { remove(); return !!w; }
+        if (!b.land && !b.after && (b.x < -100 || b.x > W + 100 || b.y < -100 || b.y > H + 100)) { remove(); return wings; }
       } else {
         b.sitT += dt;
         b.h = 0;
@@ -345,7 +361,7 @@ export function createButterfly(root) {
       return true;
     },
     draw() {
-      if (w) drawFallen();
+      for (const s of pool) if (s.w) drawFallen(s);
       if (!b) return;
       el.style.transform = `translate(${Math.round(b.x - BOX / 2)}px, ${Math.round(b.y - BOX / 2)}px)`;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -367,9 +383,16 @@ export function createButterfly(root) {
     },
   };
 
-  function updateWing(dt) {
+  function updateWing(slot, dt) {
+    const w = slot.w;
     w.t += dt;
-    if (w.h > 0) {
+    if (w.away) {
+      // carried off: keeps tumbling in the air, drifts away and leaves the screen
+      w.x += (w.vx + Math.sin(w.t * 7) * 70) * dt;
+      w.y += (w.vy + Math.cos(w.t * 5) * 40) * dt;
+      w.heading += w.spin * dt;
+      if (w.x < -100 || w.x > W + 100 || w.y < -100 || w.y > H + 100) { slot.w = null; slot.el.hidden = true; }
+    } else if (w.h > 0) {
       // falling like a leaf: side to side, spinning, slower than a stone
       w.h = Math.max(0, w.h - dt * 0.45);
       w.vx *= Math.exp(-dt * 1.2); // air drag
@@ -379,13 +402,13 @@ export function createButterfly(root) {
       w.heading += w.spin * dt;
       if (!w.h) w.lay = w.t;
     } else if (w.t - w.lay > WING_LIES) {
-      w = null;
-      wel.hidden = true;
+      slot.w = null;
+      slot.el.hidden = true;
     }
   }
 
-  function drawFallen() {
-    const fade = w.h ? 1 : Math.min(1, Math.max(0, (WING_LIES - (w.t - w.lay)) / WING_FADE));
+  function drawFallen({ w, el: wel, ctx: wctx }) {
+    const fade = w.h || w.away ? 1 : Math.min(1, Math.max(0, (WING_LIES - (w.t - w.lay)) / WING_FADE));
     wel.style.transform = `translate(${Math.round(w.x - BOX / 2)}px, ${Math.round(w.y - BOX / 2)}px)`;
     wel.style.opacity = fade;
     wctx.setTransform(1, 0, 0, 1, 0, 0);

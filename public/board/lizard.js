@@ -652,6 +652,16 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
    * The body behind keeps the old path. Goes only with `chance`, and only for a wing it can reach without
    * turning round; false otherwise.
    */
+  /** Whether the path bends between `from` and `to` more sharply than a gecko's body does walking. */
+  function sharp(g, from, to) {
+    for (let s = from; s < to; s += 8) {
+      const [, , ax, ay] = at(g, s);
+      const [, , bx, by] = at(g, s + SEG);
+      if (ax * bx + ay * by < Math.cos(0.5)) return true;
+    }
+    return false;
+  }
+
   function toWing(g, wing, chance) {
     const w = [wing[0] / g.k, wing[1] / g.k];
     const [hx, hy, dx, dy] = at(g, g.s);
@@ -672,7 +682,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     const [ex, ey] = unit(ux + dx * 0.6, uy + dy * 0.6);
     const run = Math.min(REACH + 40, D * 0.5);
     const p = [w[0] - ex * run, w[1] - ey * run];
+    const keep = { pts: g.pts, lens: g.lens, total: g.total, s: g.s };
     const sP = reroute(g, p, [ex, ey]);
+    if (sharp(g, g.s, sP + run)) { Object.assign(g, keep); return false; } // only a hook gets there: the body would fold, leave it
     g.meal = { at: w, s: sP + run };
     go(g, rand(300, 420) * g.k); // a few unhurried steps
     return true;

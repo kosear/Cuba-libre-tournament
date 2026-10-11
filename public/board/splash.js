@@ -29,8 +29,8 @@ const CUE_CREEP = 120; // px/s, the cue ball never stops on screen: it creeps of
 const SLIDE = 600; // px/s², sliding friction on the cloth: low enough for the cue to keep its spin from the screen edge
 const CUE_SHOTS = [['follow', 1.5, 0.4], ['stun', 0, 0.3], ['draw', -0.9, 0.3]]; // cue spin at the hit as u/v, chance
 // Side spin («English»): w, rad/s around the vertical axis. The number turns on the spot like a top, the cloth slows
-// it down (even on a ball that has stopped), and at an edge or the logo it bends the bounce: the surface rubs along
-// the cushion and pushes the ball sideways (SPIN_KICK), giving up half of the spin.
+// it down (even on a ball that has stopped), and at the logo it bends the bounce: the surface rubs along
+// the logo's edge and pushes the ball sideways (SPIN_KICK), giving up half of the spin.
 const SPIN_DECAY = 3; // rad/s²
 const SPIN_KICK = 0.25;
 const CUE_SIDE = 0.5; // share of cue shots with side spin, 15-30 rad/s
@@ -72,15 +72,12 @@ function cueSpin(v0, d, r) {
   return (lo + hi) / 2;
 }
 const RESTITUTION = 0.85;
-const CUSHION = 0.8; // speed kept after bouncing off a screen edge
-const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
 const FAST_CHANCE = 0.05; // one rolling ball in 20 is shot 3 times faster: it hits the logo 3 times harder (push,
 const FAST_SPEED = 3; // spin and squash all follow the speed of the hit)
 const ROCKET_CHANCE = 0.01; // and one in 100 is a rocket: 10 times faster (up to ROCKET_MAX), so it hits much harder
 const ROCKET_SPEED = 10;
 const ROCKET_MAX = 4200; // px/s: faster and the rocket is on screen for a few frames only, a hit with no ball seen
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
-const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
 
 const COLORS = ['#F2C200', '#1F4FBF', '#D21034', '#5B2A86', '#F07A1A', '#11804A', '#7A1F1F', '#111111'];
@@ -295,7 +292,7 @@ export function startSplash(root) {
   // Rolling by d turns them around the axis perpendicular to the motion by d / R, like a real ball on a table
   // (screen x right, y down, z towards the viewer). Each pixel of the visible half gets its surface normal; what is
   // there (number circle with the digit, white cap or the stripe, plain colour) comes from the angle to n and q,
-  // then diffuse light from the top left, a specular highlight and an anti-aliased edge. Marks slide over the edge
+  // then the lamp's diffuse light and highlight (see LAMP) and an anti-aliased edge. Marks slide over the edge
   // without any jumps. Redrawn only while the ball moves.
   const RES = 80; // canvas pixels across the ball, stretched to 118 px by CSS
   const DISC = Math.cos(0.42); // number circle, ~24° around n
@@ -553,18 +550,16 @@ export function startSplash(root) {
       const dy = (ty - sy) / d;
       if (!hit && pathHitsLogo(sx, sy, sx + dx * 2600, sy + dy * 2600)) continue;
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
-      // A miss rolls off the far edge; a hit reaches the logo and, bounced back, still leaves the screen; a rally
-      // keeps going for 3-4 edges. A ball that stops on screen would wait for a cue shot that may not exist.
-      const rally = Math.random() < RALLY_CHANCE;
+      // A miss rolls off the far edge; a hit reaches the logo and, bounced back, still leaves the screen.
+      // A ball that stops on screen would wait for a cue shot that may not exist. Screen edges are open, no bounces.
       const way = hit ? d + 1300 : exitDistance(sx, sy, dx, dy) + 150;
-      const vMin = speedFor(rally ? Math.max(way, 7000) : way);
+      const vMin = speedFor(way);
       const luck = Math.random();
       const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : 1;
       const raw = Math.max(vMin, hit ? rand(1100, 1500) : rand(900, 1300)) * boost;
       const v = boost === ROCKET_SPEED ? Math.min(raw, ROCKET_MAX) : raw;
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION);
       if (Math.random() < ROLL_SIDE) b.w = (Math.random() < 0.5 ? -1 : 1) * rand(5, 15);
-      b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
     }
     return false;
@@ -712,7 +707,6 @@ export function startSplash(root) {
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     roll(b, b.ux * dt, b.uy * dt); // the number turns with the spin, not with the travel
-    if (b.cushions) bounceOffEdge(b);
 
     const n = logoContact(b.x, b.y);
     if (n) {
@@ -738,32 +732,6 @@ export function startSplash(root) {
         b.y += n[1] * 2;
       }
     }
-  }
-
-  /**
-   * Screen edges are open, except for the bounces a ball has left (b.cushions: usually 0 or 1, 3-4 for a rally): it
-   * bounces off the edge it reaches only when it is fast enough to cross the screen again and the way is clear of the
-   * logo; otherwise it rolls off and has no bounces left.
-   */
-  function bounceOffEdge(b) {
-    const nx = b.x < R && b.vx < 0 ? 1 : b.x > W - R && b.vx > 0 ? -1 : 0;
-    const ny = b.y < R && b.vy < 0 ? 1 : b.y > H - R && b.vy > 0 ? -1 : 0;
-    if (!nx && !ny) return;
-    const vx = nx ? -b.vx * CUSHION : b.vx;
-    const vy = ny ? -b.vy * CUSHION : b.vy;
-    const sp = len(vx, vy);
-    const dx = vx / sp;
-    const dy = vy / sp;
-    const dist = exitDistance(b.x, b.y, dx, dy);
-    if ((b.friction && rollDistance(sp) < dist + 150) || pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) {
-      b.cushions = 0; // no clean bounce: it leaves
-      return;
-    }
-    b.cushions--;
-    b.vx = vx;
-    b.vy = vy;
-    spinKick(b, nx, ny);
-    rollOn(b);
   }
 
   /** Right after stopping: the ball rocks back about 2 px within a quarter second and sits. */
@@ -805,8 +773,6 @@ export function startSplash(root) {
       if (x.resting) x.resting = false;
       if (x.num !== 0) x.friction = FRICTION;
       x.slow = false; // knocked: no longer the ball that stops by the logo
-      // Decided once per ball, at the cue shot.
-      if ((a.num === 0 || b.num === 0) && x.cushions === undefined) x.cushions = Math.random() < CUSHION_CHANCE ? 1 : 0;
     }
   }
 

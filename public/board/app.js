@@ -199,7 +199,9 @@ function slidePlayoff() {
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
     // (the 3rd place match drops «played before the final» then, to make room for it)
-    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${side(2)}</div>`;
+    // the big final: a quiet «VS» on the line between the two names
+    const vs = extra.includes('big') ? '<div class="vs"><span>VS</span></div>' : '';
+    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${vs}${side(2)}</div>`;
   };
   // Play-offs on (no queue panel): the slide spans from the logo's left edge to the clock's right edge; the final grows
   // to fill the right side, as tall as the left column. Before (contenders, the queue still on the right) the final is

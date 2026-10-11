@@ -35,7 +35,7 @@
 //   the robbed one looks after it, licks its eye and gives chase;
 // - fight: slow dashes towards each other with freezes, a frozen stare (only the tail tips curl), then at once:
 //   of two sizes the small one wins in SMALL_WINS (the other turns and flees, the winner snaps after it and chases
-//   it off), of one size both dart at each other and... nuzzle, snout against snout, one slow rub, comic hearts,
+//   it off), of one size both dart at each other and... kiss, snout to snout, comic hearts,
 //   then walk off to opposite sides;
 // - family: a mother and her baby of the same colour, the baby trotting after her on her path; she catches a butterfly,
 //   the baby runs up alongside, tears off a wing for itself and eats it.
@@ -1144,7 +1144,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           if (!sc.base) {
             sc.base = [a.yaw, b.yaw];
             sc.first = Math.random() < 0.5 ? a : b;
-            sc.len = rand(2.1, 2.6); // the rub (0.6-1.9 s), then a moment still, snout to snout
+            sc.len = rand(2, 2.5);
             sc.hearts = { t: 0, n: 1 + Math.floor(Math.random() * 3), at: null };
           }
           sc.hearts.t += dt;
@@ -1153,8 +1153,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const o = other(f);
           // the necks stretch out slowly, one a little before the other, until the nose tips meet; worked out every
           // frame, so the snouts stay together while the heads sway
-          // one slow rub, cheek along cheek: the heads glide to one side together and back, once
-          const tw = 0.2 * Math.sin(Math.PI * smooth(Math.min(1, Math.max(0, u - 0.6) / 1.3)));
+          // a kiss: the noses meet and stay; the heads only drift, barely, a little to one side and a little to the other,
+          // in one slow movement over the whole kiss
+          const tw = 0.05 * Math.sin(2 * Math.PI * Math.min(1, Math.max(0, u - 0.5) / (sc.len - 0.3)));
           a.yaw = a.yawTo = sc.base[0] + tw;
           b.yaw = b.yawTo = sc.base[1] - tw; // facing each other: both heads swing to the same side
           const ra = a.reach;
@@ -1165,8 +1166,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           a.reach = ra;
           b.reach = rb;
           const half = Math.max(0, Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) - 6 * (ka + kb)) / 2; // the nose tips just meet
-          f.reach = (half / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
-          o.reach = (half / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
+          const press = 3 * smooth(Math.min(1, Math.max(0, u - 0.6) / 0.4)); // a light press once the noses touch (px)
+          f.reach = ((half + press) / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
+          o.reach = ((half + press) / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
           for (const g of both) g.curl = 1;
           if (u > sc.len + 0.3) next('part');
         } else if (sc.step === 'part') {

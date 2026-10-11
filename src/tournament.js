@@ -131,8 +131,15 @@ export function journal() {
     FROM actions a LEFT JOIN admins ad ON ad.id = a.admin_id
     WHERE a.tournament_id = ? ORDER BY a.id DESC LIMIT ?`).all(tid, JOURNAL_LIMIT);
   const names = {};
-  for (const r of db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND type IN ('player.add', 'player.rename', 'player.replace', 'group.add', 'group.rename') ORDER BY id").all(tid)) {
+  for (const r of db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND type IN ('player.add', 'player.rename', 'player.replace', 'group.add', 'group.rename', 'groups.setup') ORDER BY id").all(tid)) {
     const p = JSON.parse(r.payload);
+    if (r.type === 'groups.setup') {
+      for (const g of p.groups || []) {
+        names[g.id] = g.name;
+        for (const pl of g.players || []) names[pl.id] = pl.name;
+      }
+      continue;
+    }
     const id = p.newId ?? p.id; // player.replace names the new player newId
     if (id && p.name) names[id] = p.name;
   }

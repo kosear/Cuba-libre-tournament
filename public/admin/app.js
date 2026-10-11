@@ -407,15 +407,19 @@ async function bulkSetup() {
     const j = Math.floor(Math.random() * (i + 1));
     [names[i], names[j]] = [names[j], names[i]];
   }
+  // One action for the whole setup: one journal entry, one undo.
   const size = Math.ceil(names.length / groups);
+  const used = new Set(T().groups.map((g) => g.name));
+  const setup = [];
   let bye = 0;
-  for (let g = 0; g < groups; g++) {
-    const id = uuid();
-    if (!(await step('group.add', { id, name: nextGroupName() }))) return;
+  for (let g = 0, letter = 0; g < groups; g++) {
+    let name;
+    do name = `Group ${String.fromCharCode(65 + letter++)}`; while (used.has(name));
     const members = names.filter((_, k) => k % groups === g);
     while (members.length < size) members.push(++bye === 1 ? 'BYE' : `BYE ${bye}`);
-    for (const name of members) if (!(await step('player.add', { id: uuid(), name, groupId: id }))) return;
+    setup.push({ id: uuid(), name, players: members.map((n) => ({ id: uuid(), name: n })) });
   }
+  if (!(await step('groups.setup', { groups: setup }))) return;
   refresh();
   toast(skipped.length ? t('bulk.doneSkipped', { names: skipped.join(', ') }) : t('bulk.done'));
 }
@@ -472,6 +476,7 @@ function describe(e) {
   switch (e.type) {
     case 'group.add': case 'group.rename': return t(`log.${e.type}`, { name: p.name });
     case 'group.remove': return t('log.group.remove', { group: groupName(p.id) });
+    case 'groups.setup': return t('log.groups.setup', { groups: p.groups.length, players: p.groups.reduce((n, g) => n + g.players.length, 0) });
     case 'player.add': return t('log.player.add', { name: p.name, group: p.groupId ? groupName(p.groupId) : '—' });
     case 'player.rename': return t('log.player.rename', { old: '', name: p.name }).trim();
     case 'player.move': return t('log.player.move', { player: playerName(p.id), group: p.groupId ? groupName(p.groupId) : '—' });

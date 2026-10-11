@@ -61,6 +61,7 @@ export function actionKeys(type, payload = {}) {
   switch (type) {
     case 'group.add':
     case 'player.add':
+    case 'groups.setup':
       return []; // new ids never clash
     case 'tournament.start':
       return ['tournament'];
@@ -151,6 +152,18 @@ const handlers = {
     const id = requireId(p.id);
     if (s.groups.some((g) => g.id === id)) throw new DomainError('duplicate_id');
     s.groups.push({ id, name: cleanName(p.name) });
+  },
+
+  // Quick setup: several groups with their players in one action (one journal entry, one undo).
+  // { groups: [{ id, name, players: [{ id, name }] }] }; the shuffle is done by the admin page, so replay is exact.
+  'groups.setup'(s, p) {
+    requirePhase(s, 'setup');
+    if (!Array.isArray(p.groups) || !p.groups.length || p.groups.length > 26) throw new DomainError('bad_setup');
+    for (const g of p.groups) {
+      if (!Array.isArray(g?.players)) throw new DomainError('bad_setup');
+      handlers['group.add'](s, { id: g.id, name: g.name });
+      for (const pl of g.players) handlers['player.add'](s, { id: pl?.id, name: pl?.name, groupId: g.id });
+    }
   },
 
   'group.rename'(s, p) {

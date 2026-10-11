@@ -485,3 +485,19 @@ test('replace and move only during the group stage; replay gives the same state'
   t.fails('wrong_phase', 'player.move', { id: 'a1', groupId: 'A' });
   assert.deepEqual(buildState(t.log), t.s);
 });
+
+test('groups.setup: the whole quick setup in one action, all or nothing', () => {
+  const groups = [{ id: 'A', name: 'Group A', players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'b' }] },
+    { id: 'B', name: 'Group B', players: [{ id: 'c', name: 'c' }, { id: 'd', name: 'd' }] }];
+  const one = tour().do('groups.setup', { groups });
+  const many = tour().setup({ A: ['a', 'b'], B: ['c', 'd'] });
+  assert.deepEqual(one.s.groups, many.s.groups);
+  assert.deepEqual(one.s.players, many.s.players);
+  assert.deepEqual(one.s.playerOrder, many.s.playerOrder);
+  // a repeated name anywhere: nothing at all is added
+  const t = tour();
+  t.fails('player_name_taken', 'groups.setup', { groups: [{ id: 'A', name: 'Group A', players: [{ id: 'a', name: 'a' }, { id: 'b', name: 'A' }] }] });
+  assert.equal(t.s.groups.length, 0);
+  t.fails('bad_setup', 'groups.setup', { groups: [] });
+  one.start().fails('wrong_phase', 'groups.setup', { groups });
+});

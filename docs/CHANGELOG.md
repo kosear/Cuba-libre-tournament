@@ -2,6 +2,15 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-11
+
+- New action `groups.setup` `{ groups: [{ id, name, players: [{ id, name }] }] }` (setup phase only): the admin's quick
+  setup now adds all groups and their players in one action, so it is one journal entry and one undo. It is all or
+  nothing: a repeated name or a bad id rejects the whole setup. The shuffle stays on the admin page, the payload holds
+  the final groups, so replay is exact. Before, quick setup sent one `group.add` per group and one `player.add` per
+  player; old tournaments replay unchanged. The admin journal's name lookup reads names from `groups.setup` too.
+- TV state (`/api/state`) shape is unchanged.
+
 ## 2026-10-10
 
 - `player.replace` with `withId` now swaps the two players between their groups: the games of both in their old groups

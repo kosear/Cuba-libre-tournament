@@ -5,7 +5,7 @@ Found while testing. Newest on top. When a bug is fixed, move it to «Fixed» wi
 ## Open
 
 Found by QA on 2026-10-10 (local copy: a rules fuzzer with ~40 000 random admin actions, plus browser runs of the admin
-on a 360 px phone and the board at 1920×1080). Not fixed yet, waiting for the customer's decision.
+on a 360 px phone and the board at 1920×1080). Not fixed yet: the customer decides later, the questions are in [qa-questions.md](qa-questions.md).
 
 ### 2026-10-10: a manual play-off edit during the group stage switches the whole tournament to the play-off
 Repro: 2 groups of 4, start, one result, then in «Play-off» set Semi-final 1 by hand (A1 vs B2).
@@ -32,14 +32,6 @@ On the «Group stage» slide (4 groups) and on a single group slide, names like 
 «Maxim Orlov 🏆», «Budi Santoso 🏆» become «Ivan Petrov …», «Maxim Orlo…»: the 🏆 is eaten by the ellipsis.
 Cause: fixed column widths in `table.std` (name 43 %) with the bigger fonts. Expected: the name and the trophy fit
 (a smaller font for long names, or the trophy outside the cut part).
-
-## Questions for the customer (not bugs)
-
-- **BYE players on the TV.** After a quick setup the BYE fillers stay in the group tables as struck-out rows
-  («BYE», 3 frames). Show them, or hide BYE rows on the TV?
-- **BYE and fairness.** A walkover against a BYE gives a win plus the average balls (≈), like any withdrawal.
-  Players of a group with a BYE get a free win; this matters when groups are compared with each other
-  (3 groups: best second; 5+ groups: best winners). Keep it, or count BYE games differently?
 
 ## Fixed
 

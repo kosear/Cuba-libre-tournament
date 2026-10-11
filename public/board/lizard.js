@@ -83,6 +83,8 @@ function fatter(g, part = 1) {
   g.fatTo = Math.min(step * 3, g.fatTo + step * part);
 }
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
+// TEMPORARY, for testing on dev2: every screen plays the four scenes in turn at the fast pace, as with ?lizard=duo
+const DUO_LOOP = true;
 const DUO = 1 / 15; // share of runs where two geckos meet (a gecko hour or the fast mode: 1 in 5)
 const SMALL_WINS = 0.75; // a standoff of two sizes: the small one wins so often
 
@@ -130,7 +132,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   const mode = new URLSearchParams(location.search).get('lizard');
   const glutton = mode === 'glutton'; // the fast mode with every gecko a glutton that always eats the wing it can reach
   // ?lizard=duo: the fast pace with every run a scene of two, in turn; ?lizard=duo-fight (rivals, steal, family): only that one
-  const duo = mode?.startsWith('duo') ? mode.split('-')[1] || true : null;
+  const duo = mode?.startsWith('duo') ? mode.split('-')[1] || true : DUO_LOOP || null;
   const duoP = () => (often() > 1 ? 0.2 : DUO); // share of runs that are a scene of two
   const fast = mode === 'fast' || glutton || duo ? 40 : 1;
   const test = mode !== null && fast === 1;

@@ -481,17 +481,14 @@ export function startSplash(root) {
     el.height = RES;
     const shadow = document.createElement('div');
     shadow.className = 'ball-shadow';
-    const contact = document.createElement('div');
-    contact.className = 'ball-contact';
-    if (FLAT_SHADOW) contact.hidden = true;
-    root.append(shadow, contact, el);
+    root.append(shadow, el);
     const ctx = el.getContext('2d');
     // The number sits on the stripe: q ⟂ n, and the digit reads along the stripe (t = q).
     const n = randomDir();
     const q = unit(cross(n, randomDir()));
     const t = num > 8 ? q : unit(cross(n, randomDir()));
     const b = {
-      num, el, shadow, contact, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
+      num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
       x, y, vx, vy, ux: vx, uy: vy, w: 0, friction, resting: false, restAt: 0, entered: false,
     };
@@ -502,8 +499,7 @@ export function startSplash(root) {
 
   function place(b) {
     b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
-    // Shadows away from the lamp: a dark crisp contact spot right at the ball (only its rim shows, it sets the ball
-    // on the cloth) and a soft cast shadow, longer and further out the further the ball is from under the lamp.
+    // The shadow falls away from the lamp, a little longer the further the ball is from under it.
     const dx = b.x - LAMP[0];
     const dy = b.y - LAMP[1];
     const far = Math.hypot(dx, dy);
@@ -513,11 +509,10 @@ export function startSplash(root) {
     if (FLAT_SHADOW) {
       b.shadow.style.transform = `translate(${b.x - R + 24}px, ${b.y - R + 32}px)`;
     } else {
-      // both are plain discs blurred by CSS (smooth, no gradient rings): the contact spot just off towards the shadow,
-      // hidden on the lit side; the cast shadow near the ball so it starts right at its edge
-      b.contact.style.transform = `translate(${b.x - R * 0.98 + ux * R * 0.1}px, ${b.y - R * 0.98 + uy * R * 0.1}px)`;
-      const off = R * (0.12 + 0.5 * t);
-      b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.5 * t})`;
+      // One shadow, as in real light: a blurred disc just off the ball away from the lamp. Darkest at the ball's edge,
+      // only lighter further out; two separate spots read as «shadow, light band, shadow».
+      const off = R * (0.08 + 0.35 * t);
+      b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.4 * t})`;
     }
     // the light moves over the ball as it travels, even when it slides without turning
     if (!FLAT_LIGHT && !b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;
@@ -527,7 +522,6 @@ export function startSplash(root) {
   function removeBall(b) {
     b.el.remove();
     b.shadow.remove();
-    b.contact.remove();
     balls = balls.filter((x) => x !== b);
   }
 

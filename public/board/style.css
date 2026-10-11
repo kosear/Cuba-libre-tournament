@@ -200,10 +200,6 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .splash-logo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: opacity;
   filter: drop-shadow(24px 32px 14px rgba(10,18,36,.3)); transition: opacity .6s ease-in-out; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); will-change: transform; } /* a canvas shaded by splash.js */
-/* Cast shadow of a ball lit from the top left: an ellipse stretched along the light (rotated in splash.js), dark core,
-   soft edge; ::before is the small contact shadow where the ball touches the table (towards the ball's centre). */
-/* ball shadows, placed by splash.js away from the lamp: a soft cast shadow and a dark crisp contact spot */
+/* ball shadow, placed by splash.js just off the ball away from the lamp: one blurred disc */
 .ball-shadow { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%;
-  background: rgba(10,18,36,.34); filter: blur(9px); will-change: transform; pointer-events: none; }
-.ball-contact { position: absolute; left: 0; top: 0; width: calc(var(--ball, 118px) * .98); height: calc(var(--ball, 118px) * .98); border-radius: 50%;
-  background: rgba(0,0,0,.6); filter: blur(2.5px); will-change: transform; pointer-events: none; }
+  background: rgba(10,18,36,.5); filter: blur(7px); will-change: transform; pointer-events: none; }

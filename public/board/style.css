@@ -95,6 +95,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 /* the final looks like the semi-finals (customer's decision 2026-10-11) */
 .bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
+.bm.live { box-shadow: 0 12px 30px rgba(19,33,58,.16), 0 3px 8px rgba(19,33,58,.08); } /* the match being played: lifted a little over the others */
 .bm .t { position: relative; }
 .bm .t .live-tag { position: absolute; right: 18px; top: 50%; transform: translateY(-46%); margin: 0; font-size: 46px; letter-spacing: 0; } /* no taller header */
 /* projected semi-finals before the groups are over */

@@ -28,12 +28,11 @@ const MASCOTS = [
   ['👽', '', '🛸', 'Alien Visitor'], ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🌵', '🤠', '', 'Cactus Cowboy'],
   ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'], ['🥑', '🧢', '', 'Avocado Bro'],
 ];
-// pride squad: in the common pool too
+// pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [
   ['🦄', '👑', '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', '🕶️', '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
   ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'], ['🐂', '🩰', '🏳️‍🌈', 'Ballet Bull'],
 ];
-MASCOTS.push(...PRIDE);
 
 const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
@@ -181,20 +180,23 @@ function makeFire(cv) {
   };
 }
 
-// Some regulars always draw from a set of their own (a friendly running joke); by their id like everyone else, so it
-// stays for the tournament and looks like plain luck. Key: the name in lower case without spaces and dots.
+// Some regulars draw from a set of their own (a friendly running joke): `chance` of the tournaments, else the common
+// pool. Decided by their id like everyone else, so it stays for the tournament and looks like plain luck.
+// Key: the name in lower case without spaces and dots.
 const LUCKY = {
-  kc: PRIDE,
+  kc: { set: PRIDE, chance: 1 },
+  david: { set: PRIDE, chance: 0.5 },
 };
 
-/** The player's mascot: a hash of the player id (FNV-1a) into their set (LUCKY or all), random if there is no id. */
+/** The player's mascot: a hash of the player id (FNV-1a) into their set (LUCKY or the common pool). */
 function mascotFor(p) {
-  const set = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')] || MASCOTS;
-  if (!p?.id) return set[Math.floor(Math.random() * set.length)];
+  const lucky = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
+  if (!p?.id) return MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; // mix the bits: similar ids land far apart
   h = (h ^ (h >>> 16)) >>> 0;
+  const set = lucky && ((h >>> 20) % 1000) / 1000 < lucky.chance ? lucky.set : MASCOTS; // high bits: independent of the pick
   return set[h % set.length];
 }
 

@@ -76,6 +76,9 @@ function rushOn(now = Date.now()) {
 }
 
 const GLUTTON = 0.25; // share of geckos that eat 2-3 butterflies in a row
+// share of geckos that have lost their tail (they drop it to get away): a fresh blunt stump, or a new one growing back,
+// shorter, plain greyish and carrot-shaped, from where the old one broke
+const TAILLESS = 1;
 const WING_EAT = 0.2; // a wing torn off during the meal, within reach: share eaten by the same gecko at once
 const FAT = 0.22; // how much rounder the belly of the smallest gecko gets per butterfly
 /** The belly after a meal worth `part` of a butterfly: a big gecko barely shows it (1.5 gets a quarter of what 0.6 gets). */
@@ -109,6 +112,8 @@ const COLORS = [
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const smooth = (x) => x * x * (3 - 2 * x);
+/** Two '#rrggbb' colours mixed, `t` of the second. */
+const mix = (a, b, t) => '#' + [1, 3, 5].map((j) => Math.round(parseInt(a.slice(j, j + 2), 16) * (1 - t) + parseInt(b.slice(j, j + 2), 16) * t).toString(16).padStart(2, '0')).join('');
 
 // half-width of the body at each spine point: big head, thin neck, round belly, long tapering tail
 const WIDTH = Array.from({ length: N }, (_, i) => {
@@ -305,8 +310,20 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops: 0, sit: 0, col,
       limit: glutton || Math.random() < GLUTTON ? 2 + (Math.random() < 0.5 ? 1 : 0) : 1, eaten: 0, fat: 0, fatTo: 0,
       t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
-      puff: 0, wave: 0, curl: 0,
+      puff: 0, wave: 0, curl: 0, tail: lostTail(),
     };
+  }
+
+  /**
+   * The tail of a gecko that lost it, or null: `cut` the last spine point of its own tail, `end` the last one drawn
+   * (beyond `cut`: grown back).
+   */
+  function lostTail() {
+    if (Math.random() >= TAILLESS) return null;
+    const int = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    if (Math.random() < 0.4) { const cut = int(13, 20); return { cut, end: cut }; }
+    const cut = int(13, 19);
+    return { cut, end: Math.min(N - 2, cut + int(2, N - 2 - cut)) };
   }
 
   /**
@@ -1401,22 +1418,26 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     if (g.gulp) w += 5 * Math.exp(-((i - g.gulp) ** 2) / 1.2);
     if (g.puff && i > 4 && i <= HIP) w *= 1 + 0.16 * g.puff; // the body puffed up to look bigger, never the head
     if (g.fat && i > 4 && i < 12) w *= 1 + g.fat * Math.sin((Math.PI * (i - 4)) / 8); // the full belly, widest mid-body
+    const t = g.tail;
+    if (t && i > t.cut) w = WIDTH[t.cut] * (1 - (i - t.cut) / (t.end - t.cut + 1)) ** 0.7; // grown back: thick, then a quick taper
     return w;
   }
 
   function outline(g, p) {
     const left = [];
     const right = [];
-    for (let i = 0; i < N; i++) {
+    const end = g.tail?.end ?? N - 1;
+    for (let i = 0; i <= end; i++) {
       const [, , nx, ny] = frameAt(p, i);
       const w = width(g, i);
       left.push([p[i][0] + nx * w, p[i][1] + ny * w]);
       right.push([p[i][0] - nx * w, p[i][1] - ny * w]);
     }
     const [dx, dy] = frameAt(p, 0);
-    const [tx, ty] = frameAt(p, N - 1);
+    const [tx, ty] = frameAt(p, end);
     const nose = [p[0][0] + dx * 7, p[0][1] + dy * 7];
-    const tip = [p[N - 1][0] - tx * 8, p[N - 1][1] - ty * 8];
+    const out = g.tail && g.tail.end === g.tail.cut ? 3 : 8; // a stump ends blunt
+    const tip = [p[end][0] - tx * out, p[end][1] - ty * out];
     return [nose, ...left, tip, ...right.reverse()];
   }
 
@@ -1548,14 +1569,37 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     closedCurve(body);
     ctx.fillStyle = BODY;
     ctx.fill();
+    const tail = g.tail;
+    if (tail && tail.end > tail.cut) {
+      // the part grown back: plain and greyish, from a seam where the old tail broke
+      // a wide band along the spine from the seam on, cut to the body's outline
+      const far = 25;
+      ctx.save();
+      ctx.clip();
+      ctx.fillStyle = mix(BODY, '#8c8579', 0.55);
+      ctx.beginPath();
+      const back = [];
+      for (let i = tail.cut; i <= tail.end; i++) {
+        const [, , mx, my] = frameAt(p, i);
+        ctx.lineTo(p[i][0] + mx * far, p[i][1] + my * far);
+        back.push([p[i][0] - mx * far, p[i][1] - my * far]);
+      }
+      const [tx, ty] = frameAt(p, tail.end);
+      ctx.lineTo(p[tail.end][0] - tx * far, p[tail.end][1] - ty * far);
+      for (const q of back.reverse()) ctx.lineTo(q[0], q[1]);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      closedCurve(body);
+    }
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = OUTLINE;
     ctx.stroke();
 
-    // light bands across the tail, orange spots on the back
+    // light bands across the tail, orange spots on the back (none on a tail grown back)
     ctx.lineCap = 'round';
     ctx.strokeStyle = LIGHT;
-    for (let i = 14; i < N - 1; i += 3) {
+    for (let i = 14; i < (tail ? tail.cut : N - 1); i += 3) {
       const [, , nx, ny] = frameAt(p, i);
       const w = WIDTH[i] * 0.7;
       ctx.lineWidth = Math.max(2, WIDTH[i] * 0.45);
@@ -1566,6 +1610,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     }
     ctx.fillStyle = SPOT;
     for (const [fi, side, r] of g.spots) {
+      if (tail && fi > tail.cut - 0.5) continue;
       const i = Math.floor(fi);
       const f = fi - i;
       const [, , nx, ny] = frameAt(p, i);

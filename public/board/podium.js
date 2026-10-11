@@ -1,11 +1,12 @@
 // Podium after the final: a bright full-screen «poster» (docs/requirements.md, «После финала», variant C).
 // Neon gradient, slow rays behind a big golden trophy, the champion's name in huge 3D gold letters,
-// a caption with the date. Only the champion: no 2nd and 3rd places (customer's decision 2026-10-11). The entrance plays once per appearance; after it only
+// a caption with the date. The champion as big as ever; 2nd and 3rd place stand left and right of the trophy, a silver
+// and a bronze medal over their names (back on 2026-10-11, the champion's size unchanged). The entrance plays once per appearance; after it only
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
 const W = 1920;
-const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, caption: 1900 };
+const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, second: 1750, third: 1950, caption: 2200 };
 const FIREWORK_EVERY = [18000, 32000]; // ms between idle fireworks
 const COLORS = ['#ffd84a', '#ff9500', '#ffffff', '#8fc1ff', '#ff6b4a'];
 
@@ -53,12 +54,27 @@ const TROPHY = `<svg class="pz-cup" viewBox="0 0 320 340" aria-hidden="true">
   <text x="160" y="140" text-anchor="middle" font-size="96" font-weight="900" fill="#9a6500" fill-opacity=".55" font-family="Inter, system-ui, sans-serif">1</text>
 </svg>`;
 
+/** A medal: a metal disc with the place number, on a V of ribbon. kind: 'silver' | 'bronze'. */
+function medal(kind, n) {
+  const [hi, mid, lo, ribbon] = kind === 'silver' ? ['#ffffff', '#d7dde6', '#8e99a8', '#2d5bd6'] : ['#ffe2c2', '#d98a4a', '#8a4a1c', '#c8102e'];
+  return `<svg class="pz-medal" viewBox="0 0 200 250" aria-hidden="true">
+    <defs><linearGradient id="pzM${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hi}"/><stop offset=".45" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></linearGradient></defs>
+    <path d="M40 0 H90 L120 110 H70 Z" fill="${ribbon}"/><path d="M160 0 H110 L80 110 H130 Z" fill="${ribbon}" opacity=".85"/>
+    <circle cx="100" cy="160" r="82" fill="url(#pzM${n})"/>
+    <circle cx="100" cy="160" r="64" fill="none" stroke="${lo}" stroke-opacity=".45" stroke-width="5"/>
+    <path d="M52 122 A64 64 0 0 1 120 98" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8" stroke-linecap="round"/>
+    <text x="100" y="192" text-anchor="middle" font-size="92" font-weight="900" fill="${lo}" font-family="Inter, system-ui, sans-serif">${n}</text>
+  </svg>`;
+}
+
 export function createPoster(root) {
   let shown = null; // id of the champion on screen
   let fireTimer = null;
   let anims = [];
 
-  function build(p1) {
+  function build([p1, p2, p3]) {
+    const side = (p, n, kind, label) => (p ? `<div class="pz-side pz-p${n} ${kind}">${medal(kind, n)}<div class="pz-slabel">${label}</div>
+      <div class="pz-sname"><span>${esc(p.name)}</span></div></div>` : '');
     root.innerHTML = `<div class="pz-bg"></div>
       <div class="pz-rays">${raysSvg()}</div>
       <div class="pz-glow"></div>
@@ -66,9 +82,16 @@ export function createPoster(root) {
       <div class="pz-trophy">${TROPHY}</div>
       <div class="pz-label">Champion</div>
       <div class="pz-name"><span>${esc(p1?.name ?? '')}</span></div>
+      ${side(p2, 2, 'silver', '2nd place')}${side(p3, 3, 'bronze', '3rd place')}
       <div class="pz-caption">Cuba Libre · Pool Tournament · ${eveningDate()}</div>
       <div class="pz-flash"></div>`;
     fitName();
+    // 2nd and 3rd: one line each, 76 px down to 36, within their side of the trophy
+    root.querySelectorAll('.pz-sname span').forEach((node) => {
+      let size = 76;
+      node.style.fontSize = `${size}px`;
+      while (size > 36 && node.offsetWidth > 600) node.style.fontSize = `${(size -= 2)}px`;
+    });
   }
 
   /** The champion's name on one line, as big as fits: 240 px down to 90. */
@@ -103,6 +126,9 @@ export function createPoster(root) {
       { transform: 'translate(-6px, 4px)' }, { transform: 'none' },
     ], { duration: 360, delay: ENTRANCE.champion + 330, easing: 'linear', fill: 'none' });
     run('.pz-label', [{ transform: 'translateY(20px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: ENTRANCE.label });
+    for (const [sel, at] of [['.pz-p2', ENTRANCE.second], ['.pz-p3', ENTRANCE.third]]) {
+      run(sel, [{ transform: 'translateY(60px) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, delay: at });
+    }
     run('.pz-caption', [{ opacity: 0 }, { opacity: 1 }], { duration: 800, delay: ENTRANCE.caption });
     setTimeout(() => {
       if (!shown) return;
@@ -156,14 +182,14 @@ export function createPoster(root) {
   }
 
   return {
-    /** podium = [1st, 2nd, 3rd] from the snapshot; only the champion is shown. The entrance plays only when the poster appears. */
+    /** podium = [1st, 2nd, 3rd] from the snapshot. The entrance plays only when the poster appears. */
     show(podium) {
       const [p1] = podium || [];
-      const key = p1?.id ?? '';
+      const key = (podium || []).map((p) => p?.id ?? '').join('|');
       if (key === shown) return;
       const first = shown === null;
       root.hidden = false; // visible before building: the names are measured to fit
-      build(p1);
+      build(podium || []);
       shown = key;
       if (first) entrance(); // a corrected final only redraws the name
       idleFireworks();

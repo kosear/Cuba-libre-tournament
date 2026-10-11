@@ -17,8 +17,9 @@ const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share
 const SHADOW_DX = 24; // cast shadow offset: light from the top left, so it falls to the bottom right
 const SHADOW_DY = 32;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
-const FRICTION_FAST = 50; // px/s², balls that roll by
-const FRICTION_SLOW = 260; // px/s², balls that stop near the logo
+// One rolling resistance for every ball, as on real cloth (ball 118 px = 57 mm: ~0.12 m/s² ≈ 250 px/s²): balls visibly
+// slow down. Start speeds are worked out from it so a ball still gets where it must (off the screen, to the logo).
+const FRICTION = 250; // px/s²
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
@@ -28,7 +29,6 @@ const ROCKET_CHANCE = 0.01; // and one in 100 is a rocket: 10 times faster, 10 t
 const ROCKET_SPEED = 10;
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
-const RALLY_SPEED = 1.5; // it is sent faster, each bounce keeps only CUSHION of the speed
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
 
 const COLORS = ['#F2C200', '#1F4FBF', '#D21034', '#5B2A86', '#F07A1A', '#11804A', '#7A1F1F', '#111111'];
@@ -459,12 +459,15 @@ export function startSplash(root) {
       const dy = (ty - sy) / d;
       if (!hit && pathHitsLogo(sx, sy, sx + dx * 2600, sy + dy * 2600)) continue;
       // A miss must roll off the far edge: a ball that stops on screen would wait for a cue shot that may not exist.
-      const vMin = hit ? 0 : Math.sqrt(2 * FRICTION_FAST * (exitDistance(sx, sy, dx, dy) + 150));
+      // A miss rolls off the far edge; a hit reaches the logo and, bounced back, still leaves the screen; a rally
+      // keeps going for 3-4 edges. A ball that stops on screen would wait for a cue shot that may not exist.
       const rally = Math.random() < RALLY_CHANCE;
+      const way = hit ? d + 1300 : exitDistance(sx, sy, dx, dy) + 150;
+      const vMin = Math.sqrt(2 * FRICTION * (rally ? Math.max(way, 7000) : way));
       const luck = Math.random();
-      const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : rally ? RALLY_SPEED : 1;
-      const v = Math.max(vMin, hit ? rand(650, 1000) : rand(420, 760)) * boost;
-      const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION_FAST);
+      const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : 1;
+      const v = Math.max(vMin, hit ? rand(1100, 1500) : rand(900, 1300)) * boost;
+      const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION);
       b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
     }
@@ -493,8 +496,8 @@ export function startSplash(root) {
       const [sx, sy] = edgePoint();
       if (pathHitsLogo(sx, sy, qx, qy)) continue;
       const d = len(qx - sx, qy - sy);
-      const v = Math.sqrt(2 * FRICTION_SLOW * d);
-      makeBall(freeNumber(), sx, sy, ((qx - sx) / d) * v, ((qy - sy) / d) * v, FRICTION_SLOW);
+      const v = Math.sqrt(2 * FRICTION * d);
+      makeBall(freeNumber(), sx, sy, ((qx - sx) / d) * v, ((qy - sy) / d) * v, FRICTION).slow = true; // stops by the logo
       return true;
     }
     return false;
@@ -539,7 +542,7 @@ export function startSplash(root) {
     }
     // No clean shot: nudge the ball away instead.
     target.resting = false;
-    target.friction = FRICTION_FAST;
+    target.friction = FRICTION;
     const cx = logoBox.x + logoBox.w / 2;
     const cy = logoBox.y + logoBox.h / 2;
     const d = len(target.x - cx, target.y - cy) || 1;
@@ -647,14 +650,20 @@ export function startSplash(root) {
     b.x += nx * push;
     b.y += ny * push;
     if (rel <= 0) return;
-    // Equal masses, elastic: exchange the normal components.
-    a.vx -= rel * nx;
-    a.vy -= rel * ny;
-    b.vx += rel * nx;
-    b.vy += rel * ny;
+    // Equal masses, elastic: the normal components are exchanged. But the balls roll on cloth: right after the hit each
+    // one still spins as it did before, and the cloth turns that slide back into rolling within a moment. The result,
+    // applied at once: v = 5/7·(velocity after the hit) + 2/7·(velocity before). So a rolling cue ball follows on
+    // (about 30° off its line on a half-ball hit, not the 90° of sliding discs), and the struck ball rolls off at 5/7.
+    const ab = [a.vx, a.vy];
+    const bb = [b.vx, b.vy];
+    a.vx = (5 / 7) * (a.vx - rel * nx) + (2 / 7) * ab[0];
+    a.vy = (5 / 7) * (a.vy - rel * ny) + (2 / 7) * ab[1];
+    b.vx = (5 / 7) * (b.vx + rel * nx) + (2 / 7) * bb[0];
+    b.vy = (5 / 7) * (b.vy + rel * ny) + (2 / 7) * bb[1];
     for (const x of [a, b]) {
       if (x.resting) x.resting = false;
-      if (x.num !== 0) x.friction = FRICTION_FAST;
+      if (x.num !== 0) x.friction = FRICTION;
+      x.slow = false; // knocked: no longer the ball that stops by the logo
       // Decided once per ball, at the cue shot.
       if ((a.num === 0 || b.num === 0) && x.cushions === undefined) x.cushions = Math.random() < CUSHION_CHANCE ? 1 : 0;
     }
@@ -698,7 +707,7 @@ export function startSplash(root) {
     }
     if (now < nextSpawn || balls.length >= MAX_BALLS) return;
     // Only one slow ball at a time: on its way or waiting by the logo.
-    const slowBusy = balls.some((b) => b.resting || b.friction === FRICTION_SLOW);
+    const slowBusy = balls.some((b) => b.resting || b.slow);
     const r = Math.random();
     let ok;
     if (!slowBusy && r < 0.25) ok = spawnSlow();
@@ -712,7 +721,7 @@ export function startSplash(root) {
     if (!logoHome) return;
     // While a slow ball rolls in or waits by the logo for the cue, the logo holds still: its resting spot and the
     // cue's shot were worked out for this position (moving on, the logo would bump the ball away).
-    if (balls.some((b) => b.resting || b.friction === FRICTION_SLOW)) {
+    if (balls.some((b) => b.resting || b.slow)) {
       drift.vx = drift.vy = drift.va = 0;
       return;
     }
@@ -740,7 +749,7 @@ export function startSplash(root) {
     for (const b of balls) {
       if (!b.resting) continue;
       const n = logoContact(b.x, b.y);
-      if (n) { b.resting = false; b.friction = FRICTION_FAST; b.vx = n[0] * 160; b.vy = n[1] * 160; }
+      if (n) { b.resting = false; b.friction = FRICTION; b.vx = n[0] * 160; b.vy = n[1] * 160; }
     }
   }
 

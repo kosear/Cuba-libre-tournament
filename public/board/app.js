@@ -3,6 +3,7 @@
 import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
 import { createCall } from '/board/call.js';
+import { createPoster } from '/board/podium.js';
 import { startLizard } from '/board/lizard.js';
 
 const stage = document.getElementById('stage');
@@ -59,9 +60,11 @@ stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/
   <aside class="queue" id="queue"><div class="qhead"><span class="qtitle">Play Next</span><span id="clock"></span></div><div id="qtop"></div>
     <div class="qrest" id="qrest"><div class="qrest-inner" id="qinner"></div><div class="qfade" hidden></div></div></aside>
   <div class="splash" id="splash" hidden></div>
+  <div class="poster" id="poster" hidden></div>
   <div class="call" id="call" hidden></div>
   <div class="glass" id="glass"></div>`;
 const el = (id) => document.getElementById(id);
+const poster = createPoster(el('poster')); // the podium after the final, a full-screen layer like the splash
 // Until the first state arrives the board does not know what to show: no empty frame, just the background.
 stage.classList.add('loading');
 
@@ -191,12 +194,6 @@ function slidePlayoff() {
   };
 }
 
-function slidePodium() {
-  const [p1, p2, p3] = T.podium || [];
-  const col = (cls, p, place, medal) => `<div class="col ${cls}"><div class="medal">${medal}</div><div class="nm">${p ? esc(p.name) : ''}</div><div class="block">${place}</div></div>`;
-  return { title: 'Champions', html: `<div class="podium">${col('p2', p2, 2, '🥈')}${col('p1', p1, 1, '🥇')}${col('p3', p3, 3, '🥉')}</div>` };
-}
-
 // ---------- queue panel (persistent) ----------
 
 let queueKey = '';
@@ -272,10 +269,16 @@ function renderSlide() {
     splash = null;
     el('splash').hidden = true;
   }
-  const make = { groups: slideGroups, group: slideGroup, playoff: slidePlayoff, podium: slidePodium }[s.kind];
+  if (s.kind === 'podium') {
+    poster.show(T.podium); // the entrance plays once; a later update only redraws the names
+    shownKey = s.key;
+    shownKind = s.kind;
+    return;
+  }
+  poster.hide();
+  const make = { groups: slideGroups, group: slideGroup, playoff: slidePlayoff }[s.kind];
   const view = make(s);
   if (!view) return;
-  stage.classList.toggle('full', s.kind === 'podium'); // the podium uses the whole width, no queue
   if (el('title').textContent !== view.title) el('title').textContent = view.title;
   // A new slide (not a data update of the same one) slides in; not from the splash, not to or from the podium.
   const slideIn = shownKey !== s.key && shownKind && !['splash', 'podium'].includes(shownKind) && s.kind !== 'podium';

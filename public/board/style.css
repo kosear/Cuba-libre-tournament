@@ -91,16 +91,6 @@ table.cross td.loss { color: #111; font-weight: 600; }
   background: #eef1f6; border-radius: 6px; padding: 2px 8px; line-height: 1.3; } /* «not in the play-off yet, would be if the groups ended now» */
 .bracket .cand-note { left: 0; top: 370px; width: 500px; text-align: center; }
 
-/* podium */
-.podium { height: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 40px; padding: 0 120px; }
-.podium .col { text-align: center; }
-.podium .nm { font-size: 76px; font-weight: 900; text-transform: uppercase; margin-bottom: 24px; overflow-wrap: anywhere; line-height: 1.05; }
-.podium .block { border-radius: 18px 18px 0 0; display: grid; place-items: center; font-size: 120px; font-weight: 900; color: #fff; }
-.podium .p1 .block { height: 520px; background: var(--blue); }
-.podium .p2 .block { height: 380px; background: #5b8ddb; }
-.podium .p3 .block { height: 280px; background: #8fb1e6; }
-.podium .medal { font-size: 72px; margin-bottom: 10px; }
-
 /* queue panel (always on the right) */
 aside.queue { position: relative; background: var(--card); display: flex; flex-direction: column; padding: 41.5px 30px 24px; gap: 18px; height: 1080px; min-width: 0; }
 /* 41.5 px: the 36 px «Queue» line is centred at 59.5 px, like the slide title (the 120 px header has a 1 px bottom border) */
@@ -157,6 +147,45 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* splash before the start: logo and rolling balls (splash.js) */
 .splash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; background: #fff; overflow: hidden; }
 /* call screen: who goes to the table now, on top of everything for 20 s; the look is in public/board/call.js */
+/* podium after the final: the «poster» (podium.js) */
+.poster { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; overflow: hidden; color: #fff; }
+.poster[hidden] { display: none; }
+.pz-bg { position: absolute; inset: 0;
+  background: radial-gradient(ellipse 55% 50% at 50% 28%, rgba(255,216,74,.5), rgba(255,216,74,0) 70%),
+    linear-gradient(180deg, rgba(5,15,45,0) 70%, rgba(5,15,45,.18)), linear-gradient(160deg, #0a2463 0%, #2f6fcf 45%, #ff8a00 85%, #ffb000 100%); }
+.pz-rays { position: absolute; left: 110px; top: -550px; width: 1700px; height: 1700px; will-change: transform; animation: pz-turn 120s linear infinite; }
+.pz-rays svg { width: 100%; height: 100%; display: block; }
+@keyframes pz-turn { to { transform: rotate(360deg); } }
+.pz-glow { position: absolute; left: 660px; top: 0; width: 600px; height: 600px; border-radius: 50%; will-change: opacity;
+  background: radial-gradient(circle, rgba(255,236,150,.6), rgba(255,236,150,0) 65%); animation: pz-breathe 3.5s ease-in-out infinite alternate; }
+@keyframes pz-breathe { from { opacity: .55; } to { opacity: 1; } }
+.pz-trophy { position: absolute; left: 800px; top: 95px; width: 320px; height: 340px; }
+.pz-cup { width: 100%; height: 100%; display: block; }
+.pz-label { position: absolute; left: 0; right: 0; top: 452px; text-align: center; font-size: 40px; line-height: 1; font-weight: 800;
+  letter-spacing: 16px; text-transform: uppercase; color: #fff3c4; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+.pz-name { position: absolute; left: 0; right: 0; top: 505px; text-align: center; }
+/* 3D gold letters: a light gold face, the side built from stacked shadows getting darker, a soft drop shadow */
+.pz-name span { display: inline-block; white-space: nowrap; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 2px; color: #ffe066;
+  text-shadow: 0 2px 0 #f2b705, 0 4px 0 #e0a100, 0 6px 0 #c98a00, 0 8px 0 #b07600, 0 10px 0 #946200, 0 12px 0 #7a4f00, 0 24px 34px rgba(0,0,0,.45); }
+.pz-place { position: absolute; bottom: 140px; width: 640px; text-align: center; }
+.pz-place.second { left: 110px; }
+.pz-place.third { left: 1170px; }
+.pz-medal { width: 112px; height: 112px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; font-size: 60px; font-weight: 900;
+  border: 6px solid rgba(255,255,255,.55); box-shadow: 0 10px 24px rgba(0,0,0,.3); }
+.pz-place.second .pz-medal { background: radial-gradient(circle at 35% 30%, #fff, #cfd6e0 45%, #8994a6); color: #485366; }
+.pz-place.third .pz-medal { background: radial-gradient(circle at 35% 30%, #ffe1c4, #d4894a 45%, #8a4f1e); color: #fff; }
+.pz-plabel { font-size: 26px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; color: rgba(255,255,255,.88); }
+.pz-pname { margin-top: 6px; line-height: 1.1; }
+.pz-pname span { display: inline-block; font-size: 68px; font-weight: 900; text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 4px 0 rgba(0,0,0,.22), 0 12px 26px rgba(0,0,0,.35); }
+.pz-caption { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 8px;
+  text-transform: uppercase; color: rgba(255,255,255,.92); }
+.pz-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.pz-sparks { position: absolute; inset: 0; pointer-events: none; }
+.pz-burst { position: absolute; width: 0; height: 0; }
+.pz-burst i { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 50%; will-change: transform, opacity; }
+.pz-burst b { position: absolute; left: -60px; top: -60px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #fff, rgba(255,240,180,.6) 40%, rgba(255,240,180,0) 70%); }
+
 .call { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 6; overflow: hidden; background: #0b0d14; }
 .call[hidden] { display: none; }
 .splash-bg { position: absolute; inset: 0; background: #fff; will-change: opacity; } /* colour layers, faded by splash.js */

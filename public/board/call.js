@@ -20,7 +20,7 @@ const MASCOTS = [
   ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
   ['🦁', '👑', '', 'The Mane Event'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
   ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', '💸', 'Piggy Bank'],
-  ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
+  ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.62, -8], '🪄', 'Hairy Potter'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
   ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],

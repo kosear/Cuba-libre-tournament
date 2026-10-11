@@ -61,7 +61,8 @@ function rushOn(now = Date.now()) {
 }
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
-const SIZES = [[0.6, 0.15], [0.8, 0.25], [1, 0.29], [1.2, 0.2], [1.5, 0.1], [3, 0.01]];
+// TEMP on dev only, to look at the giant: 50% giants. Never merge to main; revert to [3, 0.01] and 0.29 for size 1.
+const SIZES = [[0.6, 0.075], [0.8, 0.125], [1, 0.145], [1.2, 0.1], [1.5, 0.055], [3, 0.5]];
 function pickSize() {
   let r = Math.random();
   for (const [k, p] of SIZES) if ((r -= p) < 0) return k;

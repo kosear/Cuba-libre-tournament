@@ -5,6 +5,8 @@
 // - EventSource reconnects by itself; onStatus(true/false) reports the connection.
 // - The server pings every 15 s. A connection silent for longer than STALE_MS is treated as dead
 //   and reopened: a dropped Wi-Fi often leaves the old stream hanging without an error.
+// - The state is also loaded right away and again on every stale check, without waiting for SSE: some TV browsers
+//   (Yandex Browser TV lite) open the stream but never deliver its events, the page would stay empty.
 const STALE_MS = 40_000;
 
 export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) {
@@ -46,10 +48,12 @@ export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) 
   setInterval(() => {
     if (Date.now() - lastSeen > STALE_MS) {
       onStatus(false);
+      load();
       connect();
     }
   }, 5000);
 
+  load();
   connect();
   return { reload: load };
 }

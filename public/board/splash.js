@@ -57,8 +57,8 @@ function cueSpin(v0, d, r) {
     let v = v0;
     let u = v0 * q;
     let x = 0;
-    const dt = 1 / 120;
-    for (let i = 0; i < 2000 && x < d; i++) {
+    const dt = 1 / 60; // coarse is enough to pick the spin; it runs once per cue shot, 24 tries
+    for (let i = 0; i < 600 && x < d; i++) {
       const sl = v - u;
       if (Math.abs(sl) > 4) { const a = Math.min(SLIDE * dt, Math.abs(sl) / 3.5) * Math.sign(sl); v -= a; u += 2.5 * a; }
       else { v = Math.max(0, v - (DRAG_A + DRAG_K * v) * dt); u = v; }
@@ -68,7 +68,7 @@ function cueSpin(v0, d, r) {
   };
   let lo = -4;
   let hi = 4;
-  for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (at(m) < r) lo = m; else hi = m; }
+  for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (at(m) < r) lo = m; else hi = m; }
   return (lo + hi) / 2;
 }
 const RESTITUTION = 0.85;
@@ -389,15 +389,34 @@ export function startSplash(root) {
   }
 
   // Hot loop: plain numbers only, no arrays per pixel (garbage collection pauses look like glitches on a TV).
+  /**
+   * Per pixel light of a ball at (x, y): diffuse factor and highlight. Depends only on where the ball is, not on how it
+   * has turned, so it is kept and recomputed only after the ball has moved LIGHT_STEP px (a TV has a slow CPU).
+   */
+  const LIGHT_STEP = 30;
+  function lightAt(x, y) {
+    const L = lampDir(x, y);
+    const Hk = Math.hypot(L[0], L[1], L[2] + 1);
+    const H = [L[0] / Hk, L[1] / Hk, (L[2] + 1) / Hk]; // half-way between the light and the viewer
+    const bright = 1 - 0.22 * Math.min(1, Math.hypot(x - LAMP[0], y - LAMP[1]) / 1400);
+    const lit = new Float32Array(NORMALS.length);
+    const sp = new Float32Array(NORMALS.length);
+    for (let j = 0; j < NORMALS.length; j++) {
+      const p = NORMALS[j];
+      const ndl = p.x * L[0] + p.y * L[1] + p.z * L[2];
+      const ndh = p.x * H[0] + p.y * H[1] + p.z * H[2];
+      lit[j] = (0.58 + 0.45 * Math.max(0, ndl)) * bright; // soft: the dark side stays fairly light
+      sp[j] = ndh > 0.6 ? (Math.pow(ndh, 140) * 0.55 + Math.pow(ndh, 16) * 0.07) * bright * 255 : 0; // nothing below
+    }
+    return { x, y, lit, sp };
+  }
+
   function drawBall(b) {
     if (!b.dirty) return;
     b.dirty = false;
-    b.litAt = [b.x, b.y];
+    if (!b.light || Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.light = lightAt(b.x, b.y);
+    const { lit: LIT, sp: SP } = b.light;
     const out = b.img.data;
-    const L = lampDir(b.x, b.y);
-    const Hk = Math.hypot(L[0], L[1], L[2] + 1);
-    const H = [L[0] / Hk, L[1] / Hk, (L[2] + 1) / Hk]; // half-way between the light and the viewer
-    const bright = 1 - 0.22 * Math.min(1, Math.hypot(b.x - LAMP[0], b.y - LAMP[1]) / 1400);
     const [nx, ny, nz] = b.n;
     const [tx, ty, tz] = b.t;
     const [qx, qy, qz] = b.q;
@@ -432,10 +451,8 @@ export function startSplash(root) {
         const dq = p.x * qx + p.y * qy + p.z * qz;
         if (dq > BAND || dq < -BAND) { r = 246; g = 246; bl = 240; } // white caps
       }
-      const ndl = p.x * L[0] + p.y * L[1] + p.z * L[2];
-      const ndh = Math.max(0, p.x * H[0] + p.y * H[1] + p.z * H[2]);
-      const lit = (0.58 + 0.45 * Math.max(0, ndl)) * bright; // soft: the dark side stays fairly light
-      const sp = (Math.pow(ndh, 140) * 0.55 + Math.pow(ndh, 16) * 0.07) * bright * 255;
+      const lit = LIT[j];
+      const sp = SP[j];
       const o = p.i;
       out[o] = r * lit + sp;
       out[o + 1] = g * lit + sp;
@@ -484,7 +501,7 @@ export function startSplash(root) {
     const off = R * (0.15 + 0.9 * t);
     b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.6 * t})`;
     // the light moves over the ball as it travels, even when it slides without turning
-    if (!b.dirty && b.litAt && Math.hypot(b.x - b.litAt[0], b.y - b.litAt[1]) > 6) b.dirty = true;
+    if (!b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;
     drawBall(b);
   }
 

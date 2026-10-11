@@ -11,6 +11,7 @@ main() {
   case "$env" in
     prod) branch=main ;;
     dev)  branch=dev ;;
+    dev2) branch=dev2 ;; # the infra owner's sandbox
     *) echo "unknown env $env" >&2; exit 1 ;;
   esac
 
@@ -24,7 +25,7 @@ main() {
   echo "[$env] $old -> $new"
 
   # Snapshot of the database before new code (and maybe new migrations) touches it. Never blocks a deploy.
-  if [ -x /usr/local/lib/cubalibre/backup.sh ]; then
+  if [ -x /usr/local/lib/cubalibre/backup.sh ] && [ "$env" != dev2 ]; then # dev2 is a sandbox: no backups
     as_app /usr/local/lib/cubalibre/backup.sh "$env" predeploy || echo "[$env] predeploy backup failed"
   fi
 

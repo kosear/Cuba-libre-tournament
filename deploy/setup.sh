@@ -26,6 +26,7 @@ setup_env() {
 
 setup_env prod main 3000
 setup_env dev  dev  3001
+setup_env dev2 dev2 3002 # the infra owner's sandbox: app and auto-deploy only, no backups or archive
 
 cp "$ROOT/prod/deploy/cubalibre@.service" "$ROOT/prod/deploy/cubalibre-sync@.service" \
    "$ROOT/prod/deploy/cubalibre-sync@.timer" "$ROOT/prod/deploy/cubalibre-archive@.service" \
@@ -40,6 +41,8 @@ for env in prod dev; do
   systemctl enable -q --now "cubalibre@$env" "cubalibre-sync@$env.timer" "cubalibre-archive@$env" "cubalibre-backup@$env.timer"
   systemctl restart "cubalibre@$env" "cubalibre-archive@$env"
 done
+systemctl enable -q --now cubalibre@dev2 cubalibre-sync@dev2.timer
+systemctl restart cubalibre@dev2
 systemctl reload caddy
 
 echo "done. logs: journalctl -u cubalibre@prod -f | journalctl -u cubalibre-sync@dev -f"

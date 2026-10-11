@@ -16,3 +16,11 @@ dev.cubalibre.su, dev.199-189-250-169.sslip.io {
 		flush_interval -1
 	}
 }
+
+# The infra owner's sandbox (branch dev2): experiments that should not get in the way of dev.
+dev2.cubalibre.su {
+	encode gzip
+	reverse_proxy 127.0.0.1:3002 {
+		flush_interval -1
+	}
+}

@@ -24,19 +24,23 @@
 Caddy сам выпускает и продлевает сертификаты Let's Encrypt. Конфиг `/etc/caddy/Caddyfile`, исходник в `deploy/Caddyfile`.
 - `cubalibre.su`, `www.cubalibre.su` → `127.0.0.1:3000` (prod)
 - `dev.cubalibre.su` → `127.0.0.1:3001` (dev)
+- `dev2.cubalibre.su` → `127.0.0.1:3002` (dev2, песочница владельца инфраструктуры)
 - Запасные адреса через sslip.io, работают без настройки DNS: `199-189-250-169.sslip.io` (prod) и `dev.199-189-250-169.sslip.io` (dev).
   Добавлены, пока `cubalibre.su` недоступен. Если сменится IP сервера, сменятся и эти адреса.
 - `flush_interval -1` отключает буферизацию, без этого не работает SSE.
 
 ## Окружения
 
-| | prod | dev |
-|---|---|---|
-| Ветка | `main` | `dev` |
-| Папка | `/srv/cubalibre/prod` | `/srv/cubalibre/dev` |
-| Порт | 3000 | 3001 |
-| Приложение | `cubalibre@prod` | `cubalibre@dev` |
-| Автодеплой | `cubalibre-sync@prod.timer` | `cubalibre-sync@dev.timer` |
+| | prod | dev | dev2 |
+|---|---|---|---|
+| Ветка | `main` | `dev` | `dev2` |
+| Папка | `/srv/cubalibre/prod` | `/srv/cubalibre/dev` | `/srv/cubalibre/dev2` |
+| Порт | 3000 | 3001 | 3002 |
+| Приложение | `cubalibre@prod` | `cubalibre@dev` | `cubalibre@dev2` |
+| Автодеплой | `cubalibre-sync@prod.timer` | `cubalibre-sync@dev.timer` | `cubalibre-sync@dev2.timer` |
+
+- `dev2` — песочница владельца инфраструктуры для экспериментов, чтобы не мешать работе в `dev`. Удачное переносится
+  в `dev` (поверх свежего `dev`), дальше как обычно в `main`. Бэкапов и архива у dev2 нет.
 
 - Приложение работает от системного пользователя `cubalibre`, не от root.
 - В каждой папке свой `.env` и своя база `data/app.db`, оба вне git.

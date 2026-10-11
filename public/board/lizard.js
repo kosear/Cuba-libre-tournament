@@ -19,9 +19,9 @@ const PERIOD_MIN = 7 * 60 * 1000;
 const PERIOD_MAX = 13 * 60 * 1000;
 const BUTTERFLY_MIN = 3 * 60 * 1000; // a butterfly just flying by
 const BUTTERFLY_MAX = 8 * 60 * 1000;
-// TEMP demo for watching on the TV: a gecko every 10 s, every run a hunt, every second hunt a miss,
-// a butterfly flying by every 10 s. Set to false to get the normal intervals back.
-const DEMO = true;
+// Demo for watching on the TV: a gecko every 10 s, every run a hunt, every second hunt a miss,
+// a butterfly flying by every 10 s. Normally false.
+const DEMO = false;
 const REACH = 64; // px, how far the head shoots forward in a lunge
 const SEG = 12; // px between spine points
 const N = 26; // spine points: 0-3 head, 4 neck, 5 shoulders, 11 hips, 12-25 tail

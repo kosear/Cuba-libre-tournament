@@ -19,7 +19,7 @@
 // - run-off: the gecko dashes off with the butterfly flapping in its mouth.
 // A miss: a snap at the air, a look after the butterfly and a lick over the eye (geckos do that).
 // A wing left lying brings the next gecko within a minute: it comes to eat the wing.
-// «Gecko hour»: once in every two hours, at a random minute, for RUSH_MS the geckos come one after another (as in the
+// «Gecko hour»: once in every two hours, at a random minute, for RUSH_MS the geckos come much more often (RUSH, like the
 // fast mode). The minute comes from the clock, so all screens in the bar start together and a reload changes nothing.
 // The butterfly also just flies by on its own now and then.
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
@@ -48,7 +48,7 @@ const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
 // size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
 const SLOT_MS = 2 * 60 * 60 * 1000; // one gecko hour in every slot
 const RUSH_MS = 5 * 60 * 1000;
-const RUSH = 40; // how many times more often during it
+const RUSH = 12; // how many times more often during it: a gecko every 35-65 s, 4-5 of them
 /** Is a gecko hour on now? Its start in each slot is a hash of the slot number: random, but the same on every screen. */
 function rushOn(now = Date.now()) {
   const slot = Math.floor(now / SLOT_MS);

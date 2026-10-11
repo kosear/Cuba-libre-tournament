@@ -4,12 +4,16 @@ Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
 ## 2026-10-11
 
+- New table `settings` (migration `004_settings.sql`, additive) for screen settings switched from the admin page.
+  The TV state (`/api/state`) and the admin state get a new field `settings: { lizards }`: «lots of geckos», gecko and
+  butterfly as often as `?lizard=fast` on every screen. Set with `POST /api/admin/settings { lizards: true|false }`.
+  Tournament data and old archived states are not affected; old archive records simply have no `settings`.
 - New action `groups.setup` `{ groups: [{ id, name, players: [{ id, name }] }] }` (setup phase only): the admin's quick
   setup now adds all groups and their players in one action, so it is one journal entry and one undo. It is all or
   nothing: a repeated name or a bad id rejects the whole setup. The shuffle stays on the admin page, the payload holds
   the final groups, so replay is exact. Before, quick setup sent one `group.add` per group and one `player.add` per
   player; old tournaments replay unchanged. The admin journal's name lookup reads names from `groups.setup` too.
-- TV state (`/api/state`) shape is unchanged.
+- Apart from `settings` above, the TV state shape is unchanged.
 
 ## 2026-10-10
 

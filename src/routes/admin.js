@@ -6,6 +6,7 @@ import { getState } from './public.js';
 import { DomainError } from '../domain/engine.js';
 import { addAction, undo, redo, cancelTournament, journal, getTournamentState, currentTournamentId, logHead } from '../tournament.js';
 import { snapshot } from '../domain/view.js';
+import { getSettings, setSetting } from '../settings.js';
 
 export const adminRoutes = Router();
 
@@ -13,7 +14,7 @@ export const adminRoutes = Router();
 function adminState() {
   const raw = getTournamentState();
   const tournamentId = currentTournamentId();
-  return { tournament: snapshot(raw), journal: journal(), raw, head: logHead(tournamentId), tournamentId };
+  return { tournament: snapshot(raw), journal: journal(), raw, head: logHead(tournamentId), tournamentId, settings: getSettings() };
 }
 
 // Domain errors become 400 with a code the admin page translates.
@@ -33,6 +34,15 @@ adminRoutes.get('/state', (req, res) => res.json(adminState()));
 adminRoutes.post('/actions', (req, res) => {
   const { clientId, type, payload, base, tournamentId } = req.body || {};
   run(res, () => addAction({ clientId, type, payload, adminId: req.admin.id, base, tournamentId }));
+});
+
+// Screen settings, e.g. { lizards: true } for lots of geckos on every screen.
+adminRoutes.post('/settings', (req, res) => {
+  const { lizards } = req.body || {};
+  if (typeof lizards !== 'boolean') return res.status(400).json({ error: 'bad_setting' });
+  setSetting('lizards', lizards);
+  broadcast('state', getState());
+  res.json({ ok: true, settings: getSettings() });
 });
 
 adminRoutes.post('/undo', (req, res) => run(res, () => { undo(); }));

@@ -97,12 +97,13 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * `?lizard=fast`: the normal behaviour, only 40 times more often (a gecko every 10-20 s) and with 70% catches
  *   instead of 15%, for one screen.
  */
-export function startLizard(root, { rush = () => true } = {}) {
+export function startLizard(root, { rush = () => true, swarm = () => false } = {}) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const fast = mode === 'fast' ? 40 : 1;
   const test = mode !== null && fast === 1;
   // the fast mode and a gecko hour: many geckos, catches are the rule
-  const often = () => (fast > 1 ? fast : !test && !DEMO && rush() && rushOn() ? RUSH : 1);
+  // ?lizard=fast, «lots of geckos» from the admin page (as often as the fast mode), or a gecko hour
+  const often = () => (fast > 1 ? fast : test || DEMO ? 1 : swarm() ? 40 : rush() && rushOn() ? RUSH : 1);
   const escapeP = () => (often() > 1 ? 0 : 0.8); // after slipping out of the jaws, the share that gets away at the second snap
   const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
   const huntTest = mode === 'hunt';
@@ -129,7 +130,7 @@ export function startLizard(root, { rush = () => true } = {}) {
       bTimer = setTimeout(flyBy, bPeriod());
     }
     rushing = on;
-  }, 10000);
+  }, 3000);
   let raf = 0;
   let last = 0;
   let g = null; // the current run

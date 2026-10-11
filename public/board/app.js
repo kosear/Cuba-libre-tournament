@@ -14,6 +14,7 @@ const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 
 let T = null; // tournament snapshot
+let SETTINGS = {}; // screen settings from the admin page (state.settings)
 let slides = [];
 let index = 0;
 let timer = null;
@@ -404,6 +405,7 @@ function updateCall() {
 
 function onState(state) {
   T = state.tournament;
+  SETTINGS = state.settings || {};
   updateCall();
   const keepKey = slides[index]?.key ?? shownKey;
   slides = buildSlides(T);
@@ -416,7 +418,8 @@ function onState(state) {
 
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
 live({ onState });
-startLizard(el('glass')); // gecko hours too, also during a tournament: that is when the bar is full
+// gecko hours too, also during a tournament: that is when the bar is full; «lots of geckos» is switched in the admin page
+startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards });
 
 // Debug hook for checking slides from the browser console.
 window.__board = {

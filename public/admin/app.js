@@ -197,6 +197,8 @@ function renderChrome() {
   $('redo').disabled = !direct || !S?.journal.canRedo;
   $('undo').title = t('undo');
   $('redo').title = t('redo');
+  $('swarm').classList.toggle('on', !!S?.settings?.lizards);
+  $('swarm').title = t(S?.settings?.lizards ? 'swarm.on' : 'swarm.off');
   $('lang').innerHTML = LANGS.map((l) => `<button data-lang="${l}" class="${l === lang() ? 'on' : ''}">${l.toUpperCase()}</button>`).join('');
   $('tabs').innerHTML = TABS.map((x) => `<button data-tab="${x.id}" class="${x.id === tab ? 'on' : ''}"><b>${x.icon}</b>${esc(t(`tab.${x.id}`))}</button>`).join('');
 }
@@ -652,6 +654,11 @@ document.addEventListener('click', async (e) => {
   if (d.tab) { tab = d.tab; store('tab', tab); window.scrollTo(0, 0); render(); return; }
   if (d.lang) { setLang(d.lang); render(); if (sheet) openSheet(sheet.kind, sheet.id); return; }
   if (el.id === 'undo' || d.undo !== undefined) { post('/api/admin/undo'); return; }
+  if (el.id === 'swarm') {
+    const on = !S?.settings?.lizards;
+    post('/api/admin/settings', { lizards: on }).then((ok) => ok && toast(t(on ? 'swarm.on' : 'swarm.off')));
+    return;
+  }
   if (el.id === 'redo' || d.redo !== undefined) { post('/api/admin/redo'); return; }
   if (el.id === 'menu') { openSheet('settings'); return; }
   if (d.close !== undefined) { closeSheet(); return; }

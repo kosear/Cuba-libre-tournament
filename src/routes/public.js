@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { getTournamentState } from '../tournament.js';
 import { snapshot } from '../domain/view.js';
+import { getSettings } from '../settings.js';
 
 export const publicRoutes = Router();
 
@@ -9,6 +10,7 @@ export const publicRoutes = Router();
 export function getState() {
   return {
     tournament: snapshot(getTournamentState()),
+    settings: getSettings(),
     now: new Date().toISOString(),
   };
 }

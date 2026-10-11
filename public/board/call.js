@@ -9,31 +9,32 @@ const PATTERNS = [
 ];
 const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
 
-// [body, hat, prop, name]
+// [body, hat, prop, name]; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
+// whose head is not in the middle (checked against the Noto emoji the TV uses)
 const MASCOTS = [
   // nicknames with a joke, like a boxer's
-  ['🦈', '🕶️', '🎱', 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
-  ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', '🕶️', '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
+  ['🦈', ['🕶️', -0.33, 0.28, -18], '🎱', 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
+  ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
   ['🦁', '👑', '', 'The Mane Event'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
   ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', '💸', 'Piggy Bank'],
-  ['🦍', '👑', '', 'Kong of the Table'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
-  ['🐧', '🎩', '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
+  ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
+  ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
   ['🦊', '', '💋', 'Foxy Lady'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
-  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐻', '🤠', '🌵', 'Cowboy Bear'], ['🦜', '🏴‍☠️', '⚔️', 'Pirate Parrot'],
-  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Octopus Hustler'], ['🐢', '⛑️', '', 'Safety Turtle'],
+  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐻', '', '🍯', 'Honey Bear'], ['🦜', '', '⚔️', 'Pirate Parrot'],
+  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Octopus Hustler'], ['🐢', ['⛑️', -0.74, 0.8, -20], '', 'Safety Turtle'],
   ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🥊', 'Boxing Kangaroo'],
-  ['🐐', '🎓', '🎺', 'Jazz Goat'], ['🦩', '🕶️', '🍹', 'Party Flamingo'], ['🐊', '🧢', '🦷', 'Smiley Croc'],
-  ['🦔', '🎉', '🎈', 'Birthday Hedgehog'], ['🐳', '🎩', '🎻', 'Whale Maestro'], ['🐌', '⛑️', '🏎️', 'Racing Snail'],
-  ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', '🪖', '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
+  ['🐐', '🎓', '🎺', 'Jazz Goat'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🍹', 'Party Flamingo'], ['🐊', '', '🦷', 'Smiley Croc'],
+  ['🦔', '', '🎈', 'Birthday Hedgehog'], ['🐳', ['🎩', -0.44, 0.36, -10], '🎻', 'Whale Maestro'], ['🐌', ['⛑️', -0.33, 0.18, -15], '🏎️', 'Racing Snail'],
+  ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
   ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
 ];
 // pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [
-  ['🦄', '👑', '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', '🕶️', '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
-  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'], ['🐂', '🩰', '🏳️‍🌈', 'Ballet Bull'],
+  ['🦄', ['👑', -0.3, 0.18, -10], '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
+  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
 ];
 
 const CSS = `
@@ -252,7 +253,10 @@ export function createCall(root) {
   function setMascot(n, [body, hat, item]) {
     const box = q(`.mascot.m${n}`);
     box.textContent = body;
-    if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
+    if (Array.isArray(hat)) {
+      const [h, dx, dy, deg] = hat;
+      box.insertAdjacentHTML('beforeend', `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`);
+    } else if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
     if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);
   }
 

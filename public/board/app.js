@@ -424,16 +424,17 @@ let call = null; // { id, timer }
 let callScreen = null; // fight-night screen, public/board/call.js; built on first use
 
 /**
- * Important matches get the fire: the play-off, tie-breaks, the two group leaders against each other,
- * and the last match of a group (it settles the group).
+ * Why a match is a big one, for the tapes on the call screen ('' for an ordinary match): every play-off match,
+ * a tie-break, the last match of a group, the two current leaders of a group against each other.
  */
-function isImportant(m) {
-  if (m.stage === 'playoff' || m.stage === 'tiebreak') return true;
+function hypeOf(m) {
+  if (m.stage === 'playoff') return { sf1: 'Semi-final', sf2: 'Semi-final', third: '3rd place', final: 'Final' }[m.id] ?? 'Play-off';
+  if (m.stage === 'tiebreak') return 'Tie-break';
   const g = T.groups.find((x) => x.id === m.groupId);
-  if (!g) return false;
-  if (g.total - g.played === 1) return true;
+  if (!g) return '';
+  if (g.total - g.played === 1) return 'Group decider';
   const top = g.rows.filter((r) => !r.out).slice(0, 2).map((r) => r.id);
-  return g.played > 0 && top.includes(m.p1?.id) && top.includes(m.p2?.id);
+  return g.played > 0 && top.includes(m.p1?.id) && top.includes(m.p2?.id) ? 'Top of the group' : '';
 }
 
 function showCall(m) {
@@ -441,7 +442,7 @@ function showCall(m) {
   const box = el('call');
   box.hidden = false; // visible before show(): it measures the names
   callScreen ??= createCall(box);
-  callScreen.show(m, isImportant(m), CALL_MS, T.players);
+  callScreen.show(m, hypeOf(m), CALL_MS, T.players);
   call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
 }
 

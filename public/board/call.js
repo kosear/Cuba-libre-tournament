@@ -1,6 +1,7 @@
 // «Now playing» call screen, fight-night style (designed in /lab/): who goes to the table right now.
 // Red corner left, blue corner right, a random background pattern, two random mascots, the names punch in
-// from opposite sides, VS slams down, then an idle motion. Fire along the bottom only for important matches.
+// from opposite sides, VS slams down, then an idle motion. Important matches: VS hits much harder (shock waves,
+// shards, a heavy shake) and two caution tapes run across the screen saying why the match matters (FINAL, TIE-BREAK…).
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
@@ -118,12 +119,23 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-/* fire for important matches: the classic pixel «Doom fire» on a tiny canvas, stretched over the bottom with crisp
-   pixels (cheaper for the TV than smoothing, and it looks like a game); its own layer, so redrawing it repaints nothing else.
-   Once replaced by SVG tongues because the TV choked; the culprit then was more likely the huge rotating ray layers. */
-.fight canvas.fire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 330px; z-index: 1; pointer-events: none; display: none;
-  image-rendering: pixelated; image-rendering: crisp-edges; will-change: transform; }
-.fight.important canvas.fire { display: block; }
+/* important matches: two caution tapes across the screen, the words running in opposite directions (one moving layer
+   each, transforms only); shock waves and shards when VS lands */
+.fight .tape { position: absolute; left: -240px; width: 2400px; height: 76px; z-index: 5; pointer-events: none; display: none; overflow: hidden;
+  background: #ffd400; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+  border-image: repeating-linear-gradient(45deg, #111 0 14px, #ffd400 14px 28px) 12; }
+.fight.important .tape { display: block; }
+.fight .tape.t1 { top: -34px; transform: rotate(-1.5deg); }
+.fight .tape.t2 { top: 958px; transform: rotate(2deg); }
+.fight .tape .run { display: flex; width: max-content; will-change: transform; white-space: nowrap; color: #111;
+  font-size: 46px; line-height: 52px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 4px; }
+.fight .tape .run span { padding-right: 46px; }
+.fight .shock { position: absolute; left: 760px; top: 420px; width: 400px; height: 400px; border-radius: 50%; z-index: 3; pointer-events: none;
+  border: 16px solid #ffd400; opacity: 0; will-change: transform, opacity; }
+.fight .shock.s2 { border-color: #fff; border-width: 10px; }
+.fight .shard { position: absolute; left: 951px; top: 610px; width: 18px; height: 34px; z-index: 3; pointer-events: none; opacity: 0;
+  will-change: transform, opacity; clip-path: polygon(50% 0, 100% 40%, 70% 100%, 0 70%); }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
@@ -141,62 +153,6 @@ function rays() {
     d += `<polygon points="${p(r1, a)} ${p(r2, a - w)} ${p(r2, a + w)}"/>`;
   }
   return `<div class="rays"><svg viewBox="0 0 2112 1188" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
-}
-
-// Classic «Doom fire» (85×28 cells, big pixels): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
-// The bottom row is not equally hot: hot spots wander slowly along it, so tongues of different heights, not a wall.
-function makeFire(cv) {
-  const ctx = cv.getContext('2d');
-  const FW = cv.width;
-  const FH = cv.height;
-  const MAX = 36;
-  const heat = new Uint8Array(FW * FH);
-  const pal = []; // black -> red -> orange -> yellow -> white; low heat is transparent
-  for (let k = 0; k <= MAX; k++) {
-    const t = k / MAX;
-    pal.push([
-      Math.min(255, Math.round(255 * Math.min(1, t * 2.2))),
-      Math.round(255 * Math.max(0, Math.min(1, (t - 0.35) * 1.8))),
-      Math.round(255 * Math.max(0, (t - 0.8) * 4)),
-      Math.round(255 * Math.min(1, t * 3.5)),
-    ]);
-  }
-  const img = ctx.createImageData(FW, FH);
-  let running = false;
-  let last = 0;
-  let t = Math.random() * 100;
-  function step() {
-    t += 0.05;
-    for (let x = 0; x < FW; x++) {
-      const u = x / FW;
-      const m = 0.78 + 0.3 * Math.sin(u * 7 + t * 0.7) * Math.sin(u * 3.1 - t * 0.4) + 0.12 * Math.sin(u * 19 + t * 1.3);
-      heat[(FH - 1) * FW + x] = Math.round(MAX * Math.max(0.45, Math.min(1, m)));
-    }
-    for (let x = 0; x < FW; x++) {
-      for (let y = 1; y < FH; y++) {
-        const src = y * FW + x;
-        const r = (Math.random() * 3.6) | 0;
-        const dst = src - FW - (r & 1) + ((Math.random() * 1.6) | 0);
-        if (dst >= 0) heat[dst] = Math.max(0, heat[src] - (r > 2 ? 3 : (r & 1) * 2)); // ~1.25 a row: dies out before the top
-      }
-    }
-    const d = img.data;
-    for (let k = 0; k < heat.length; k++) {
-      const c = pal[heat[k]];
-      d[k * 4] = c[0]; d[k * 4 + 1] = c[1]; d[k * 4 + 2] = c[2]; d[k * 4 + 3] = c[3];
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-  function frame(now) {
-    if (!running) return;
-    if (cv.offsetParent === null) { running = false; return; } // hidden without stop(): nothing to burn for
-    if (now - last > 50) { step(); last = now; }
-    requestAnimationFrame(frame);
-  }
-  return {
-    start() { if (!running) { running = true; requestAnimationFrame(frame); } },
-    stop() { running = false; },
-  };
 }
 
 // Some regulars draw from a set of their own (a friendly running joke): `chance` of the tournaments, else the common
@@ -254,16 +210,16 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <canvas class="fire" width="85" height="28"></canvas>
+      <div class="shock s1"></div><div class="shock s2"></div><div class="shards"></div>
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
+      <div class="tape t1"><div class="run"></div></div><div class="tape t2"><div class="run"></div></div>
     <div class="flash"></div><div class="bar"></div></div>`;
   const q = (sel) => root.querySelector(sel);
   const fight = q('.fight');
   const ring = q('.ring');
-  const fire = makeFire(q('canvas.fire'));
   let running = []; // animations of the current show, cancelled by the next one
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
@@ -306,7 +262,46 @@ export function createCall(root) {
       { transform: `translate(${-power * 0.35}px, ${power * 0.25}px)`, offset: 0.6 },
       { transform: 'none' },
     ], { duration: 380, delay: at, easing: 'ease-out' });
-    anim(q('.flash'), [{ opacity: power / 60 }, { opacity: 0 }], { duration: 260, delay: at, easing: 'ease-out' });
+    anim(q('.flash'), [{ opacity: Math.min(0.7, power / 60) }, { opacity: 0 }], { duration: 260, delay: at, easing: 'ease-out' }); // never a blank white screen
+  }
+
+  /** The tapes: the words repeated past twice the tape's width, the row runs by exactly one half, so it loops seamlessly. */
+  function tapes(text, at) {
+    const words = Array.from({ length: 16 }, () => `<span>${text.replace(/[&<>]/g, '')} ★</span>`).join('');
+    [['.t1', -1, -1.5], ['.t2', 1, 2]].forEach(([sel, dir, deg]) => {
+      const tape = q(`.tape${sel}`);
+      const row = tape.querySelector('.run');
+      row.innerHTML = words + words;
+      // whips in from the side as VS lands, then the words keep running
+      anim(tape, [{ transform: `rotate(${deg}deg) translateX(${dir * -2600}px)` }, { transform: `rotate(${deg}deg) translateX(${dir * 40}px)`, offset: 0.8 },
+        { transform: `rotate(${deg}deg)` }], { duration: 420, delay: at, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+      const half = row.scrollWidth / 2;
+      anim(row, dir < 0 ? [{ transform: 'translateX(0)' }, { transform: `translateX(${-half}px)` }] : [{ transform: `translateX(${-half}px)` }, { transform: 'translateX(0)' }],
+        { duration: half * 9, iterations: Infinity, easing: 'linear' });
+    });
+  }
+
+  /** A big slam: two shock waves from VS and shards flying out. */
+  function blast(at) {
+    anim(q('.shock.s1'), [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(4.5)', opacity: 0 }], { duration: 650, delay: at, easing: 'cubic-bezier(.1,.7,.3,1)' });
+    anim(q('.shock.s2'), [{ transform: 'scale(.2)', opacity: .9 }, { transform: 'scale(3.2)', opacity: 0 }], { duration: 560, delay: at + 90, easing: 'cubic-bezier(.1,.7,.3,1)' });
+    const box = q('.shards');
+    box.innerHTML = '';
+    const colors = ['#ffd400', '#fff', '#f47b20'];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('i');
+      s.className = 'shard';
+      s.style.background = colors[i % 3];
+      box.append(s);
+      const a = (i / 18) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const r = 520 + Math.random() * 420;
+      const spin = (Math.random() - 0.5) * 900;
+      const k = 0.8 + Math.random() * 1.4;
+      anim(s, [
+        { transform: `rotate(${a}rad) scale(${k})`, opacity: 1 },
+        { transform: `translate(${Math.cos(a) * r}px, ${Math.sin(a) * r + 160}px) rotate(${spin}deg) scale(${k})`, opacity: 0 },
+      ], { duration: 900 + Math.random() * 300, delay: at, easing: 'cubic-bezier(.15,.8,.4,1)', fill: 'forwards' });
+    }
   }
 
   const loop = (el, frames, ms, delay, extra = {}) => anim(el, frames, { duration: ms, delay, iterations: Infinity, easing: 'ease-in-out', ...extra });
@@ -344,15 +339,15 @@ export function createCall(root) {
   }
 
   return {
-    /** m: match view (p1, p2, label); important: fire along the bottom; ms: how long the screen stays; players: all, in join order. */
-    show(m, important, ms, players = []) {
+    /** m: match view (p1, p2, label); hype: why it is a big match ('' if not), for the tapes; ms: how long the screen stays; players: all, in join order. */
+    show(m, hype, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
-      fight.classList.toggle('important', !!important);
-      if (important) fire.start(); else fire.stop();
+      const important = !!hype;
+      fight.classList.toggle('important', important);
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
       // tournament, so next time the same name most likely gets another one
       // no two players of the tournament share a mascot; each keeps theirs for the whole tournament
@@ -378,12 +373,23 @@ export function createCall(root) {
       anim(q('.n2'), punch(-1920, -1), { duration: FLY, delay: T2, fill: 'backwards' });
       impact(T1 + FLY * 0.78, 22);
       impact(T2 + FLY * 0.78, 22);
-      anim(q('.vs'), [
+      // an important match: VS falls from higher and lands much harder, squashed flat for a moment
+      anim(q('.vs'), important ? [
+        { transform: 'scale(10) rotate(-16deg)', opacity: 0, easing: 'cubic-bezier(.7,0,1,.6)' },
+        { transform: 'scale(1.25, .7) rotate(3deg)', opacity: 1, offset: 0.66 },
+        { transform: 'scale(.9, 1.12) rotate(-2deg)', opacity: 1, offset: 0.82 },
+        { transform: 'scale(1) rotate(0)', opacity: 1 },
+      ] : [
         { transform: 'scale(6) rotate(-12deg)', opacity: 0, easing: 'cubic-bezier(.6,0,.9,.5)' },
         { transform: 'scale(.85) rotate(4deg)', opacity: 1, offset: 0.7 },
         { transform: 'scale(1) rotate(0)', opacity: 1 },
-      ], { duration: 340, delay: TV, fill: 'backwards' });
-      impact(TV + 240, 36);
+      ], { duration: important ? 420 : 340, delay: TV, fill: 'backwards' });
+      if (important) {
+        impact(TV + 280, 64);
+        impact(TV + 520, 26); // the aftershock
+        blast(TV + 280);
+        tapes(hype, TV + 300);
+      } else impact(TV + 240, 36);
       anim(q('.label'), [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 250, fill: 'backwards' });
       // Mascots swoop in right behind the names, then bob.
       for (const [n, from, delay] of [[1, -700, 60], [2, 700, 360]]) {
@@ -399,7 +405,6 @@ export function createCall(root) {
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
-      fire.stop();
     },
   };
 }

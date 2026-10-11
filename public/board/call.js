@@ -178,8 +178,15 @@ function makeFire(cv) {
   };
 }
 
-/** The player's mascot: a hash of the player id (FNV-1a), random if there is no id. */
+// Personal mascots of regulars: always theirs, never in the random pool. Key: the name in lower case without spaces and dots.
+const PERSONAL = {
+  kc: ['🐂', '🏳️‍🌈', '🩰', 'Ballet Bull'], // a friend's running joke: pointe shoes at the feet, a little flag on the head
+};
+
+/** The player's mascot: a personal one by name, else a hash of the player id (FNV-1a), random if there is no id. */
 function mascotFor(p) {
+  const own = PERSONAL[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
+  if (own) return own;
   if (!p?.id) return MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;

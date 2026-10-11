@@ -85,7 +85,7 @@ function fatter(g, part = 1) {
 }
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
 // TEMPORARY, for testing on dev2: every screen plays the four scenes in turn at the fast pace, as with ?lizard=duo
-const DUO_LOOP = 'rivals';
+const DUO_LOOP = true;
 const DUO = 1 / 15; // share of runs where two geckos meet (a gecko hour or the fast mode: 1 in 5)
 const SMALL_WINS = 0.75; // a standoff of two sizes: the small one wins so often
 

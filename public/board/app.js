@@ -416,7 +416,7 @@ function onState(state) {
 
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
 live({ onState });
-startLizard(el('glass'), { rush: () => !T?.started }); // no gecko hour while a tournament is on
+startLizard(el('glass')); // gecko hours too, also during a tournament: that is when the bar is full
 
 // Debug hook for checking slides from the browser console.
 window.__board = {

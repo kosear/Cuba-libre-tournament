@@ -28,7 +28,7 @@ app.use('/api/admin', requireAdminApi, adminRoutes);
 // Static files are always revalidated (ETag), so a reload after a deploy picks up new code.
 const staticOpts = { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') };
 
-// Static: / -> start screen, /board -> TV scoreboard, /admin -> admin panel (login required, except the login page)
+// Static: / -> start screen (a TV gets the scoreboard right away), /board -> TV scoreboard, /admin -> admin panel
 app.use('/shared', express.static(path.join(ROOT, 'public/shared'), staticOpts));
 // The rules engine also runs in the admin page, to show actions made offline before they reach the server.
 app.use('/domain', express.static(path.join(ROOT, 'src/domain'), staticOpts));
@@ -36,6 +36,14 @@ app.use('/assets', express.static(path.join(ROOT, 'public/assets'), staticOpts))
 app.use('/admin', requireAdminPage, express.static(path.join(ROOT, 'public/admin'), staticOpts));
 app.use('/board', express.static(path.join(ROOT, 'public/board'), staticOpts));
 app.use('/lab', express.static(path.join(ROOT, 'public/lab'), staticOpts)); // animation playground, fake data
+// A TV opening the site gets the scoreboard right away, no buttons to reach with the remote; phones and computers
+// get the start screen. The board's files use absolute paths, so it can be served at / as it is.
+const TV = /\b(smart-?tv|android ?tv|google ?tv|googletv|tizen|web0s|webos|hbbtv|bravia|crkey|aft[a-z0-9]+|mitv[\w-]*)\b|\bTV\b/i;
+app.get('/', (req, res, next) => {
+  if (!TV.test(req.get('user-agent') || '')) return next();
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(ROOT, 'public/board/index.html'));
+});
 app.use('/', express.static(path.join(ROOT, 'public/start'), staticOpts));
 
 app.use((err, req, res, next) => {

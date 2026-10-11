@@ -100,7 +100,7 @@ src/domain/            tournament rules engine: state is rebuilt from the action
                        also served at /domain, the admin page runs it to apply offline actions locally
 src/tournament.js      action log storage: current tournament, undo/redo, journal
 test/                  `npm test`: rules engine tests (node:test)
-public/start/          served at /        (start screen: Scoreboard or Admin panel, public)
+public/start/          served at /        (start screen: Scoreboard or Admin panel; a TV gets the scoreboard at / instead)
 public/board/          served at /board   (TV scoreboard, public)
 public/admin/          served at /admin   (admin page, login required; login.html/login.js/style.css/sw.js are public)
 public/shared/         served at /shared  (live.js: SSE, auto-reload after a deploy, reconnect when pings stop)

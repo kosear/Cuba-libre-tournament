@@ -195,10 +195,10 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* 3D gold letters: a light gold face, the side built from stacked shadows getting darker, a soft drop shadow */
 .pz-name span { display: inline-block; white-space: nowrap; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 2px; color: #ffe066;
   text-shadow: 0 3px 0 #f2b705, 0 6px 0 #e0a100, 0 9px 0 #c98a00, 0 12px 0 #b07600, 0 15px 0 #946200, 0 18px 0 #7a4f00, 0 30px 40px rgba(0,0,0,.45); }
-/* 2nd and 3rd place, left and right of the trophy: a medal, the place, the name in silver or bronze 3D letters */
+/* 2nd and 3rd place, left and right of the trophy: a small silver or bronze cup, the place, the name in silver or bronze 3D letters */
 .pz-side { position: absolute; top: 150px; width: 620px; text-align: center; }
 .pz-side.pz-p2 { left: 60px; } .pz-side.pz-p3 { right: 60px; }
-.pz-medal { width: 170px; height: 212px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
+.pz-medal { width: 190px; height: 202px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
 .pz-slabel { font-size: 30px; line-height: 1; font-weight: 800; letter-spacing: 10px; text-transform: uppercase; color: rgba(255,255,255,.9);
   text-shadow: 0 2px 0 rgba(0,0,0,.25); margin-bottom: 14px; }
 .pz-sname span { display: inline-block; white-space: nowrap; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 1px; }

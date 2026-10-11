@@ -56,12 +56,14 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * Mounts the gecko layer into `root`. Returns { stop }.
  * Testing: `?lizard` in the page address runs the gecko every 15 s and a butterfly every 20 s;
  * `?lizard=hunt` also makes every run a hunt.
- * `?lizard=fast`: the normal behaviour, only 10 times more often (a gecko about once a minute), for one screen.
+ * `?lizard=fast`: the normal behaviour, only 10 times more often (a gecko about once a minute) and with 70% catches
+ *   instead of 15%, for one screen.
  */
 export function startLizard(root) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const fast = mode === 'fast' ? 10 : 1;
   const test = mode !== null && fast === 1;
+  const CATCH = fast > 1 ? 0.7 : 0.15; // share of long sits that end in a catch; in the fast mode catches are the rule
   const huntTest = mode === 'hunt';
   const huntAll = huntTest || DEMO;
   const period = () => (DEMO ? 10000 : test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX) / fast); // random, so it is never expected
@@ -187,7 +189,7 @@ export function startLizard(root) {
       g.yawTo = rand(-0.4, 0.4);
       if (long && huntAll) g.until = rand(6, 10);
       const r = Math.random();
-      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < 0.15);
+      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < CATCH);
     } else if (g.mode === 'stop') {
       const busy = g.hunt && !['wait', 'call'].includes(g.hunt.phase); // eyes on the butterfly
       if (!busy && g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks

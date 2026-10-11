@@ -195,17 +195,18 @@ function slidePlayoff() {
   };
   return {
     title: 'Play-off',
-    // left: the semi-finals and under them the 3rd place match; right: only the final, lines from the semi-finals
+    // left: the semi-finals and under them the 3rd place match, the same step of 280 px; right: only the final.
+    // Lines from the semi-finals to the final, a dashed one from them to the 3rd place match.
     html: `<div class="bracket">
       <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
-      ${cand ? '<div class="col-t cand-note">If the groups ended now</div>' : ''}
       <svg class="lines" viewBox="0 0 1284 888" preserveAspectRatio="none">
         <path d="M500 150 H610 V290 H720" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M500 430 H610 V290" fill="none" stroke="#c9d1dd" stroke-width="3"/>
+        <path d="M610 430 V710 H500" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
       </svg>
       ${box('sf1', 'Semi-final 1', 'left:0;top:50px;width:500px')}
       ${box('sf2', 'Semi-final 2', 'left:0;top:330px;width:500px')}
-      ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:0;top:640px;width:500px', 'third')}
+      ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:0;top:610px;width:500px', 'third')}
       ${box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
     </div>`,
   };
@@ -431,6 +432,7 @@ function onState(state, cached = false) {
   if (!cached) { try { localStorage.setItem('boardState', JSON.stringify(state)); } catch {} }
   T = state.tournament;
   SETTINGS = state.settings || {};
+  stage.classList.toggle('po', T.phase === 'playoff'); // play-offs: no queue, only a small blue plate with the clock
   updateCall();
   const keepKey = slides[index]?.key ?? shownKey;
   slides = buildSlides(T);

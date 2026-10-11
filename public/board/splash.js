@@ -14,8 +14,6 @@ const LOGO_W = 1260;
 const LOGO_SRC = '/assets/cuba-libre-logo.svg';
 const LOGO_TEXT_Y = 0.38; // vertical centre of the «CUBA LIBRE» letters, as a share of the logo height
 const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share of its height (a bit above the middle)
-const SHADOW_DX = 24; // cast shadow offset: light from the top left, so it falls to the bottom right
-const SHADOW_DY = 32;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
 // One resistance for every ball, as on real cloth: a base part plus a part growing with speed (dv/dt = -(A + K·v)).
 // A fast ball loses speed quickly, the last bit it creeps and stops softly, then settles back a hair in the nap.
@@ -303,9 +301,12 @@ export function startSplash(root) {
   const DOT = Math.cos(0.17); // cue ball red dot
   const BAND = Math.sin(0.56); // stripe: |N·q| below this (~32° to each side of the equator) is coloured, above is white
   const DISC_R = Math.sin(0.42);
-  const LIGHT = (() => { const l = [-0.45, -0.6, 0.66]; const k = Math.hypot(...l); return l.map((v) => v / k); })();
-  const HALF = [(LIGHT[0]) / 2, (LIGHT[1]) / 2, (LIGHT[2] + 1) / 2]; // light + view, for the highlight
-  const HALF_N = (() => { const k = Math.hypot(...HALF); return HALF.map((v) => v / k); })();
+  // Light: a lamp hanging over the table, a bit up and left of the screen centre (other shadows fall down-right too).
+  // Each ball is lit from where it is: under the lamp the highlight sits near the middle of the ball, towards an edge
+  // it slides over to the lamp's side, and the ball gets dimmer. The highlight is the lamp's sharp reflection in the
+  // glossy ball plus a faint broad sheen.
+  const LAMP = [860, 380, 900]; // x, y on the screen and height above the table, px
+  const lampDir = (x, y) => { const d = [LAMP[0] - x, LAMP[1] - y, LAMP[2]]; const k = Math.hypot(...d); return d.map((v) => v / k); };
 
   const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -362,9 +363,7 @@ export function startSplash(root) {
         if (r2 >= 1) continue;
         const z = Math.sqrt(1 - r2);
         const edge = Math.min(1, (1 - Math.sqrt(r2)) * RES * 0.5); // anti-aliased rim
-        const diffuse = 0.6 + 0.45 * Math.max(0, x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]); // soft: the dark side stays fairly light
-        const spec = Math.pow(Math.max(0, x * HALF_N[0] + y * HALF_N[1] + z * HALF_N[2]), 60) * 0.5;
-        out.push({ i: (py * RES + px) * 4, x, y, z, edge, diffuse, spec });
+        out.push({ i: (py * RES + px) * 4, x, y, z, edge });
       }
     }
     return out;
@@ -395,7 +394,12 @@ export function startSplash(root) {
   function drawBall(b) {
     if (!b.dirty) return;
     b.dirty = false;
+    b.litAt = [b.x, b.y];
     const out = b.img.data;
+    const L = lampDir(b.x, b.y);
+    const Hk = Math.hypot(L[0], L[1], L[2] + 1);
+    const H = [L[0] / Hk, L[1] / Hk, (L[2] + 1) / Hk]; // half-way between the light and the viewer
+    const bright = 1 - 0.22 * Math.min(1, Math.hypot(b.x - LAMP[0], b.y - LAMP[1]) / 1400);
     const [nx, ny, nz] = b.n;
     const [tx, ty, tz] = b.t;
     const [qx, qy, qz] = b.q;
@@ -430,8 +434,10 @@ export function startSplash(root) {
         const dq = p.x * qx + p.y * qy + p.z * qz;
         if (dq > BAND || dq < -BAND) { r = 246; g = 246; bl = 240; } // white caps
       }
-      const lit = p.diffuse;
-      const sp = p.spec * 255;
+      const ndl = p.x * L[0] + p.y * L[1] + p.z * L[2];
+      const ndh = Math.max(0, p.x * H[0] + p.y * H[1] + p.z * H[2]);
+      const lit = (0.58 + 0.45 * Math.max(0, ndl)) * bright; // soft: the dark side stays fairly light
+      const sp = (Math.pow(ndh, 140) * 0.95 + Math.pow(ndh, 16) * 0.07) * bright * 255;
       const o = p.i;
       out[o] = r * lit + sp;
       out[o + 1] = g * lit + sp;
@@ -448,14 +454,16 @@ export function startSplash(root) {
     el.height = RES;
     const shadow = document.createElement('div');
     shadow.className = 'ball-shadow';
-    root.append(shadow, el);
+    const contact = document.createElement('div');
+    contact.className = 'ball-contact';
+    root.append(shadow, contact, el);
     const ctx = el.getContext('2d');
     // The number sits on the stripe: q ⟂ n, and the digit reads along the stripe (t = q).
     const n = randomDir();
     const q = unit(cross(n, randomDir()));
     const t = num > 8 ? q : unit(cross(n, randomDir()));
     const b = {
-      num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
+      num, el, shadow, contact, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
       x, y, vx, vy, ux: vx, uy: vy, w: 0, friction, resting: false, restAt: 0, entered: false,
     };
@@ -466,14 +474,26 @@ export function startSplash(root) {
 
   function place(b) {
     b.el.style.transform = `translate(${b.x - R}px, ${b.y - R}px)`;
-    // the shadow box is 1.4R × 1R larger than the ball's (see .ball-shadow), centred on the offset point, stretched along the light
-    b.shadow.style.transform = `translate(${b.x - R * 1.4 + SHADOW_DX}px, ${b.y - R + SHADOW_DY}px) rotate(37deg)`;
+    // Shadows away from the lamp: a dark crisp contact spot right at the ball (only its rim shows, it sets the ball
+    // on the cloth) and a soft cast shadow, longer and further out the further the ball is from under the lamp.
+    const dx = b.x - LAMP[0];
+    const dy = b.y - LAMP[1];
+    const far = Math.hypot(dx, dy);
+    const ang = Math.atan2(dy, dx);
+    const t = far / LAMP[2]; // tan of the light's angle from the vertical
+    const [ux, uy] = far ? [dx / far, dy / far] : [0, 0];
+    b.contact.style.transform = `translate(${b.x - R + ux * R * 0.1}px, ${b.y - R + uy * R * 0.1}px)`;
+    const off = R * (0.15 + 0.9 * t);
+    b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.6 * t})`;
+    // the light moves over the ball as it travels, even when it slides without turning
+    if (!b.dirty && b.litAt && Math.hypot(b.x - b.litAt[0], b.y - b.litAt[1]) > 6) b.dirty = true;
     drawBall(b);
   }
 
   function removeBall(b) {
     b.el.remove();
     b.shadow.remove();
+    b.contact.remove();
     balls = balls.filter((x) => x !== b);
   }
 

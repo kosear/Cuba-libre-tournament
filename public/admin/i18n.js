@@ -158,7 +158,7 @@ const DICT = {
     'err.already_withdrawn': 'Игрок уже снят', 'err.not_withdrawn': 'Игрок участвует в турнире',
     'err.already_played': 'Этот матч уже сыгран', 'err.same_player': 'Выберите двух разных игроков',
     'err.player_withdrawn': 'Этот игрок выбыл', 'err.nothing_to_undo': 'Нечего отменять', 'err.nothing_to_redo': 'Нечего возвращать',
-    'swarm.on': 'Много ящериц: включено', 'swarm.off': 'Много ящериц: выключено',
+    'swarm.on': 'Много гекконов: включено', 'swarm.off': 'Много гекконов: выключено',
     'err.not_in_queue': 'Матча нет в очереди', 'err.not_finished': 'У матча нет результата',
     'err.match_not_found': 'Матча больше нет', 'err.player_not_found': 'Игрока больше нет', 'err.group_not_found': 'Группы больше нет',
   },

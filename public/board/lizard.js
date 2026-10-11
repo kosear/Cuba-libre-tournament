@@ -860,9 +860,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   /** Signed angle from direction `a` to direction `b` (+ is clockwise on screen). */
   const turn = (a, b) => Math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]);
   /** How far a gecko standing still must shoot its head to put the nose on `p` (screen px), in reaches. */
-  function reachTo(g, p) {
+  function reachTo(g, p, most = 1.6) {
     const q = spine(g);
-    return Math.max(0.2, Math.min(1.6, (Math.hypot(p[0] / g.k - q[0][0], p[1] / g.k - q[0][1]) - 6) / REACH));
+    return Math.max(0.2, Math.min(most, (Math.hypot(p[0] / g.k - q[0][0], p[1] / g.k - q[0][1]) - 6) / REACH));
   }
 
   /**
@@ -934,8 +934,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     g.chew = 0;
     g.reach = 0;
     g.squint = t < 0.3 ? Math.sin((t / 0.3) * Math.PI) * 0.7 : 0;
-    if (t > 0.25) g.yawTo = clampYaw(aim(g, headW(h.robbed).map((c) => c / g.k)));
-    else g.yaw = g.yawTo = h.base + 0.25 * Math.sin(t * 40);
+    if (t > 0.25) g.yawTo = 0.55 * clampYaw(aim(g, headW(h.robbed).map((c) => c / g.k))); // eyes after the thief, the head barely turns
+    else g.yaw = g.yawTo = h.base + 0.06 * Math.sin(t * 40); // a start, the head stays put while the thief's snout is there
     g.lick = t > 1.1 && t < 1.7 ? Math.sin(((t - 1.1) / 0.6) * Math.PI) : 0;
     if (t >= 1.9) g.hunt = null;
   }
@@ -1029,12 +1029,16 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         a.hunt = { caught: true, style: 'classic', target: [m[0] / a.k, m[1] / a.k], phase: 'wait', t: 0, start: rand(0.3, 0.8), hold: true };
       });
       a.goal.s -= STALK;
-      // the thief comes from the side, a little from the front, to where the catch will be in the jaws
+      // the thief comes almost head-on, a little from the side, to where the catch will be in the jaws: all the time
+      // it is in front of the other, never across it; an ordinary snap, then it turns off away from the other
       const P = [m[0] - d[0] * (REACH - 4) * ka, m[1] - d[1] * (REACH - 4) * ka];
-      const thb = th + (Math.random() < 0.5 ? 1 : -1) * rand(1.45, 2.1);
-      const b = comer(P, thb, kb, REACH * 1.05 * kb, () => {
+      const thb = th + Math.PI + (Math.random() < 0.5 ? 1 : -1) * rand(0.4, 0.65);
+      const b = comer(P, thb, kb, REACH * 1.05 * kb + 12 * ka, () => {
         sc.step = 'snatch';
-        b.hunt = { steal: a, phase: 'lunge', t: 0, k: reachTo(b, a.hunt?.prey ? preyW(a) : P) };
+        // the head turned straight at the catch first, so the snap lands on it and not on the other's head
+        const q = a.hunt?.prey ? preyW(a) : P;
+        b.yaw = b.yawTo = clampYaw(aim(b, [q[0] / kb, q[1] / kb]));
+        b.hunt = { steal: a, phase: 'lunge', t: 0, k: Math.max(0.3, reachTo(b, q) - 0.3) }; // grabs the near wing, not the middle
       });
       b.delay = Infinity; // off the screen until the catch
       b.top = rand(850, 1000) / kb; // a dash
@@ -1044,10 +1048,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         else if (sc.step === 'dash' && sc.t - sc.t0 > 6) { sc.step = 'late'; if (a.hunt) a.hunt.hold = false; b.goal = null; go(b, 900); }
         else if (sc.step === 'snatch' && !b.hunt) {
           sc.step = 'run';
-          // off ahead of the robbed one's nose, turning where it stands, away from it
-          const s = awayFrom(b, a);
-          const want = turn(dirOf(b), dirOf(a));
-          turnOff(b, Math.sign(want) === s ? want : s * 1.2, b.carry ? 1050 : 700, true);
+          // turning where it stands, away from the robbed one, and off
+          turnOff(b, awayFrom(b, a) * rand(1.2, 1.5), b.carry ? 1050 : 700, true);
           if (!a.hunt?.robbed && a.hunt) a.hunt.hold = false; // too late, it was swallowed: just goes
         } else if (sc.step === 'run' && !a.hunt && a.mode === 'stop') {
           sc.step = 'chase';

@@ -27,10 +27,13 @@ const MASCOTS = [
   ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', '🪖', '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
   ['👽', '', '🛸', 'Alien Visitor'], ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🌵', '🤠', '', 'Cactus Cowboy'],
   ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'], ['🥑', '🧢', '', 'Avocado Bro'],
-  // pride squad
-  ['🦄', '👑', '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', '🕶️', '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
-  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'],
 ];
+// pride squad: in the common pool too
+const PRIDE = [
+  ['🦄', '👑', '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', '🕶️', '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
+  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'], ['🐂', '🩰', '🏳️‍🌈', 'Ballet Bull'],
+];
+MASCOTS.push(...PRIDE);
 
 const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
@@ -178,25 +181,21 @@ function makeFire(cv) {
   };
 }
 
-// The Ballet Bull, drawn after one friend: quiff, full short beard, white oversized tee, plus a pink tutu, pointe shoes,
-// hooves over the head in fifth position and a rainbow flag. A proud, strong, smiling stage star with sparkles:
-// someone to want to be, never a mockery.
-const BALLET_BULL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="1em" height="1em" style="display:block"><path d="M182 168 C214 160 226 132 214 118" fill="none" stroke="#5e3820" stroke-width="5" stroke-linecap="round"/><path d="M214 118 c-8 -6 -2 -16 4 -12 c6 -6 12 4 6 9 c6 4 -2 12 -10 3z" fill="#3b2414"/><path d="M168 190 C196 196 210 214 204 230 C198 244 176 244 160 238" fill="none" stroke="#6b4126" stroke-width="22" stroke-linecap="round"/><path d="M166 230 c-10 -2 -18 6 -14 13 c4 6 14 4 18 -2z" fill="#ff9ccc" stroke="#d9579a" stroke-width="2"/><path d="M146 190 C144 220 146 250 148 272" fill="none" stroke="#6b4126" stroke-width="22" stroke-linecap="round"/><path d="M138 266 L158 252 M158 266 L138 252 M140 252 L156 240" stroke="#ff9ccc" stroke-width="3.5" stroke-linecap="round"/><path d="M138 262 C136 278 142 292 149 294 C156 292 161 278 158 262z" fill="#ff9ccc" stroke="#d9579a" stroke-width="2"/><rect x="143" y="289" width="12" height="5" rx="2" fill="#f6c1dd" stroke="#d9579a" stroke-width="1.5"/><path d="M112 112 C104 140 106 172 118 192 L182 192 C194 172 196 140 188 112 C172 98 128 98 112 112z" fill="#f4f1e8"/><path d="M120 150 C124 168 130 184 134 192 M176 140 C178 160 176 178 172 192" fill="none" stroke="#d9d4c4" stroke-width="3" stroke-linecap="round"/><path d="M136 104 Q150 114 164 104" fill="none" stroke="#d9d4c4" stroke-width="3"/><path d="M84 186 Q96 170 108 184 Q120 168 132 182 Q144 166 156 182 Q168 166 180 182 Q192 168 204 184 Q216 172 220 188 Q190 206 150 206 Q108 206 84 186z" fill="#ff8fc8"/><path d="M90 180 Q104 160 118 176 Q132 158 146 174 Q160 158 174 174 Q188 160 202 178 Q214 166 214 182 Q186 196 150 196 Q112 196 90 180z" fill="#ffb3da"/><path d="M104 176 Q150 156 196 176 Q176 186 150 186 Q122 186 104 176z" fill="#ffd3ea"/><path d="M120 120 C96 100 98 60 124 44" fill="none" stroke="#7a4a2a" stroke-width="22" stroke-linecap="round"/><path d="M106 92 C100 80 102 70 108 62" fill="none" stroke="#8d5832" stroke-width="5" stroke-linecap="round"/><path d="M180 120 C204 100 202 60 176 44" fill="none" stroke="#7a4a2a" stroke-width="22" stroke-linecap="round"/><path d="M194 92 C200 80 198 70 192 62" fill="none" stroke="#8d5832" stroke-width="5" stroke-linecap="round"/><path d="M104 108 C108 96 122 92 132 102 L124 124 C114 124 106 118 104 108z" fill="#f4f1e8"/><path d="M196 108 C192 96 178 92 168 102 L176 124 C186 124 194 118 196 108z" fill="#f4f1e8"/><ellipse cx="128" cy="40" rx="10" ry="8" fill="#3b2414" transform="rotate(-30 128 40)"/><ellipse cx="172" cy="40" rx="10" ry="8" fill="#3b2414" transform="rotate(30 172 40)"/><line x1="176" y1="46" x2="208" y2="2" stroke="#8a6a3a" stroke-width="4" stroke-linecap="round"/><g transform="translate(206 4) rotate(12)"><path d="M0 0 C14 -6 26 6 44 0 L44 6 C26 12 14 0 0 6z" fill="#e40303"/><path d="M0 6 C14 0 26 12 44 6 L44 12 C26 18 14 6 0 12z" fill="#ff8c00"/><path d="M0 12 C14 6 26 18 44 12 L44 18 C26 24 14 12 0 18z" fill="#ffed00"/><path d="M0 18 C14 12 26 24 44 18 L44 24 C26 30 14 18 0 24z" fill="#008026"/><path d="M0 24 C14 18 26 30 44 24 L44 30 C26 36 14 24 0 30z" fill="#24408e"/><path d="M0 30 C14 24 26 36 44 30 L44 36 C26 42 14 30 0 36z" fill="#732982"/></g><path d="M120 70 C100 66 92 52 98 40 C104 54 114 58 126 60z" fill="#f3e6c4" stroke="#c9b48a" stroke-width="2"/><path d="M180 70 C200 66 208 52 202 40 C196 54 186 58 174 60z" fill="#f3e6c4" stroke="#c9b48a" stroke-width="2"/><ellipse cx="114" cy="80" rx="12" ry="6" fill="#6b4126" transform="rotate(20 114 80)"/><ellipse cx="186" cy="80" rx="12" ry="6" fill="#6b4126" transform="rotate(-20 186 80)"/><ellipse cx="150" cy="80" rx="34" ry="30" fill="#7a4a2a"/><path d="M124 64 C122 46 132 34 146 30 C154 22 172 22 180 32 C176 32 172 34 170 36 C178 42 180 52 176 62 C168 54 158 52 148 54 C138 55 130 58 124 64z" fill="#1f1a17"/><path d="M136 46 C144 34 160 30 172 32 M140 52 C148 42 162 40 172 44" fill="none" stroke="#3a312b" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="136" cy="76" rx="6" ry="7" fill="#fff"/><circle cx="137" cy="77" r="3.5" fill="#1a1a1a"/><ellipse cx="164" cy="76" rx="6" ry="7" fill="#fff"/><circle cx="163" cy="77" r="3.5" fill="#1a1a1a"/><path d="M128 67 Q136 63 143 66 M157 66 Q164 63 172 67" fill="none" stroke="#1f1a17" stroke-width="4.5" stroke-linecap="round"/><path d="M118 86 C118 112 132 126 150 126 C168 126 182 112 182 86 C176 100 166 108 150 108 C134 108 124 100 118 86z" fill="#241a14"/><ellipse cx="150" cy="98" rx="20" ry="13" fill="#e8b49a"/><ellipse cx="143" cy="97" rx="3.5" ry="4.5" fill="#5e3820"/><ellipse cx="157" cy="97" rx="3.5" ry="4.5" fill="#5e3820"/><path d="M143 104 C143 113 157 113 157 104" fill="none" stroke="#f2c230" stroke-width="3.5"/><path d="M138 114 Q150 122 162 114" fill="none" stroke="#f4f1e8" stroke-width="3.5" stroke-linecap="round"/><g fill="#fff6b0"><path d="M62 120 l4 12 l12 4 l-12 4 l-4 12 l-4 -12 l-12 -4 l12 -4z"/><path d="M238 210 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3z"/><path d="M70 236 l2.5 7 l7 2.5 l-7 2.5 l-2.5 7 l-2.5 -7 l-7 -2.5 l7 -2.5z"/><path d="M244 96 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2z"/></g></svg>`;
-
-// Personal mascots of regulars: always theirs, never in the random pool. Key: the name in lower case without spaces and dots.
-// [body, hat, item, nickname, picture]: with a picture, it is drawn instead of the emoji.
-const PERSONAL = {
-  kc: ['🐂', '', '', 'Ballet Bull', BALLET_BULL], // a friend's running joke
+// Some regulars always draw from a set of their own (a friendly running joke); by their id like everyone else, so it
+// stays for the tournament and looks like plain luck. Key: the name in lower case without spaces and dots.
+const LUCKY = {
+  kc: PRIDE,
 };
 
-/** The player's mascot: a personal one by name, else a hash of the player id (FNV-1a), random if there is no id. */
+/** The player's mascot: a hash of the player id (FNV-1a) into their set (LUCKY or all), random if there is no id. */
 function mascotFor(p) {
-  const own = PERSONAL[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
-  if (own) return own;
-  if (!p?.id) return MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
+  const set = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')] || MASCOTS;
+  if (!p?.id) return set[Math.floor(Math.random() * set.length)];
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
-  return MASCOTS[h % MASCOTS.length];
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; // mix the bits: similar ids land far apart
+  h = (h ^ (h >>> 16)) >>> 0;
+  return set[h % set.length];
 }
 
 export function createCall(root) {
@@ -239,9 +238,8 @@ export function createCall(root) {
     }
   }
 
-  function setMascot(n, [body, hat, item, , picture]) {
+  function setMascot(n, [body, hat, item]) {
     const box = q(`.mascot.m${n}`);
-    if (picture) { box.innerHTML = picture; return; }
     box.textContent = body;
     if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
     if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);

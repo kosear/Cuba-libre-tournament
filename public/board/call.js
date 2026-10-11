@@ -109,7 +109,7 @@ const CSS = `
 /* fire for important matches: the classic pixel «Doom fire» on a tiny canvas, stretched over the bottom with crisp
    pixels (cheaper for the TV than smoothing, and it looks like a game); its own layer, so redrawing it repaints nothing else.
    Once replaced by SVG tongues because the TV choked; the culprit then was more likely the huge rotating ray layers. */
-.fight canvas.fire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 440px; z-index: 1; pointer-events: none; display: none;
+.fight canvas.fire { position: absolute; left: 0; bottom: 60px; width: 2040px; height: 330px; z-index: 1; pointer-events: none; display: none;
   image-rendering: pixelated; image-rendering: crisp-edges; will-change: transform; }
 .fight.important canvas.fire { display: block; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
@@ -131,7 +131,8 @@ function rays() {
   return `<div class="rays"><svg viewBox="0 0 2112 1188" aria-hidden="true"><g fill="#fff" fill-opacity=".28">${d}</g></svg></div>`;
 }
 
-// Classic «Doom fire» (85×32 cells, big pixels): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
+// Classic «Doom fire» (85×28 cells, big pixels): heat rises from the bottom row, cools and drifts sideways; 20 frames a second.
+// The bottom row is not equally hot: hot spots wander slowly along it, so tongues of different heights, not a wall.
 function makeFire(cv) {
   const ctx = cv.getContext('2d');
   const FW = cv.width;
@@ -149,10 +150,16 @@ function makeFire(cv) {
     ]);
   }
   const img = ctx.createImageData(FW, FH);
-  for (let x = 0; x < FW; x++) heat[(FH - 1) * FW + x] = MAX;
   let running = false;
   let last = 0;
+  let t = Math.random() * 100;
   function step() {
+    t += 0.05;
+    for (let x = 0; x < FW; x++) {
+      const u = x / FW;
+      const m = 0.78 + 0.3 * Math.sin(u * 7 + t * 0.7) * Math.sin(u * 3.1 - t * 0.4) + 0.12 * Math.sin(u * 19 + t * 1.3);
+      heat[(FH - 1) * FW + x] = Math.round(MAX * Math.max(0.45, Math.min(1, m)));
+    }
     for (let x = 0; x < FW; x++) {
       for (let y = 1; y < FH; y++) {
         const src = y * FW + x;
@@ -207,7 +214,7 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <canvas class="fire" width="85" height="32"></canvas>
+      <canvas class="fire" width="85" height="28"></canvas>
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>

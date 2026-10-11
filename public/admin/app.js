@@ -363,13 +363,23 @@ function viewGroupsSetup() {
 
 const BYE = /^BYE( \d+)?$/; // filler players: withdrawn right at the start, their opponents win by walkover
 
-/** Names from the list: trimmed, empty lines and repeats (any case, or already in the tournament) skipped. */
+// A list pasted from a chat: «1. Name», «2) Name», «3 Name»; WhatsApp also puts invisible characters around the number.
+const INVISIBLE = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
+const NUMBERED = /^\d{1,3}\s*[.)\-:–]?\s+|^\d{1,3}[.)\-:–]\s*/;
+
+/**
+ * Names from the list: trimmed, the numbering in front dropped, empty lines and repeats (any case, or already in the
+ * tournament) skipped. In a numbered list, lines without a number (a title like «Friday 9th October») are skipped too.
+ */
 function bulkNames() {
   const taken = new Set(T().players.map((p) => p.name.toLowerCase()));
   const names = [];
   const skipped = [];
-  for (const raw of $('bulk-names').value.split('\n')) {
-    const name = raw.trim().replace(/\s+/g, ' ');
+  const lines = $('bulk-names').value.split('\n').map((l) => l.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const numbered = lines.filter((l) => NUMBERED.test(l)).length >= lines.length / 2;
+  for (const line of lines) {
+    if (numbered && !NUMBERED.test(line)) { skipped.push(line); continue; }
+    const name = numbered ? line.replace(NUMBERED, '').trim() : line;
     if (!name) continue;
     if (taken.has(name.toLowerCase()) || name.length > 40 || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
     taken.add(name.toLowerCase());

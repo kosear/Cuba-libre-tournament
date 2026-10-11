@@ -217,15 +217,23 @@ export function createButterfly(root) {
     return { ...k, size: k.size * rand(0.92, 1.08) };
   }
 
+  /** Its flying speed, px/s: SPEED for an average size. */
+  function cruise() { return SPEED * Math.sqrt(b.kind.size); }
+
   function spawn(near, at, kind) {
     const [x, y] = at || edgePoint(near);
     const a = Math.atan2(H / 2 - y, W / 2 - x);
     b = {
-      x, y, vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED, h: 1, heading: a, t: rand(0, 10), flap: 0, beat: rand(8, 11),
+      x, y, h: 1, heading: a, t: rand(0, 10), flap: 0,
       kind: kind || pick(),
-      mode: 'fly', goal: null, land: false, sitFor: 0, speed: SPEED,
+      mode: 'fly', goal: null, land: false, sitFor: 0,
       onLand: null, after: null, hops: 0,
     };
+    // a big one flies faster and smoother on slower wingbeats, a small one slower, fluttering and zigzagging more
+    b.speed = cruise();
+    b.beat = rand(8, 11) / b.kind.size;
+    b.vx = Math.cos(a) * b.speed;
+    b.vy = Math.sin(a) * b.speed;
     el.hidden = false;
   }
 
@@ -234,9 +242,9 @@ export function createButterfly(root) {
     b.mode = 'fly';
     b.land = false;
     b.goal = [b.x + Math.cos(a) * 3000, b.y + Math.sin(a) * 3000];
-    b.speed = fast ? SPEED * 2.2 : SPEED;
+    b.speed = cruise() * (fast ? 2.2 : 1);
     b.after = null;
-    if (fast) { b.vx = Math.cos(a) * b.speed; b.vy = Math.sin(a) * b.speed; b.beat = 14; }
+    if (fast) { b.vx = Math.cos(a) * b.speed; b.vy = Math.sin(a) * b.speed; b.beat = 14 / b.kind.size; }
   }
 
   /** Up again and over to another spot nearby, to land there for a while. */
@@ -252,7 +260,7 @@ export function createButterfly(root) {
       b.goal = [x, y];
       b.land = true;
       b.sitFor = rand(2, 6);
-      b.speed = SPEED;
+      b.speed = cruise();
       return;
     }
     leave();
@@ -293,7 +301,7 @@ export function createButterfly(root) {
       b.goal = target;
       b.land = true;
       b.sitFor = Infinity;
-      b.speed = SPEED;
+      b.speed = cruise();
       b.onLand = onLand;
       b.after = null;
     },
@@ -340,11 +348,12 @@ export function createButterfly(root) {
         b.vy += ((dy / d) * sp - b.vy) * k;
         // the flutter: never a straight line; each downstroke gives a little jerk forward
         const kick = 0.75 + 0.5 * Math.max(0, Math.sin(b.flap));
-        const wob = (Math.sin(b.t * 3.1) * 90 + Math.sin(b.t * 7.7) * 45 + Math.sin(b.t * 13.3) * 20) * near;
+        const zig = near / b.kind.size; // the small ones zigzag more
+        const wob = (Math.sin(b.t * 3.1) * 90 + Math.sin(b.t * 7.7) * 45 + Math.sin(b.t * 13.3) * 20) * zig;
         const v = Math.hypot(b.vx, b.vy) || 1;
         b.x += (b.vx * kick - (b.vy / v) * wob) * dt;
         b.y += (b.vy * kick + (b.vx / v) * wob) * dt;
-        b.heading += (Math.atan2(b.vy, b.vx) + 0.25 * Math.sin(b.t * 5.3) * near - b.heading) * (1 - Math.exp(-dt * 8));
+        b.heading += (Math.atan2(b.vy, b.vx) + 0.25 * Math.sin(b.t * 5.3) * zig - b.heading) * (1 - Math.exp(-dt * 8));
         // it rises a little on each downstroke and sinks between them
         b.h = (b.land ? Math.min(1, d / 140) : 1) * (0.85 + 0.15 * Math.sin(b.flap - 1));
         b.flap += dt * 2 * Math.PI * b.beat;

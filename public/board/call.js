@@ -18,7 +18,7 @@ const MASCOTS = [
   // nicknames with a joke, like a boxer's
   ['🦈', ['🕶️', -0.33, 0.28, -18], '🎱', 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
   ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
-  ['🦁', '👑', '', 'The Mane Event'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
+  ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
   ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', '💸', 'Piggy Bank'],
   ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.62, -8], '🪄', 'Hairy Potter'],
   // Bali and around
@@ -31,7 +31,7 @@ const MASCOTS = [
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
-  [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '📉', 'Bear Market'], ['🦜', '', '⚔️', 'Pirate Parrot'],
+  [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🫂', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', '', '🌺', 'Pelan Pelan'],
   ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', '🦷', 'Crikey!'],

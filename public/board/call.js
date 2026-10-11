@@ -51,13 +51,10 @@ const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
 .fight .ring { position: absolute; inset: -60px; will-change: transform; } /* bigger than the stage: shaking never shows the edges */
 .fight .corner { position: absolute; inset: 0; }
-/* everything but the background (halves, pattern, orange band): one group above it, so the way out fades it as a single layer */
-.fight .stuff { position: absolute; inset: 0; z-index: 1; }
-.fight.leaving .rays, .fight.leaving .rays svg { animation-play-state: paused; } /* frozen on the way out */
 .fight .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 49%, transparent 49.1%); }
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
-.fight .gap { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
+.fight .gap { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 49%, #f47b20 49.1%, #f47b20 50.9%, transparent 51%); }
 /* anime speed lines: 12 SVG triangles in ONE layer just a bit bigger than the stage (2112×1188, centred), so the TV's
    graphics chip keeps a single small texture. The fan sways ±1.5° (never a full turn: the rays' ends stay off screen)
    and jitters in small jerks. Only transforms change, nothing is repainted. */
@@ -206,24 +203,16 @@ function mascotFor(p, players = []) {
   return set[k];
 }
 
-// The slow way out at the end of the screen: the action slows down to a stop, all but the background fades out,
-// then the two halves part. LEAVE_SLOW ms in all, taken from the end of the screen's time (app.js).
-const SLOWDOWN = 1000; // seconds 17-18 of the 20 s screen
-const FADE = 1000; // 18-19
-const PART = 1000; // 19-20
-export const LEAVE_SLOW = SLOWDOWN + FADE + PART;
-
 export function createCall(root) {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="pattern"></div><div class="gap"></div>
-      <div class="stuff">${rays()}
+      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
-      <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div></div>
+      <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
       <div class="tape t1"><div class="run"></div></div><div class="tape t2"><div class="run"></div></div>
     <div class="flash"></div><div class="bar"></div></div>`;
@@ -231,9 +220,6 @@ export function createCall(root) {
   const fight = q('.fight');
   const ring = q('.ring');
   let running = []; // animations of the current show, cancelled by the next one
-  let shown = 0; // counts show() calls
-  let barAnim = null; // the countdown keeps running while everything else slows down
-  let leaveTimers = []; // timers of a leave() in progress, dropped by the next show()
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -331,13 +317,6 @@ export function createCall(root) {
     show(m, hype, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
-      shown++; // a leave() still running for the previous match must not hide this one
-      leaveTimers.forEach(clearTimeout);
-      leaveTimers = [];
-      fight.getAnimations({ subtree: true }).forEach((a) => { if (a instanceof CSSAnimation) { a.playbackRate = 1; a.play(); } }); // the rays, if a slowdown stopped them
-      fight.style.background = '';
-      root.style.background = '';
-      fight.classList.remove('leaving');
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
@@ -385,60 +364,11 @@ export function createCall(root) {
           900 + n * 120, delay + 500);
       }
       idle(pick(IDLES), TV + 600, ms - TV - 600);
-      barAnim = anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
+      anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
-    },
-    /**
-     * The way out, then done(). slow (at the end of the screen, LEAVE_SLOW ms): the action slows down to a stop
-     * (SLOWDOWN), all but the background (halves, pattern, orange band) fades out (FADE), then the red and blue halves part to the sides
-     * like doors and show the board underneath (PART); the countdown runs to the end. Fast (~0.8 s, the match left the
-     * queue early): the same, at once. Few layers move: a heavier way out (names, VS, tapes flying off one by one) was
-     * too much for the TV.
-     */
-    leave(done, slow = false) {
-      const my = shown;
-      const later = (fn, ms) => leaveTimers.push(setTimeout(() => { if (my === shown) fn(); }, ms));
-      const go = (el, frames, ms, delay, easing) => anim(el, frames, { duration: ms, delay, easing, fill: 'forwards' });
-      // everything that moves, the rays' CSS animations too; not the countdown
-      const moving = () => fight.getAnimations({ subtree: true }).filter((a) => a !== barAnim && a.playState === 'running');
-      const [slowdown, fade, part] = slow ? [SLOWDOWN, FADE, PART] : [0, 250, 480];
-      let atRest = false; // the slowdown is over: its last step must not touch the fade and the doors
-      if (slowdown) {
-        // the speed falls from 1 to 0 in small steps, a little faster at first: a smooth coming to rest
-        const t0 = performance.now();
-        const step = () => {
-          if (atRest) return;
-          const k = Math.max(0, 1 - (performance.now() - t0) / slowdown);
-          moving().forEach((a) => { a.playbackRate = k * k; });
-          if (k > 0) later(step, 150);
-        };
-        step();
-      }
-      later(() => {
-        atRest = true;
-        moving().forEach((a) => a.pause()); // at rest
-        fight.classList.add('leaving');
-        for (const el of [q('.stuff'), q('.pattern'), q('.tape.t1'), q('.tape.t2')]) go(el, [{ opacity: 1 }, { opacity: 0 }], fade, 0, 'ease-in-out');
-        // the halves still cover it; once they part, the board shows (the call box in app.js has a dark background too)
-        fight.style.background = 'transparent';
-        root.style.background = 'transparent';
-        const ease = slow ? 'cubic-bezier(.6,0,.4,1)' : 'cubic-bezier(.5,0,.8,.5)';
-        // the orange band leaves with the red half
-        for (const el of [q('.red'), q('.gap')]) go(el, [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], part, fade + (slow ? 0 : 50), ease);
-        go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], part, fade + (slow ? 0 : 50), ease);
-        go(q('.bar'), [{ opacity: 1 }, { opacity: 0 }], slow ? 400 : 150, slow ? fade + part - 400 : 0, 'ease-out');
-        later(() => {
-          running.forEach((a) => a.cancel());
-          running = [];
-          fight.classList.remove('leaving');
-          fight.style.background = '';
-          root.style.background = '';
-          done();
-        }, fade + part + 70);
-      }, slowdown);
     },
   };
 }

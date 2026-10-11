@@ -2,7 +2,7 @@
 // data comes live over SSE, the page reloads itself after a deploy (shared/live.js).
 import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
-import { createCall, LEAVE_SLOW } from '/board/call.js';
+import { createCall } from '/board/call.js';
 import { createPoster } from '/board/podium.js';
 import { startLizard } from '/board/lizard.js';
 
@@ -443,18 +443,14 @@ function showCall(m) {
   box.hidden = false; // visible before show(): it measures the names
   callScreen ??= createCall(box);
   callScreen.show(m, hypeOf(m), CALL_MS, T.players);
-  call = { id: m.id, timer: setTimeout(() => hideCall(true), CALL_MS - LEAVE_SLOW) }; // the slow way out fills its last seconds
+  call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
 }
 
-/**
- * The call screen goes away with its way out (call.js leave()): it parts and shows the board underneath.
- * slow: at the end of its time (the last LEAVE_SLOW ms of CALL_MS); else at once (the match left the queue).
- */
-function hideCall(slow = false) {
+function hideCall() {
   clearTimeout(call?.timer);
   call = null;
-  if (!callScreen || el('call').hidden) return;
-  callScreen.leave(() => { el('call').hidden = true; }, slow);
+  callScreen?.hide();
+  el('call').hidden = true;
 }
 
 function updateCall() {

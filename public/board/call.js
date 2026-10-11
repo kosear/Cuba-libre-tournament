@@ -175,6 +175,14 @@ function makeFire(cv) {
   };
 }
 
+/** The player's mascot: a hash of the player id (FNV-1a), random if there is no id. */
+function mascotFor(p) {
+  if (!p?.id) return MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
+  let h = 0x811c9dc5;
+  for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
+  return MASCOTS[h % MASCOTS.length];
+}
+
 export function createCall(root) {
   const style = document.createElement('style');
   style.textContent = CSS;
@@ -278,9 +286,11 @@ export function createCall(root) {
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!important);
       if (important) fire.start(); else fire.stop();
-      const m1 = pick(MASCOTS);
-      let m2;
-      do m2 = pick(MASCOTS); while (m2 === m1);
+      // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
+      // tournament, so next time the same name most likely gets another one
+      const m1 = mascotFor(m.p1);
+      let m2 = mascotFor(m.p2);
+      if (m2 === m1) m2 = MASCOTS[(MASCOTS.indexOf(m1) + 1) % MASCOTS.length]; // two players with the same mascot: the next one
       setMascot(1, m1);
       setMascot(2, m2);
       setName(q('.n1'), m.p1?.name ?? '', m1[3]);

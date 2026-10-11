@@ -14,6 +14,12 @@ const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
 // There is no pug emoji: a pug face drawn in the style of the Noto emoji (the TV's), used as a body.
 const PUG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 10 120 120" width="1em" height="1em" style="display:block"><path d="M64 26 C40 26 22 34 18 52 C14 68 12 90 22 104 C32 118 50 122 64 122 C78 122 96 118 106 104 C116 90 114 68 110 52 C106 34 88 26 64 26z" fill="#e2b77b"/><path d="M18 80 C16 96 24 110 40 117 C30 106 24 94 22 78z M110 80 C112 96 104 110 88 117 C98 106 104 94 106 78z" fill="#cf9f63"/><path d="M64 26 C42 26 26 34 21 50 C32 41 47 37 64 37 C81 37 96 41 107 50 C102 34 86 26 64 26z" fill="#efcc94"/><path d="M22 34 C24 24 36 20 44 26 C40 34 34 44 26 50 C20 46 20 40 22 34z" fill="#2f2622"/><path d="M106 34 C104 24 92 20 84 26 C88 34 94 44 102 50 C108 46 108 40 106 34z" fill="#2f2622"/><path d="M28 34 C32 28 38 27 41 29 C37 35 33 40 29 43z" fill="#4a3d36"/><path d="M100 34 C96 28 90 27 87 29 C91 35 95 40 99 43z" fill="#4a3d36"/><path d="M44 46 Q54 40 64 44 Q74 40 84 46" fill="none" stroke="#a8773f" stroke-width="3.2" stroke-linecap="round"/><path d="M50 54 Q57 50 64 53 Q71 50 78 54" fill="none" stroke="#a8773f" stroke-width="3" stroke-linecap="round"/><path d="M30 70 C30 58 40 54 48 58 C54 61 58 66 64 66 C70 66 74 61 80 58 C88 54 98 58 98 70 C98 82 96 96 88 104 C80 112 48 112 40 104 C32 96 30 82 30 70z" fill="#3e322c"/><ellipse cx="45" cy="70" rx="11" ry="11" fill="#f3ead9"/><ellipse cx="83" cy="70" rx="11" ry="11" fill="#f3ead9"/><circle cx="45.5" cy="70.5" r="9.6" fill="#1a1411"/><circle cx="82.5" cy="70.5" r="9.6" fill="#1a1411"/><circle cx="42" cy="66.5" r="3.4" fill="#fff"/><circle cx="79" cy="66.5" r="3.4" fill="#fff"/><path d="M48 82 C54 76 74 76 80 82 C74 80 54 80 48 82z" fill="#2a211d" stroke="#2a211d" stroke-width="4" stroke-linejoin="round"/><path d="M54 88 C54 83 74 83 74 88 C74 93 69 96 64 96 C59 96 54 93 54 88z" fill="#15100e"/><ellipse cx="59.5" cy="87.5" rx="2.6" ry="1.6" fill="#4d3f38"/><path d="M64 96 L64 101" stroke="#15100e" stroke-width="2.6" stroke-linecap="round"/><path d="M64 101 C58 108 46 108 42 100" fill="none" stroke="#15100e" stroke-width="2.6" stroke-linecap="round"/><path d="M64 101 C70 108 82 108 86 100" fill="none" stroke="#15100e" stroke-width="2.6" stroke-linecap="round"/><path d="M59 104 C59 113 69 113 69 104 C66 106 62 106 59 104z" fill="#e8657e"/><path d="M64 106 L64 110" stroke="#c44a63" stroke-width="1.4" stroke-linecap="round"/></svg>`;
 
+// Cuban Pete («They call me Cuban Pete, I'm the king of the rumba beat»): the frog with the green face of «The Mask»,
+// a Cuban straw fedora and maracas, both drawn (no straw-hat emoji, and the maracas emoji is too new for the TV).
+const PETE_HAT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.45em" height="1.45em" style="display:block"><ellipse cx="60" cy="84" rx="58" ry="17" fill="#c9a861"/><ellipse cx="60" cy="81" rx="56" ry="15" fill="#e9cf8c"/><path d="M8 80 Q60 92 112 80" fill="none" stroke="#c9a861" stroke-width="2"/><path d="M28 80 C26 58 30 36 40 30 C48 26 54 32 60 32 C66 32 72 26 80 30 C90 36 94 58 92 80 Q60 90 28 80z" fill="#e3c57f"/><path d="M40 30 C48 26 54 32 60 32 C66 32 72 26 80 30 C76 40 70 44 60 44 C50 44 44 40 40 30z" fill="#d6b56c"/><path d="M34 52 Q60 60 86 52 M31 62 Q60 71 89 62" fill="none" stroke="#caa962" stroke-width="1.6"/><path d="M29 68 Q60 79 91 68 L92 79 Q60 90 28 79z" fill="#2c211b"/><path d="M29 68 Q60 79 91 68" fill="none" stroke="#4a3a2e" stroke-width="1.5"/></svg>`;
+const MARACAS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.25em" height="1.25em" style="display:block"><g transform="rotate(-24 60 60)"><rect x="30" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="30" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="34.5" cy="38" rx="21" ry="26" fill="#e23b2e"/><path d="M15 32 Q34.5 42 54 32 M14 44 Q34.5 54 55 44" fill="none" stroke="#ffd23f" stroke-width="5"/><path d="M19 22 Q34.5 28 50 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="27" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g><g transform="rotate(22 60 60)"><rect x="80" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="80" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="84.5" cy="38" rx="21" ry="26" fill="#ffc21f"/><path d="M65 32 Q84.5 42 104 32 M64 44 Q84.5 54 105 44" fill="none" stroke="#e23b2e" stroke-width="5"/><path d="M69 22 Q84.5 28 100 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="77" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g></svg>`;
+const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.06, -8], MARACAS, 'Cuban Pete'];
+
 // [body, hat, prop, name]; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
 // whose head is not in the middle (checked against the Noto emoji the TV uses)
 const MASCOTS = [
@@ -41,6 +47,7 @@ const MASCOTS = [
   ['🐰', '', '🎱', 'Bunny Hop'], ['🐗', '', '🃏', 'Wild Card'], ['🤖', '', '🍺', 'Bender'],
   ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '', '🍍', 'Pineapple Pizza'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
+  CUBAN_PETE,
 ];
 // pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [
@@ -157,10 +164,14 @@ const LUCKY = {
   kc: { set: PRIDE, chance: 1 },
   david: { set: PRIDE, chance: 0.5 },
 };
+// every Pete (Peter, Pedro, Петя...) gets Cuban Pete in half the tournaments; the name only has to start so
+const PETES = /^(pete|peter|petr|pyotr|piet|pietro|pierre|pedro|петя|петр|питер|пит)/;
+const PETE = { set: [CUBAN_PETE], chance: 0.5 };
 
 /** The player's set (LUCKY or the common pool) and their place in it: a hash of the player id (FNV-1a). */
 function mascotPick(p) {
-  const lucky = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
+  const key = (p?.name || '').toLowerCase().replace(/[\s.]/g, '').replace(/ё/g, 'е');
+  const lucky = LUCKY[key] || (PETES.test(key) ? PETE : null);
   if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : MASCOTS; return [set, Math.floor(Math.random() * set.length)]; }
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
@@ -179,11 +190,9 @@ function mascotsFor(players) {
   const out = new Map();
   for (const p of players) {
     const [set, start] = mascotPick(p);
-    let m = set[start];
-    for (let k = 0; k < set.length; k++) {
-      const c = set[(start + k) % set.length];
-      if (!used.has(c)) { m = c; break; }
-    }
+    // all of a small set taken (a second Pete): the common pool instead, never a mascot twice
+    const free = (s, i) => { for (let k = 0; k < s.length; k++) { const c = s[(i + k) % s.length]; if (!used.has(c)) return c; } return null; };
+    const m = free(set, start) || free(MASCOTS, start % MASCOTS.length) || set[start];
     used.add(m);
     out.set(p.id, m);
   }

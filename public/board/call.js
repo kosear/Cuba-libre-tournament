@@ -9,7 +9,10 @@ const PATTERNS = [
 ];
 const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
 
-// [body, hat, prop, name]; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
+// There is no pug emoji: a pug face drawn in the style of the Noto emoji (the TV's), used as a body.
+const PUG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="9 15 110 110" width="1em" height="1em" style="display:block"><path d="M22 30 C10 32 6 48 12 60 C18 56 26 50 34 44 C34 38 30 31 22 30z" fill="#3b302b"/><path d="M106 30 C118 32 122 48 116 60 C110 56 102 50 94 44 C94 38 98 31 106 30z" fill="#3b302b"/><path d="M64 22 C34 22 16 42 16 70 C16 100 38 116 64 116 C90 116 112 100 112 70 C112 42 94 22 64 22z" fill="#e7bf86"/><path d="M64 22 C40 22 24 34 19 54 C30 40 46 34 64 34 C82 34 98 40 109 54 C104 34 88 22 64 22z" fill="#f0cf9c"/><path d="M48 44 Q64 38 80 44" fill="none" stroke="#b98b55" stroke-width="3" stroke-linecap="round"/><path d="M52 52 Q64 47 76 52" fill="none" stroke="#b98b55" stroke-width="3" stroke-linecap="round"/><path d="M64 58 C50 56 36 60 32 74 C29 86 34 100 44 106 C52 111 76 111 84 106 C94 100 99 86 96 74 C92 60 78 56 64 58z" fill="#4a3c35"/><ellipse cx="44" cy="70" rx="13" ry="12" fill="#4a3c35"/><ellipse cx="84" cy="70" rx="13" ry="12" fill="#4a3c35"/><ellipse cx="44" cy="69" rx="9" ry="9.5" fill="#1d1714"/><ellipse cx="84" cy="69" rx="9" ry="9.5" fill="#1d1714"/><circle cx="41" cy="65.5" r="3.2" fill="#fff"/><circle cx="81" cy="65.5" r="3.2" fill="#fff"/><path d="M50 80 Q64 74 78 80" fill="none" stroke="#2c241f" stroke-width="3" stroke-linecap="round"/><path d="M55 84 C55 80 73 80 73 84 C73 89 68 92 64 92 C60 92 55 89 55 84z" fill="#1d1714"/><ellipse cx="60" cy="84" rx="2.4" ry="1.6" fill="#55463f"/><path d="M64 92 L64 97 M64 97 C60 102 52 102 49 98 M64 97 C68 102 76 102 79 98" fill="none" stroke="#1d1714" stroke-width="2.6" stroke-linecap="round"/><path d="M60 100 C60 108 68 108 68 100z" fill="#e8657e"/></svg>`;
+
+// [body, hat, prop, name]; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
 // whose head is not in the middle (checked against the Noto emoji the TV uses)
 const MASCOTS = [
   // nicknames with a joke, like a boxer's
@@ -22,7 +25,7 @@ const MASCOTS = [
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
-  ['🐶', ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '📉', 'Bear Market'], ['🦜', '', '⚔️', 'Pirate Parrot'],
+  [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '📉', 'Bear Market'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', ['⛑️', -0.74, 0.8, -20], '', 'Safety Turtle'],
   ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🥊', 'Boxing Kangaroo'],
   ['🐐', '🎓', '🎺', 'Jazz Goat'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🍹', 'Party Flamingo'], ['🐊', '', '🦷', 'Smiley Croc'],
@@ -280,7 +283,7 @@ export function createCall(root) {
 
   function setMascot(n, [body, hat, item]) {
     const box = q(`.mascot.m${n}`);
-    box.textContent = body;
+    if (body.startsWith('<')) box.innerHTML = body; else box.textContent = body;
     if (Array.isArray(hat)) {
       const [h, dx, dy, deg] = hat;
       box.insertAdjacentHTML('beforeend', `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`);

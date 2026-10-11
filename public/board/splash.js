@@ -511,13 +511,13 @@ export function startSplash(root) {
     const t = far / LAMP[2]; // tan of the light's angle from the vertical
     const [ux, uy] = far ? [dx / far, dy / far] : [0, 0];
     if (FLAT_SHADOW) {
-      b.shadow.style.transform = `translate(${b.x - R * 1.15 + 24}px, ${b.y - R * 1.15 + 32}px)`;
+      b.shadow.style.transform = `translate(${b.x - R + 24}px, ${b.y - R + 32}px)`;
     } else {
-      // the contact spot sits off towards the shadow: hidden under the ball on the lit side, on the other it runs
-      // straight into the cast shadow, which starts dense right at the ball's edge (no light gap between them)
-      b.contact.style.transform = `translate(${b.x - R * 1.1 + ux * R * 0.12}px, ${b.y - R * 1.1 + uy * R * 0.12}px)`;
-      const off = R * (0.1 + 0.55 * t);
-      b.shadow.style.transform = `translate(${b.x - R * 1.15 + ux * off}px, ${b.y - R * 1.15 + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.6 * t})`;
+      // both are plain discs blurred by CSS (smooth, no gradient rings): the contact spot just off towards the shadow,
+      // hidden on the lit side; the cast shadow near the ball so it starts right at its edge
+      b.contact.style.transform = `translate(${b.x - R * 0.98 + ux * R * 0.1}px, ${b.y - R * 0.98 + uy * R * 0.1}px)`;
+      const off = R * (0.12 + 0.5 * t);
+      b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.5 * t})`;
     }
     // the light moves over the ball as it travels, even when it slides without turning
     if (!FLAT_LIGHT && !b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;

@@ -312,17 +312,17 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
 
   /**
    * A new way on from where the head is: a curve to `p` arriving along the unit vector `e`, then straight on along `e`
-   * off the screen. Gecko units; the body behind keeps the old path. `bend` pulls the start of the curve sideways.
-   * Returns the arc length at `p`.
+   * off the screen. Gecko units; the body behind keeps the old path. `bend` pulls the start of the curve sideways,
+   * `lead` is how far it keeps going the old way first (a share of the distance). Returns the arc length at `p`.
    */
-  function reroute(g, p, e, bend = [0, 0]) {
+  function reroute(g, p, e, bend = [0, 0], lead = 0.6) {
     const [hx, hy, dx, dy] = at(g, g.s);
     const R = Math.hypot(p[0] - hx, p[1] - hy);
     const back = N * SEG + 60;
     const pts = [];
     for (let s = g.s - back; s < g.s; s += 4) pts.push(at(g, s).slice(0, 2));
     const head = pts.length; // index of the point where the head is now
-    const c1 = [hx + dx * R * 0.6 + bend[0], hy + dy * R * 0.6 + bend[1]];
+    const c1 = [hx + dx * R * lead + bend[0], hy + dy * R * lead + bend[1]];
     const c2 = [p[0] - e[0] * R * 0.4, p[1] - e[1] * R * 0.4];
     for (let i = 0; i <= 40; i++) {
       const t = i / 40;
@@ -342,12 +342,39 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     Object.assign(g, { mode: 'run', until: 99, stops: 0, top: speed / g.k, yawTo: 0, hold: false, creep: 0 });
   }
 
-  /** Turns off by angle `a` (+ is clockwise on screen) in a curve and runs off the screen at `speed` px/s. */
-  function turnOff(g, a, speed) {
+  /**
+   * Turns off by angle `a` (+ is clockwise on screen) and runs off the screen at `speed` px/s. `tight`: turns where it
+   * stands, without a step the old way first (next to another gecko). Keeps where the turn ends (`g.exit`, screen px).
+   */
+  function turnOff(g, a, speed, tight = false) {
     const [hx, hy, dx, dy] = at(g, g.s);
     const e = [dx * Math.cos(a) - dy * Math.sin(a), dx * Math.sin(a) + dy * Math.cos(a)];
     const R = 150;
-    reroute(g, [hx + dx * R * 0.5 + e[0] * R, hy + dy * R * 0.5 + e[1] * R], e);
+    const f = tight ? 0.05 : 0.5;
+    const p = [hx + dx * R * f + e[0] * R, hy + dy * R * f + e[1] * R];
+    reroute(g, p, e, [0, 0], tight ? 0.12 : 0.6);
+    g.exit = { p: [p[0] * g.k, p[1] * g.k], e };
+    go(g, speed);
+  }
+  /** +1 or -1: the way to turn that leads away from the other gecko's body. */
+  function awayFrom(g, o) {
+    const [hx, hy, dx, dy] = at(g, g.s);
+    const q = spine(o)[8];
+    const cross = dx * (q[1] * o.k / g.k - hy) - dy * (q[0] * o.k / g.k - hx);
+    return cross > 0 ? -1 : 1;
+  }
+  /** Turn signs for two face to face: one off to one side of the screen, the other to the opposite side. */
+  function apart(a, b) {
+    const [dx, dy] = dirOf(a);
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const n = [-dy * side, dx * side];
+    const sign = (g, v) => { const [ex, ey] = dirOf(g); return ex * v[1] - ey * v[0] > 0 ? 1 : -1; };
+    return [sign(a, n), sign(b, [-n[0], -n[1]])];
+  }
+  /** Runs after another along the way it went off (its `exit`), at `speed` px/s. */
+  function chase(g, o, speed) {
+    const { p, e } = o.exit;
+    reroute(g, [p[0] / g.k, p[1] / g.k], e);
     go(g, speed);
   }
 
@@ -407,7 +434,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       const r = Math.random();
       if (long && g.force) {
         // a scene wants this sit to be a catch
-        g.until = Math.max(g.until, 9);
+        g.until = rand(9, 12); // not one of the long sits: the scene is about what comes next
         startHunt(g, true);
         if (g.hunt) Object.assign(g.hunt, g.force);
       } else if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < catchP());
@@ -980,8 +1007,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           }
           if (u > (winner ? 1.2 : 2.2)) {
             sc.step = 'gone';
-            const side = Math.random() < 0.5 ? 1 : -1;
-            for (const g of [a, b]) { g.reach = 0; turnOff(g, side * rand(1.3, 1.7), g === loser ? 750 : 560); }
+            const [sa, sb] = apart(a, b);
+            a.reach = b.reach = 0;
+            turnOff(a, sa * rand(1.3, 1.7), a === loser ? 750 : 560, true);
+            turnOff(b, sb * rand(1.3, 1.7), b === loser ? 750 : 560, true);
           }
         }
       };
@@ -1003,7 +1032,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       // the thief comes from the side, a little from the front, to where the catch will be in the jaws
       const P = [m[0] - d[0] * (REACH - 4) * ka, m[1] - d[1] * (REACH - 4) * ka];
       const thb = th + (Math.random() < 0.5 ? 1 : -1) * rand(1.45, 2.1);
-      const b = comer(P, thb, kb, REACH * 0.85 * kb, () => {
+      const b = comer(P, thb, kb, REACH * 1.05 * kb, () => {
         sc.step = 'snatch';
         b.hunt = { steal: a, phase: 'lunge', t: 0, k: reachTo(b, a.hunt?.prey ? preyW(a) : P) };
       });
@@ -1015,12 +1044,15 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         else if (sc.step === 'dash' && sc.t - sc.t0 > 6) { sc.step = 'late'; if (a.hunt) a.hunt.hold = false; b.goal = null; go(b, 900); }
         else if (sc.step === 'snatch' && !b.hunt) {
           sc.step = 'run';
-          // off along the way the robbed one is facing, so it can chase straight on
-          turnOff(b, turn(dirOf(b), dirOf(a)) * (b.carry ? 1 : 0.6), b.carry ? 1050 : 700);
+          // off ahead of the robbed one's nose, turning where it stands, away from it
+          const s = awayFrom(b, a);
+          const want = turn(dirOf(b), dirOf(a));
+          turnOff(b, Math.sign(want) === s ? want : s * 1.2, b.carry ? 1050 : 700, true);
           if (!a.hunt?.robbed && a.hunt) a.hunt.hold = false; // too late, it was swallowed: just goes
         } else if (sc.step === 'run' && !a.hunt && a.mode === 'stop') {
           sc.step = 'chase';
-          go(a, 900);
+          chase(a, b, 900); // along the thief's track, long after it has passed
+          a.hold = false;
         } else if (sc.step === 'late' && !a.hunt && a.mode === 'stop') {
           sc.step = 'gone';
           go(a, 650);
@@ -1070,15 +1102,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
               loser.puffTo = 0;
               loser.waveTo = 0;
               loser.twitch = 0;
-              const side = Math.random() < 0.5 ? 1 : -1;
-              turnOff(loser, side * rand(1.4, 1.8), 1150);
-              sc.later = [0.35, () => {
-                const q = loser.pts;
-                const e = unit(q[q.length - 1][0] - q[q.length - 2][0], q[q.length - 1][1] - q[q.length - 2][1]); // where it is heading off to
-                const p = headW(loser);
-                const k = winner.k;
-                reroute(winner, [p[0] / k + e[0] * 40, p[1] / k + e[1] * 40], e);
-                go(winner, 1000);
+              turnOff(loser, apart(loser, winner)[0] * rand(1.4, 1.8), 1150, true);
+              sc.later = [0.6, () => {
+                chase(winner, loser, 1000); // on its track, slower, so it never runs into it
                 winner.waveTo = 0;
                 winner.twitch = 0;
                 winner.puffTo = 0;
@@ -1088,7 +1114,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         } else if (sc.step === 'close') {
           // one size: they rush at each other
           const [pa, pb] = [headW(a), headW(b)];
-          const near = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) < 70;
+          const near = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) < 85;
           for (const g of [a, b]) g.creep = near ? 0 : 160 / g.k;
           if (near || u > 2) { sc.step = 'scuffle'; sc.t0 = sc.t; sc.dust = { at: [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2], t: 0 }; sc.base = [a.yaw, b.yaw]; }
         } else if (sc.step === 'scuffle') {
@@ -1102,12 +1128,12 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           if (u > 1.8) {
             sc.step = 'gone';
             sc.dust = null;
-            const side = Math.random() < 0.5 ? 1 : -1;
-            for (const g of [a, b]) {
-              Object.assign(g, { reach: 0, gape: 0, puffTo: 0, waveTo: 0, twitch: 0 });
-              g.squint = 0;
-              turnOff(g, side * rand(1.3, 1.7), 1100);
-            }
+            // nose to nose: each turns well round, away from the other, one a moment after the other
+            const sides = apart(a, b);
+            const off = (g, i) => turnOff(g, sides[i] * rand(1.9, 2.2), 1100, true);
+            [a, b].forEach((g) => { Object.assign(g, { reach: 0, gape: 0, puffTo: 0, waveTo: 0, twitch: 0 }); g.squint = 0; });
+            off(a, 0);
+            sc.later = [0.25, () => off(b, 1)];
           }
         }
       };
@@ -1143,10 +1169,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           sc.step = 'come';
           const P = preyW(a);
           const dm = dirOf(a);
-          const side = Math.random() < 0.5 ? 1 : -1;
+          const side = (sc.side = Math.random() < 0.5 ? 1 : -1);
           const n = [-dm[1] * side, dm[0] * side];
-          const e = unit(dm[0] * 0.55 - n[0], dm[1] * 0.55 - n[1]); // coming in from that side, a bit from behind
-          const run = REACH * 0.85 * kb;
+          const e = unit(-dm[0] * 0.35 - n[0], -dm[1] * 0.35 - n[1]); // past her head, then in from that side, a bit from the front
+          const run = REACH * 1.45 * kb;
           const p = [(P[0] - e[0] * run) / kb, (P[1] - e[1] * run) / kb];
           const wide = (WIDTH[8] * km * 1.6 + 50) / kb;
           b.follow = null;
@@ -1160,7 +1186,11 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         } else if ((sc.step === 'tug' || sc.step === 'late') && !b.hunt && b.mode === 'stop') {
           sc.step = 'gone';
           b.hold = false;
-          turnOff(b, turn(dirOf(b), dirOf(a)) * 0.9, 480);
+          // off ahead of her and out to its side, never on her line: she runs faster than it
+          const dm = dirOf(a);
+          const side = sc.side;
+          const out = unit(dm[0] - dm[1] * side, dm[1] + dm[0] * side);
+          turnOff(b, turn(dirOf(b), out), 650, true);
         }
         if (sc.step === 'come' && sc.t > 60) { b.goal = null; go(b, 500); sc.step = 'gone'; }
       };

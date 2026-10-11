@@ -76,10 +76,9 @@ const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
 const FAST_CHANCE = 0.05; // one rolling ball in 20 is shot 3 times faster: it hits the logo 3 times harder (push,
 const FAST_SPEED = 3; // spin and squash all follow the speed of the hit)
-const ROCKET_CHANCE = 0.01; // and one in 100 is a rocket: 10 times faster, 10 times harder
+const ROCKET_CHANCE = 0.01; // and one in 100 is a rocket: 10 times faster (up to ROCKET_MAX), so it hits much harder
 const ROCKET_SPEED = 10;
-const ROCKET_MAX = 4200; // px/s: faster and the rocket is on screen for a few frames only, a hit with no ball seen;
-// above it the rocket keeps its speed but hits the logo as hard as if it flew ROCKET_SPEED times faster (b.punch)
+const ROCKET_MAX = 4200; // px/s: faster and the rocket is on screen for a few frames only, a hit with no ball seen
 const MAX_BALLS = 8; // a safety ceiling for the TV: every moving ball is redrawn each frame
 const RALLY_CHANCE = 0.15; // now and then a rolling ball goes round the table: 3-4 bounces off the edges
 const MAX_STEP = 8; // px per physics sub-step, prevents tunnelling at low frame rates
@@ -564,7 +563,6 @@ export function startSplash(root) {
       const raw = Math.max(vMin, hit ? rand(1100, 1500) : rand(900, 1300)) * boost;
       const v = boost === ROCKET_SPEED ? Math.min(raw, ROCKET_MAX) : raw;
       const b = makeBall(freeNumber(), sx, sy, dx * v, dy * v, FRICTION);
-      b.punch = raw / v; // a capped rocket still hits as hard as its full speed
       if (Math.random() < ROLL_SIDE) b.w = (Math.random() < 0.5 ? -1 : 1) * rand(5, 15);
       b.cushions = rally ? 3 + (Math.random() < 0.5 ? 1 : 0) : Math.random() < CUSHION_CHANCE ? 1 : 0;
       return true;
@@ -724,7 +722,7 @@ export function startSplash(root) {
         b.vy -= (1 + RESTITUTION) * vn * n[1];
         spinKick(b, n[0], n[1]);
         rollOn(b);
-        const hit = -vn * (b.punch || 1); // speed into the logo (a rocket's as if uncapped): everything below follows it
+        const hit = -vn; // speed into the logo: everything below follows it
         wobble(n[0], n[1], hit);
         drift.vx -= n[0] * hit * LOGO_PUSH; // n points out of the logo, the push goes the other way
         drift.vy -= n[1] * hit * LOGO_PUSH;

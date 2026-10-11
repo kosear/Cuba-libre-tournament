@@ -110,9 +110,8 @@ const CSS = `
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fight .n1 { left: 180px; top: 380px; }
 .fight .n2 { right: 180px; top: 640px; }
-.fight .vs { position: absolute; z-index: 3; left: 660px; width: 600px; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
-  color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform;
-  -webkit-text-stroke: 22px #fff; paint-order: stroke fill; } /* a thick white outline, drawn under the yellow */
+.fight .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
+  color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
@@ -285,23 +284,28 @@ export function createCall(root) {
   function idle(kind, at, hold) {
     const s1 = q('.n1 span');
     const s2 = q('.n2 span');
+    const vs = q('.vs');
     const sub = q('.sub');
-    // VS stays calm whatever the idle: it only turns slowly anticlockwise, the names keep the attention
-    loop(q('.vs'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-360deg)' }], 30000, at, { easing: 'linear' });
     if (kind === 'drift') {
       loop(s1, [{ transform: 'translateX(0)' }, { transform: 'translateX(28px)' }, { transform: 'translateX(0)' }], 2400, at);
       loop(s2, [{ transform: 'translateX(0)' }, { transform: 'translateX(-28px)' }, { transform: 'translateX(0)' }], 2400, at);
+      loop(vs, [{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(1)' }], 1600, at);
     } else if (kind === 'sway') {
       loop(s1, [{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(14px)' }, { transform: 'translateY(0)' }], 2600, at);
       loop(s2, [{ transform: 'translateY(0)' }, { transform: 'translateY(14px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }], 2600, at);
+      loop(vs, [{ transform: 'rotate(0)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(0)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(0)' }], 2200, at);
     } else if (kind === 'heartbeat') {
+      loop(vs, [{ transform: 'scale(1)' }, { transform: 'scale(1.16)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.22 },
+        { transform: 'scale(1.1)', offset: 0.32 }, { transform: 'scale(1)', offset: 0.46 }, { transform: 'scale(1)' }], 1000, at, { easing: 'ease-out' });
       loop(sub, jitter(1.5), 160, at, { easing: 'linear' });
     } else if (kind === 'stare-down') {
       anim(s1, [{ transform: 'translateX(0)' }, { transform: 'translateX(70px)' }], { duration: hold, delay: at, easing: 'ease-in', fill: 'forwards' });
       anim(s2, [{ transform: 'translateX(0)' }, { transform: 'translateX(-70px)' }], { duration: hold, delay: at, easing: 'ease-in', fill: 'forwards' });
+      loop(vs, jitter(2.5), 140, at, { easing: 'linear' });
     } else {
       loop(s1, jitter(3), 120, at, { easing: 'linear' });
       loop(s2, jitter(3), 130, at, { easing: 'linear' });
+      loop(vs, jitter(4), 110, at, { easing: 'linear' });
       loop(sub, jitter(2), 150, at, { easing: 'linear' });
     }
   }

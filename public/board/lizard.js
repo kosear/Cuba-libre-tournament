@@ -25,7 +25,8 @@
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
 // it, snaps it up and eats it.
 // A glutton (GLUTTON of the geckos) does not stop at one: after a catch it sits on and hunts again, 2-3 butterflies
-// in all. Every butterfly eaten makes the belly visibly rounder (FAT, a cartoonish bit more than real).
+// in all. Every butterfly eaten makes the belly visibly rounder (FAT, a cartoonish bit more than real);
+// the bigger the gecko, the less one butterfly shows on it (fatter()).
 // A wing torn off and left lying: WING_EAT of the time the same gecko eats it itself, walking over to it.
 // The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
 // screen), never touching what is shown. A gecko hour happens only when `rush()` allows (not during a tournament).
@@ -65,7 +66,12 @@ function rushOn(now = Date.now()) {
 
 const GLUTTON = 0.25; // share of geckos that eat 2-3 butterflies in a row
 const WING_EAT = 0.2; // a wing torn off during the meal, within reach: share eaten by the same gecko at once
-const FAT = 0.22; // how much rounder the belly gets per butterfly
+const FAT = 0.22; // how much rounder the belly of the smallest gecko gets per butterfly
+/** The belly after a meal worth `part` of a butterfly: a big gecko barely shows it (1.5 gets a quarter of what 0.6 gets). */
+function fatter(g, part = 1) {
+  const step = FAT * (SIZES[0][0] / g.k) ** 1.5;
+  g.fatTo = Math.min(step * 3, g.fatTo + step * part);
+}
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
@@ -456,7 +462,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   function finish(g) {
     g.hunt = null; g.lick = 0; g.squint = 0; g.gulp = 0; g.lips = 0;
     g.eaten++;
-    g.fatTo = Math.min(FAT * 3, g.fatTo + FAT);
+    fatter(g);
     if (bf.wing && toWing(g, bf.wing, glutton ? 1 : WING_EAT)) return;
     if (!huntMore(g)) g.look = g.until - rand(1, 2);
   }
@@ -683,7 +689,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         g.gulp = t < 2.2 ? 3 + ((t - 1.4) / 0.8) * 6 : 0;
         g.squint = t < 2.3 ? Math.sin(Math.min(1, (t - 1.4) / 0.9) * Math.PI) : 0;
         g.lips = t > 2.4 && t < 3.3 ? (t - 2.4) / 0.9 : 0;
-        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); g.fatTo = Math.min(FAT * 3, g.fatTo + FAT / 3); huntMore(g); }
+        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); fatter(g, 1 / 3); huntMore(g); }
       }
     }
   }

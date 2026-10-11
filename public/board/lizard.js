@@ -596,7 +596,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     else classic(g, h, t);
   }
 
-  /** Tears the prey's `side` wing off: it falls to the table, or with `away` is carried off the screen. */
+  /** Tears the prey's `side` wing off: it falls to the table, or with `away` is first carried a little way off by the air. */
   function tearWing(g, prey, side, speed, away = false) {
     const [x, y, heading, s] = preyPlace(g, prey);
     const [sx, sy] = [-Math.sin(heading) * side, Math.cos(heading) * side]; // that wing's side
@@ -752,7 +752,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       g.yaw = g.yawTo = h.base * 0.3 + sgn * 0.6 * sh;
       prey.span = u < 0.15 ? 0.3 + 0.7 * Math.abs(Math.sin(t * 50)) : u < 0.3 ? 1 : 0.25 + (k < 2 ? 0.3 * Math.abs(Math.sin(t * 30)) : 0);
       if (k === 1 && u >= 0.15 && !prey.torn) { prey.torn = -sgn; tearWing(g, prey, -sgn, 230); } // flung to the table
-      if (k === 3 && u >= 0.15 && prey.torn !== 2) { tearWing(g, prey, sgn, 520, true); prey.torn = 2; } // gone with the air
+      if (k === 3 && u >= 0.15 && prey.torn !== 2) { tearWing(g, prey, sgn, 330, true); prey.torn = 2; } // caught by the air, lands further off
     } else if (t < 5.2) {
       g.yawTo = 0;
       prey.span = 0;

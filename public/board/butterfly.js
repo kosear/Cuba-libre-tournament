@@ -231,7 +231,7 @@ export function createButterfly(root) {
     };
     // a big one flies faster and smoother on slower wingbeats, a small one slower, fluttering and zigzagging more
     b.speed = cruise();
-    b.beat = rand(8, 11) / b.kind.size;
+    b.beat = rand(6.5, 9) / b.kind.size;
     b.vx = Math.cos(a) * b.speed;
     b.vy = Math.sin(a) * b.speed;
     el.hidden = false;
@@ -244,7 +244,7 @@ export function createButterfly(root) {
     b.goal = [b.x + Math.cos(a) * 3000, b.y + Math.sin(a) * 3000];
     b.speed = cruise() * (fast ? 2.2 : 1);
     b.after = null;
-    if (fast) { b.vx = Math.cos(a) * b.speed; b.vy = Math.sin(a) * b.speed; b.beat = 14 / b.kind.size; }
+    if (fast) { b.vx = Math.cos(a) * b.speed; b.vy = Math.sin(a) * b.speed; b.beat = 11.5 / b.kind.size; }
   }
 
   /** Up again and over to another spot nearby, to land there for a while. */
@@ -316,11 +316,11 @@ export function createButterfly(root) {
     },
     /**
      * A wing torn off at (x, y), thrown off with velocity `v`: it flutters down, spinning, lies a while and fades.
-     * `away`: caught by the air instead, it keeps fluttering and drifts off the screen.
+     * `away`: caught by the air, it first tumbles a little way off, then falls.
      */
     dropWing(x, y, heading, kind, side, v, away = false) {
       const s = pool.find((p) => !p.w) || pool[0];
-      s.w = { x, y, heading, kind, side, t: 0, h: 0.5, vx: v[0], vy: v[1], spin: rand(-6, 6), away };
+      s.w = { x, y, heading, kind, side, t: 0, h: 0.5, vx: v[0], vy: v[1], spin: rand(-6, 6), away: away ? rand(0.5, 0.9) : 0 };
       s.el.hidden = false;
     },
     /** Slipped out of the gecko's jaws at (x, y): flutters up and lands again at `to`, `onLand` when it sits. */
@@ -404,11 +404,13 @@ export function createButterfly(root) {
     const w = slot.w;
     w.t += dt;
     if (w.away) {
-      // carried off: keeps tumbling in the air, drifts away and leaves the screen
+      // caught by the air: tumbles a little way off, slowing down, then falls like any other
+      w.vx *= Math.exp(-dt * 1.5);
+      w.vy *= Math.exp(-dt * 1.5);
       w.x += (w.vx + Math.sin(w.t * 7) * 70) * dt;
       w.y += (w.vy + Math.cos(w.t * 5) * 40) * dt;
       w.heading += w.spin * dt;
-      if (w.x < -100 || w.x > W + 100 || w.y < -100 || w.y > H + 100) { slot.w = null; slot.el.hidden = true; }
+      if (w.t > w.away) w.away = 0;
     } else if (w.h > 0) {
       // falling like a leaf: side to side, spinning, slower than a stone
       w.h = Math.max(0, w.h - dt * 0.45);

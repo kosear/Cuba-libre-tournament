@@ -3,7 +3,9 @@
 // the body bends and the tail waves in step with a trot (diagonal legs together), feet stay planted while on the
 // ground. It runs in dashes with short stops, one of them a longer sit (1-45 s, mostly short), looks around while stopped, then leaves.
 // The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
-// Every run it comes in a different colour (the Bali one, blue, red, green...).
+// Every run it comes in a different colour (the Bali one, blue, red, green...) and one of five sizes.
+// Sizes: the gecko lives in its own units (world px / k), so its shape, gait and hunt need no changes; only what it
+// shares with the screen and the butterflies is converted (path, targets, the canvas, the prey's size).
 // A sit over 4 s may turn into a hunt (15% catch, 70% a funny miss): a butterfly (butterfly.js) lands in front of
 // it, the gecko turns to it, freezes with a twitching tail tip, creeps closer in small steps and lunges. A catch:
 // the butterfly struggles in its jaws, a head shake tears a wing off (it flutters down and lies there), the gecko
@@ -31,7 +33,14 @@ const N = 26; // spine points: 0-3 head, 4 neck, 5 shoulders, 11 hips, 12-25 tai
 const SHOULDER = 5;
 const HIP = 11;
 const STRIDE = 100; // px travelled per full gait cycle
-const BOX = 600; // canvas size, the gecko is drawn around its middle
+const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
+// size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
+const SIZES = [[0.6, 0.15], [0.8, 0.25], [1, 0.3], [1.2, 0.2], [1.5, 0.1]];
+function pickSize() {
+  let r = Math.random();
+  for (const [k, p] of SIZES) if ((r -= p) < 0) return k;
+  return 1;
+}
 // colours: body, outline, spots, tail bands; the first is the real Bali tokay
 const COLORS = [
   ['#7d95b5', '#3e4f66', '#f07a3a', '#c9d6e6'],
@@ -90,6 +99,11 @@ export function startLizard(root) {
     timer = setTimeout(run, period());
     if (g) return;
     g = makeRun();
+    // a bigger gecko needs a bigger canvas; a new size also resets the context, draw() sets it up every frame
+    if (el.width !== g.box) {
+      el.width = el.height = g.box;
+      el.style.width = el.style.height = `${g.box}px`;
+    }
     el.hidden = false;
     wake();
   }
@@ -159,12 +173,17 @@ export function startLizard(root) {
       if (k) lens.push(lens[k - 1] + Math.hypot(p[0] - pts[k - 1][0], p[1] - pts[k - 1][1]));
       pts.push(p);
     }
+    // from here on the path is in the gecko's own units
+    const k = pickSize();
+    for (const p of pts) { p[0] /= k; p[1] /= k; }
+    for (let i = 0; i < lens.length; i++) lens[i] /= k;
     const spots = [];
     for (let i = SHOULDER; i < 22; i += rand(1.2, 2.2)) spots.push([i, rand(-0.6, 0.6), rand(3, 5.5) * (i < HIP + 2 ? 1 : 0.75)]);
     const stops = meal ? 0 : Math.floor(rand(1, 4)); // a wing run: its only stop is the meal
     lastColor = (lastColor + 1 + Math.floor(Math.random() * (COLORS.length - 1))) % COLORS.length; // never twice in a row
     return {
-      pts, lens, total: lens[200], s: 0, v: 0, meal: meal && { at: meal, s: lens[100] },
+      k, box: Math.ceil((BOX * Math.max(1, k)) / 2) * 2,
+      pts, lens, total: lens[200], s: 0, v: 0, meal: meal && { at: [meal[0] / k, meal[1] / k], s: lens[100] },
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
       col: COLORS[lastColor],
       sit: huntAll ? stops : 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
@@ -197,7 +216,8 @@ export function startLizard(root) {
   function advance(g, dt) {
     g.t += dt;
     g.until -= dt;
-    const [hx, hy] = at(g, g.s);
+    const hx = at(g, g.s)[0] * g.k;
+    const hy = at(g, g.s)[1] * g.k;
     const inside = hx > 250 && hx < W - 250 && hy > 200 && hy < H - 200;
     if (g.mode === 'run' && g.meal && !g.meal.done && g.s + g.v / 14 >= g.meal.s - REACH - 10) {
       // the wing just ahead (it stops within ~v/14 px): stop, look, snap
@@ -251,7 +271,8 @@ export function startLizard(root) {
     const [fx, fy] = unit(hx - nx, hy - ny);
     const d = 4 * SEG + 7 + REACH - 4;
     const target = [nx + (fx * Math.cos(a) - fy * Math.sin(a)) * d, ny + (fx * Math.sin(a) + fy * Math.cos(a)) * d];
-    if (target[0] < 60 || target[0] > W - 60 || target[1] < 60 || target[1] > H - 60) return;
+    const [wx, wy] = [target[0] * g.k, target[1] * g.k];
+    if (wx < 60 || wx > W - 60 || wy < 60 || wy > H - 60) return;
     // a long sit: the butterfly comes later, so the hunt ends well before the sit does
     g.hunt = { caught, target, phase: 'wait', t: 0, start: g.until > 12 ? rand(0, g.until - 9) : 0 };
   }
@@ -264,7 +285,7 @@ export function startLizard(root) {
     const next = (phase) => { h.phase = phase; h.t = 0; };
     if (h.phase === 'wait' && t >= h.start) {
       next('call');
-      bf.summon(h.target, () => { next('watch'); h.watch = rand(0.8, 1.8); });
+      bf.summon([h.target[0] * g.k, h.target[1] * g.k], () => { next('watch'); h.watch = rand(0.8, 1.8); });
     } else if (h.phase === 'watch') {
       // head turned to it, frozen, only the tail tip twitches
       g.yawTo = clampYaw(aim(g, h.target));
@@ -277,7 +298,7 @@ export function startLizard(root) {
       g.creep = done ? 0 : Math.sin(t * 3.5) > -0.2 ? 40 : 0;
       if (done && g.v < 2 && Math.abs(g.yaw - g.yawTo) < 0.04) {
         next('lunge');
-        if (!h.caught) bf.flee(at(g, g.s - 4 * SEG)); // it takes off just as the gecko moves
+        if (!h.caught) { const [nx, ny] = at(g, g.s - 4 * SEG); bf.flee([nx * g.k, ny * g.k]); } // it takes off just as the gecko moves
       }
     } else if (h.phase === 'lunge') {
       g.reach = t < 0.08 ? smooth(t / 0.08) : t < 0.16 ? 1 : t < 0.5 ? 1 - smooth((t - 0.16) / 0.34) : 0;
@@ -294,7 +315,7 @@ export function startLizard(root) {
     } else {
       // missed: freeze, look after it, lick the eye
       const p = bf.pos;
-      if (p && t > 0.25) g.yawTo = clampYaw(aim(g, p));
+      if (p && t > 0.25) g.yawTo = clampYaw(aim(g, [p[0] / g.k, p[1] / g.k]));
       g.lick = t > 1 && t < 1.6 ? Math.sin(((t - 1) / 0.6) * Math.PI) : 0;
       if (t >= 2.2) { g.hunt = null; g.look = g.until - rand(1, 2); }
     }
@@ -314,7 +335,8 @@ export function startLizard(root) {
         prey.torn = Math.cos(t * 26) > 0 ? 1 : -1;
         const [x, y, heading, s] = preyPlace(g, prey);
         const [sx, sy] = [-Math.sin(heading) * prey.torn, Math.cos(heading) * prey.torn]; // that wing's side
-        bf.dropWing(x + sx * 24 * s, y + sy * 24 * s, heading, prey.kind, prey.torn, [sx * 190, sy * 190]);
+        const k = g.k;
+        bf.dropWing((x + sx * 24 * s) * k, (y + sy * 24 * s) * k, heading, prey.kind, prey.torn, [sx * 190, sy * 190]);
       }
     } else if (t < 1.6) {
       // a pause: the prey still twitches now and then
@@ -391,7 +413,7 @@ export function startLizard(root) {
   function preyPlace(g, prey, p = spine(g)) {
     const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
     // held by the thorax, the abdomen in the mouth, head and wings outside; each bite pulls it in under the head
-    const s = 0.85 * (1 - 0.35 * prey.depth);
+    const s = (0.85 * (1 - 0.35 * prey.depth)) / g.k; // the butterfly keeps its size, whatever the gecko's
     const out = 6 + 2 - 3 * s - prey.depth * 40;
     return [p[0][0] + hx * out, p[0][1] + hy * out, Math.atan2(hy, hx), s];
   }
@@ -542,12 +564,13 @@ export function startLizard(root) {
     const p = spine(g);
     const ls = legs(g, p);
     const body = outline(g, p);
-    const cx = Math.round(p[8][0]);
-    const cy = Math.round(p[8][1]);
-    el.style.transform = `translate(${cx - BOX / 2}px, ${cy - BOX / 2}px)`;
+    const { k, box } = g;
+    const cx = Math.round(p[8][0] * k);
+    const cy = Math.round(p[8][1] * k);
+    el.style.transform = `translate(${cx - box / 2}px, ${cy - box / 2}px)`;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, BOX, BOX);
-    ctx.setTransform(1, 0, 0, 1, BOX / 2 - cx, BOX / 2 - cy);
+    ctx.clearRect(0, 0, box, box);
+    ctx.setTransform(k, 0, 0, k, box / 2 - cx, box / 2 - cy); // gecko units -> canvas px
 
     // shadow on the table, light from the top left like the balls
     ctx.save();
@@ -563,7 +586,7 @@ export function startLizard(root) {
     if (prey) {
       const [x, y, heading, s] = preyPlace(g, prey, p);
       const o = { missing: prey.torn, crumple: prey.crumple };
-      drawButterfly(ctx, x + 5, y + 7, heading, s, prey.span, null, o);
+      drawButterfly(ctx, x + 5 / k, y + 7 / k, heading, s, prey.span, null, o);
       drawButterfly(ctx, x, y, heading, s, prey.span, prey.kind, o);
     }
 
@@ -574,8 +597,8 @@ export function startLizard(root) {
       const back = 2 + piece.depth * 26;
       const x = p[0][0] + hx * (6 - back);
       const y = p[0][1] + hy * (6 - back);
-      const sc = 0.85 * (1 - 0.45 * piece.depth);
-      drawWing(ctx, x + 5, y + 7, Math.atan2(hy, hx), sc, null, piece.side, true);
+      const sc = (0.85 * (1 - 0.45 * piece.depth)) / k;
+      drawWing(ctx, x + 5 / k, y + 7 / k, Math.atan2(hy, hx), sc, null, piece.side, true);
       drawWing(ctx, x, y, Math.atan2(hy, hx), sc, piece.kind, piece.side, true);
     }
 

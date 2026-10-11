@@ -1,7 +1,7 @@
 // «Now playing» call screen, fight-night style (designed in /lab/): who goes to the table right now.
 // Red corner left, blue corner right, a random background pattern, two random mascots, the names punch in
-// from opposite sides, VS slams down, then an idle motion. Important matches: VS hits much harder (shock waves,
-// shards, a heavy shake) and two caution tapes run across the screen saying why the match matters (FINAL, TIE-BREAK…).
+// from opposite sides, VS slams down, then an idle motion. Important matches: two caution tapes run across the screen
+// saying why the match matters (FINAL, TIE-BREAK…). (Shock waves and a harder slam were tried: too heavy for the TV.)
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
@@ -120,7 +120,7 @@ const CSS = `
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
 /* important matches: two caution tapes across the screen, the words running in opposite directions (one moving layer
-   each, transforms only); shock waves and shards when VS lands */
+   each, transforms only) */
 .fight .tape { position: absolute; left: -240px; width: 2400px; height: 76px; z-index: 5; pointer-events: none; display: none; overflow: hidden;
   background: #ffd400; box-shadow: 0 8px 24px rgba(0,0,0,.45);
   border-top: 12px solid transparent; border-bottom: 12px solid transparent;
@@ -131,11 +131,6 @@ const CSS = `
 .fight .tape .run { display: flex; width: max-content; will-change: transform; white-space: nowrap; color: #111;
   font-size: 46px; line-height: 52px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 4px; }
 .fight .tape .run span { padding-right: 46px; }
-.fight .shock { position: absolute; left: 760px; top: 420px; width: 400px; height: 400px; border-radius: 50%; z-index: 3; pointer-events: none;
-  border: 16px solid #ffd400; opacity: 0; will-change: transform, opacity; }
-.fight .shock.s2 { border-color: #fff; border-width: 10px; }
-.fight .shard { position: absolute; left: 951px; top: 610px; width: 18px; height: 34px; z-index: 3; pointer-events: none; opacity: 0;
-  will-change: transform, opacity; clip-path: polygon(50% 0, 100% 40%, 70% 100%, 0 70%); }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
@@ -210,7 +205,6 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <div class="shock s1"></div><div class="shock s2"></div><div class="shards"></div>
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
@@ -279,29 +273,6 @@ export function createCall(root) {
       anim(row, dir < 0 ? [{ transform: 'translateX(0)' }, { transform: `translateX(${-half}px)` }] : [{ transform: `translateX(${-half}px)` }, { transform: 'translateX(0)' }],
         { duration: half * 9, iterations: Infinity, easing: 'linear' });
     });
-  }
-
-  /** A big slam: two shock waves from VS and shards flying out. */
-  function blast(at) {
-    anim(q('.shock.s1'), [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(4.5)', opacity: 0 }], { duration: 650, delay: at, easing: 'cubic-bezier(.1,.7,.3,1)' });
-    anim(q('.shock.s2'), [{ transform: 'scale(.2)', opacity: .9 }, { transform: 'scale(3.2)', opacity: 0 }], { duration: 560, delay: at + 90, easing: 'cubic-bezier(.1,.7,.3,1)' });
-    const box = q('.shards');
-    box.innerHTML = '';
-    const colors = ['#ffd400', '#fff', '#f47b20'];
-    for (let i = 0; i < 18; i++) {
-      const s = document.createElement('i');
-      s.className = 'shard';
-      s.style.background = colors[i % 3];
-      box.append(s);
-      const a = (i / 18) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const r = 520 + Math.random() * 420;
-      const spin = (Math.random() - 0.5) * 900;
-      const k = 0.8 + Math.random() * 1.4;
-      anim(s, [
-        { transform: `rotate(${a}rad) scale(${k})`, opacity: 1 },
-        { transform: `translate(${Math.cos(a) * r}px, ${Math.sin(a) * r + 160}px) rotate(${spin}deg) scale(${k})`, opacity: 0 },
-      ], { duration: 900 + Math.random() * 300, delay: at, easing: 'cubic-bezier(.15,.8,.4,1)', fill: 'forwards' });
-    }
   }
 
   const loop = (el, frames, ms, delay, extra = {}) => anim(el, frames, { duration: ms, delay, iterations: Infinity, easing: 'ease-in-out', ...extra });
@@ -373,23 +344,13 @@ export function createCall(root) {
       anim(q('.n2'), punch(-1920, -1), { duration: FLY, delay: T2, fill: 'backwards' });
       impact(T1 + FLY * 0.78, 22);
       impact(T2 + FLY * 0.78, 22);
-      // an important match: VS falls from higher and lands much harder, squashed flat for a moment
-      anim(q('.vs'), important ? [
-        { transform: 'scale(10) rotate(-16deg)', opacity: 0, easing: 'cubic-bezier(.7,0,1,.6)' },
-        { transform: 'scale(1.25, .7) rotate(3deg)', opacity: 1, offset: 0.66 },
-        { transform: 'scale(.9, 1.12) rotate(-2deg)', opacity: 1, offset: 0.82 },
-        { transform: 'scale(1) rotate(0)', opacity: 1 },
-      ] : [
+      anim(q('.vs'), [
         { transform: 'scale(6) rotate(-12deg)', opacity: 0, easing: 'cubic-bezier(.6,0,.9,.5)' },
         { transform: 'scale(.85) rotate(4deg)', opacity: 1, offset: 0.7 },
         { transform: 'scale(1) rotate(0)', opacity: 1 },
-      ], { duration: important ? 420 : 340, delay: TV, fill: 'backwards' });
-      if (important) {
-        impact(TV + 280, 64);
-        impact(TV + 520, 26); // the aftershock
-        blast(TV + 280);
-        tapes(hype, TV + 300);
-      } else impact(TV + 240, 36);
+      ], { duration: 340, delay: TV, fill: 'backwards' });
+      impact(TV + 240, 36);
+      if (important) tapes(hype, TV + 240); // the tapes whip in as VS lands
       anim(q('.label'), [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 250, fill: 'backwards' });
       // Mascots swoop in right behind the names, then bob.
       for (const [n, from, delay] of [[1, -700, 60], [2, 700, 360]]) {

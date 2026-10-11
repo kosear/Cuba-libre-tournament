@@ -951,8 +951,19 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   }
   /** Family: the baby grabs a wing of its mother's catch, tears it off and eats it. */
   function tug(g, h, t) {
-    g.reach = h.k * (t < 0.08 ? smooth(t / 0.08) : t < 0.5 ? 1 : t < 0.8 ? 1 - smooth((t - 0.5) / 0.3) : 0);
     const m = h.tug;
+    g.reach = h.k * (t < 0.08 ? smooth(t / 0.08) : t < 0.5 ? 1 : t < 0.8 ? 1 - smooth((t - 0.5) / 0.3) : 0);
+    // its snout goes up to her head, never over it: the neck stops where the two outlines meet
+    const room = 1.25 * (g.k + m.k) + 1;
+    if (polyGap(snoutW(g), snoutW(m)) < room) {
+      let lo = 0;
+      let hi = g.reach;
+      for (let i = 0; i < 8; i++) {
+        g.reach = (lo + hi) / 2;
+        if (polyGap(snoutW(g), snoutW(m)) < room) hi = g.reach; else lo = g.reach;
+      }
+      g.reach = lo;
+    }
     const prey = m.hunt?.prey;
     if (t > 0.1 && t < 0.5) {
       g.yaw = g.yawTo = h.base + 0.3 * Math.sin(t * 30); // tugging
@@ -1204,7 +1215,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       a.top = rand(500, 620);
       const b = newGecko(world, kb, col);
       b.follow = a;
-      b.gap = (N * SEG + 40) * km;
+      b.gap = (N * SEG + 90) * km; // clear of her tail, which swings when she stops
       b.s = (a.s * km - b.gap) / kb;
       b.hold = false;
       const sc = { a, b, step: 'walk' };
@@ -1222,7 +1233,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const wide = (WIDTH[8] * km * 1.6 + 50) / kb;
           b.follow = null;
           b.goal = {
-            s: reroute(b, p, e, [n[0] * wide, n[1] * wide]),
+            s: reroute(b, p, e, [n[0] * wide, n[1] * wide], 0.25), // out to the side at once, clear of her tail
             then: () => { sc.step = 'tug'; b.hunt = { tug: a, side, phase: 'lunge', t: 0, base: b.yaw, k: reachTo(b, a.hunt?.prey ? preyW(a) : P) }; },
           };
           go(b, 520); // go() keeps the goal
@@ -1231,10 +1242,11 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         } else if ((sc.step === 'tug' || sc.step === 'late') && !b.hunt && b.mode === 'stop') {
           sc.step = 'gone';
           b.hold = false;
-          // off ahead of her and out to its side, never on her line: she runs faster than it
+          // off to its side, only a little ahead of her (never on her line: she runs faster): turning further forward,
+          // its body would sweep over her nose
           const dm = dirOf(a);
           const side = sc.side;
-          const out = unit(dm[0] - dm[1] * side, dm[1] + dm[0] * side);
+          const out = unit(dm[0] * 0.2 - dm[1] * side, dm[1] * 0.2 + dm[0] * side);
           turnOff(b, turn(dirOf(b), out), 650, true);
         }
         if (sc.step === 'come' && sc.t > 60) { b.goal = null; go(b, 500); sc.step = 'gone'; }

@@ -215,8 +215,8 @@ function renderQueue() {
   if (key === queueKey) return; // nothing changed: do not touch the DOM, the scroll goes on
   queueKey = key;
   el('qtop').innerHTML = top;
-  // Capital letters are wide: a long name on the Next card gets a smaller font instead of being cut.
-  for (const n of el('qtop').querySelectorAll('.qbig.next .qp')) {
+  // Capital letters are wide: a long name on the Next / After next card gets a smaller font instead of being cut.
+  for (const n of el('qtop').querySelectorAll('.qbig .qp')) {
     let size = parseFloat(getComputedStyle(n).fontSize);
     while (n.clientWidth && n.scrollWidth > n.clientWidth && size > 28) n.style.fontSize = `${(size -= 1)}px`;
   }

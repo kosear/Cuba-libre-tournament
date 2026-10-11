@@ -117,7 +117,7 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
 .qbig.next .qp { text-transform: uppercase; letter-spacing: 2px; } /* names in capitals only on the Next card */
 .qbig.after { background: #eef1f6; color: #5d6779; }
-.qbig.after .qp { font-size: 34px; }
+.qbig.after .qp { font-size: 34px; text-transform: uppercase; letter-spacing: 2px; } /* capitals like the Next card */
 .qlabel { font-size: 18px; line-height: 22px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qp { font-size: 42px; font-weight: 800; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qvs { font-size: 20px; font-weight: 700; margin: 2px 0; }
@@ -143,7 +143,7 @@ aside.queue { background: var(--blue); }
 .qhead { color: rgba(255,255,255,.85); }
 .qhead .qtitle { color: #fff; }
 aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY NEXT» */
-.qbig.next { background: #f89a1c; color: #111; } /* a slightly more yellow orange than the call screen band, black text */
+.qbig.next { background: #ff9500; color: #111; box-shadow: 0 6px 18px rgba(10,30,70,.28); } /* a vivid yellow-orange, black text, lifted off the blue */
 .qbig.next .qvs { color: rgba(17,17,17,.6); }
 .qbig.after { background: rgba(255,255,255,.14); color: #fff; }
 .qbig.after .qvs { color: rgba(255,255,255,.7); }

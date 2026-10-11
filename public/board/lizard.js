@@ -4,7 +4,7 @@
 // ground. It runs in dashes with short stops, one of them a longer sit (1-45 s, mostly short), looks around while stopped, then leaves.
 // The canvas is redrawn only while the gecko is on screen (a few seconds every PERIOD_MIN..PERIOD_MAX).
 // Every run it comes in a different colour (the Bali one, blue, red, green...).
-// A sit over 4 s may turn into a hunt (70% catch, 15% a funny miss): a butterfly (butterfly.js) lands in front of
+// A sit over 4 s may turn into a hunt (15% catch, 70% a funny miss): a butterfly (butterfly.js) lands in front of
 // it, the gecko turns to it, freezes with a twitching tail tip, creeps closer in small steps and lunges. A catch:
 // the butterfly struggles in its jaws, a head shake tears a wing off (it flutters down and lies there), the gecko
 // works the prey in with a few bites, swallows with its eyes squeezed shut (lizards push food down with their eyes)
@@ -185,7 +185,7 @@ export function startLizard(root) {
       g.yawTo = rand(-0.4, 0.4);
       if (long && huntAll) g.until = rand(6, 10);
       const r = Math.random();
-      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.7 : r < 0.7);
+      if (long && g.until > 4 && (huntAll || r < 0.85)) startHunt(g, DEMO ? hunts++ % 2 === 0 : huntTest ? Math.random() < 0.15 : r < 0.15);
     } else if (g.mode === 'stop') {
       const busy = g.hunt && !['wait', 'call'].includes(g.hunt.phase); // eyes on the butterfly
       if (!busy && g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks

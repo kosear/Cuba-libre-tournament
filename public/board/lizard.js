@@ -76,9 +76,10 @@ function rushOn(now = Date.now()) {
 }
 
 const GLUTTON = 0.25; // share of geckos that eat 2-3 butterflies in a row
-// share of geckos that have lost their tail (they drop it to get away): a fresh blunt stump, or a new one growing back,
-// shorter, plain greyish and carrot-shaped, from where the old one broke
-const TAILLESS = 1;
+// share of geckos that have lost their tail (they drop it to get away), babies half as often; in the wild it is 30-60%,
+// nearly all growing back (shorter, plain greyish and carrot-shaped, from where the old one broke), a few a fresh stump
+const TAILLESS = 0.25;
+const STUMP = 0.15; // of those, a fresh blunt stump
 const WING_EAT = 0.2; // a wing torn off during the meal, within reach: share eaten by the same gecko at once
 const FAT = 0.22; // how much rounder the belly of the smallest gecko gets per butterfly
 /** The belly after a meal worth `part` of a butterfly: a big gecko barely shows it (1.5 gets a quarter of what 0.6 gets). */
@@ -310,7 +311,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops: 0, sit: 0, col,
       limit: glutton || Math.random() < GLUTTON ? 2 + (Math.random() < 0.5 ? 1 : 0) : 1, eaten: 0, fat: 0, fatTo: 0,
       t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
-      puff: 0, wave: 0, curl: 0, tail: lostTail(),
+      puff: 0, wave: 0, curl: 0, tail: lostTail(k),
     };
   }
 
@@ -318,10 +319,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
    * The tail of a gecko that lost it, or null: `cut` the last spine point of its own tail, `end` the last one drawn
    * (beyond `cut`: grown back).
    */
-  function lostTail() {
-    if (Math.random() >= TAILLESS) return null;
+  function lostTail(k) {
+    if (Math.random() >= TAILLESS * (k <= SIZES[0][0] ? 0.5 : 1)) return null;
     const int = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-    if (Math.random() < 0.4) { const cut = int(13, 20); return { cut, end: cut }; }
+    if (Math.random() < STUMP) { const cut = int(13, 20); return { cut, end: cut }; }
     const cut = int(13, 19);
     return { cut, end: Math.min(N - 2, cut + int(2, N - 2 - cut)) };
   }

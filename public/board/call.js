@@ -31,7 +31,7 @@ const MASCOTS = [
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
-  [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🫂', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
+  [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', '', '🌺', 'Pelan Pelan'],
   ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', '🦷', 'Crikey!'],

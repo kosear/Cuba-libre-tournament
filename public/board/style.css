@@ -83,6 +83,8 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bm .p span { overflow: hidden; text-overflow: ellipsis; }
 .bm .p.tbd { color: #a8b2c4; font-style: italic; }
 .bm .p.win { color: var(--ink); } /* the winner stays black, only the loser turns grey */
+.bm .p .win-tag { flex: none; background: var(--green); color: #fff; border-radius: 4px; padding: 4px 8px 3px; font: normal 800 19px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 2px; text-transform: uppercase; } /* same size as the LIVE label */
 .bm .p.lose { color: #a8b2c4; }
 .bm .p .s { font-style: normal; font-size: 18px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 10px; flex: none; }
 /* the final looks like the semi-finals (customer's decision 2026-10-11) */

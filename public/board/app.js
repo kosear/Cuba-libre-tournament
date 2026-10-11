@@ -187,7 +187,7 @@ function slidePlayoff() {
       const p = m?.[`p${n}`];
       if (!p) return `<div class="p tbd"><span>${esc(fallback[slot][n - 1])}</span></div>`;
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
-      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '✓' : ''}</div>`;
+      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '<i class="win-tag">Winner</i>' : ''}</div>`;
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
     // (the 3rd place match drops «played before the final» then, to make room for it)

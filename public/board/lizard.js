@@ -45,7 +45,7 @@ const SHOULDER = 5;
 const HIP = 11;
 const STRIDE = 100; // px travelled per full gait cycle
 const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
-// size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare; 3 the giant, half the screen, 1 run in 100
+// size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
 const SLOT_MS = 2 * 60 * 60 * 1000; // one gecko hour in every slot
 const RUSH_MS = 5 * 60 * 1000;
 const RUSH = 12; // how many times more often during it: a gecko every 35-65 s, 4-5 of them
@@ -61,8 +61,7 @@ function rushOn(now = Date.now()) {
 }
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
-// TEMP on dev only, to look at the giant: 50% giants. Never merge to main; revert to [3, 0.01] and 0.29 for size 1.
-const SIZES = [[0.6, 0.075], [0.8, 0.125], [1, 0.145], [1.2, 0.1], [1.5, 0.055], [3, 0.5]];
+const SIZES = [[0.6, 0.15], [0.8, 0.25], [1, 0.3], [1.2, 0.2], [1.5, 0.1]];
 function pickSize() {
   let r = Math.random();
   for (const [k, p] of SIZES) if ((r -= p) < 0) return k;
@@ -231,11 +230,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     const stops = meal ? 0 : Math.floor(rand(1, 4)); // a wing run: its only stop is the meal
     lastColor = (lastColor + 1 + Math.floor(Math.random() * (COLORS.length - 1))) % COLORS.length; // never twice in a row
     return {
-      // the canvas only as big as the gecko needs (bent tail, lunge): a giant's stays lighter for the TV
+      // the canvas only as big as the gecko needs (bent tail, lunge)
       k, box: Math.ceil((BOX * Math.max(1, k * 0.8)) / 2) * 2,
-      pace: k > 2 ? 0.5 : 1, // the giant moves slowly and heavily: in screen pixels its steps are already huge
       pts, lens, total: lens[200], s: 0, v: 0, meal: meal && { at: [meal[0] / k, meal[1] / k], s: lens[100] },
-      mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750) * (k > 2 ? 0.5 : 1), stops,
+      mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops,
       col: COLORS[lastColor],
       sit: huntAll ? stops : 1 + Math.floor(Math.random() * stops), // which stop (counting down) is the longer sit
       t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
@@ -291,7 +289,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       const busy = g.hunt && !['wait', 'call'].includes(g.hunt.phase); // eyes on the butterfly
       if (!busy && g.look > 0 && g.until < g.look) { g.look -= rand(1.5, 4); g.yawTo = rand(-0.4, 0.4); } // a long sit: several looks
       if (g.hunt) hunt(g, dt);
-      if (g.until <= 0 && !g.hunt) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = (g.carry ? rand(850, 1000) : rand(550, 750)) * g.pace; g.yawTo = 0; }
+      if (g.until <= 0 && !g.hunt) { g.mode = 'run'; g.until = rand(0.5, 1.2); g.top = g.carry ? rand(850, 1000) : rand(550, 750); g.yawTo = 0; }
     }
     const target = g.mode === 'run' ? g.top : g.creep;
     g.v += (target - g.v) * (1 - Math.exp(-dt * 14)); // geckos start and stop almost at once

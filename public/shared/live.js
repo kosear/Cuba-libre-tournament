@@ -7,6 +7,7 @@
 //   and reopened: a dropped Wi-Fi often leaves the old stream hanging without an error.
 // - The state is also loaded right away and again on every stale check, without waiting for SSE: some TV browsers
 //   (Yandex Browser TV lite) open the stream but never deliver its events, the page would stay empty.
+//   For the same reason the commit is also checked over /api/health, so such a TV still reloads after a deploy.
 const STALE_MS = 40_000;
 
 export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) {
@@ -24,6 +25,21 @@ export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) 
     }
   }
 
+  function sameCommit(c) {
+    if (commit && c !== commit) { location.reload(); return false; }
+    commit = c;
+    return true;
+  }
+
+  async function checkCommit() {
+    try {
+      const res = await fetch('/api/health', { cache: 'no-store' });
+      if (res.ok) sameCommit((await res.json()).commit);
+    } catch {
+      // offline: the next check will try again
+    }
+  }
+
   function seen() {
     lastSeen = Date.now();
     onStatus(true);
@@ -34,9 +50,7 @@ export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) 
     lastSeen = Date.now();
     es = new EventSource('/api/events');
     es.addEventListener('hello', (e) => {
-      const c = JSON.parse(e.data).commit;
-      if (commit && c !== commit) { location.reload(); return; }
-      commit = c;
+      if (!sameCommit(JSON.parse(e.data).commit)) return;
       seen();
       load();
     });
@@ -48,11 +62,13 @@ export function live({ stateUrl = '/api/state', onState, onStatus = () => {} }) 
   setInterval(() => {
     if (Date.now() - lastSeen > STALE_MS) {
       onStatus(false);
+      checkCommit();
       load();
       connect();
     }
   }, 5000);
 
+  checkCommit();
   load();
   connect();
   return { reload: load };

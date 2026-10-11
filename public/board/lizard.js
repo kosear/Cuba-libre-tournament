@@ -1153,18 +1153,14 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const o = other(f);
           // the necks stretch out slowly, one a little before the other, until the nose tips meet; worked out every
           // frame, so the snouts stay together while the heads sway
-          // a kiss: the noses meet and stay, the heads perfectly still (reptiles don't sway)
-          a.yaw = a.yawTo = sc.base[0];
-          b.yaw = b.yawTo = sc.base[1];
-          const ra = a.reach;
-          const rb = b.reach;
-          a.reach = b.reach = 0;
-          const pa = headW(a);
-          const pb = headW(b);
-          a.reach = ra;
-          b.reach = rb;
-          // the nose tips touch (each sticks out 7 units past its head point), with a hair of room: touching, not pressing
-          const half = Math.max(0, Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) - 7.5 * (ka + kb) - 2) / 2;
+          // a kiss: the noses meet; then each turns its head a little to its own right, once, and stays (no swaying:
+          // reptiles don't), the snouts sliding a little past each other
+          const nudge = 0.1 * smooth(Math.min(1, Math.max(0, u - 0.7) / 0.8));
+          a.yaw = a.yawTo = sc.base[0] + nudge;
+          b.yaw = b.yawTo = sc.base[1] + nudge;
+          // how far each neck must stretch (the same length for both) for the drawn snouts to be 1 px apart, whichever
+          // way the heads point: found by halving, on the outlines themselves
+          const half = snoutsAt(a, b, 1);
           f.reach = (half / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
           o.reach = (half / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
           for (const g of both) g.curl = 1;
@@ -1246,6 +1242,52 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       return sc;
     },
   };
+  /** The front of the head as drawn (the outline round the nose), in screen px. */
+  function snoutW(g) {
+    const o = outline(g, spine(g));
+    const pts = [...o.slice(o.length - 4), ...o.slice(0, 5)]; // right side, nose, left side
+    return pts.map((q) => [q[0] * g.k, q[1] * g.k]);
+  }
+  /** Shortest distance between two polylines (screen px). */
+  function polyGap(A, B) {
+    const seg = (p, a, b) => {
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+      return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t);
+    };
+    let m = Infinity;
+    for (let i = 1; i < A.length; i++) for (const q of B) m = Math.min(m, seg(q, A[i - 1], A[i]));
+    for (let i = 1; i < B.length; i++) for (const q of A) m = Math.min(m, seg(q, B[i - 1], B[i]));
+    return m;
+  }
+  /**
+   * The neck stretch (screen px, the same for both) that leaves the two snouts `gap` px apart; reach is restored.
+   * Steps out from no stretch and stops at the first closing (stretched further the snouts would slide past each
+   * other and the distance grow again); then halves within that step.
+   */
+  function snoutsAt(a, b, gap) {
+    const keep = [a.reach, b.reach];
+    const at = (r) => { a.reach = r / (REACH * a.k); b.reach = r / (REACH * b.k); return polyGap(snoutW(a), snoutW(b)); };
+    let lo = 0;
+    let hi = -1;
+    let prev = at(0);
+    if (prev > gap) {
+      for (let r = 4; r <= 120; r += 4) {
+        const d = at(r);
+        if (d <= gap) { hi = r; break; }
+        if (d > prev) break; // passing by: the closest was the step before
+        lo = r;
+        prev = d;
+      }
+      for (let i = 0; i < 8 && hi > 0; i++) {
+        const mid = (lo + hi) / 2;
+        if (at(mid) > gap) lo = mid; else hi = mid;
+      }
+    }
+    [a.reach, b.reach] = keep;
+    return lo;
+  }
   /** Where the catch in a gecko's jaws is, in screen px. */
   function preyW(g) {
     const [x, y] = preyPlace(g, g.hunt.prey);

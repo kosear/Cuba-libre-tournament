@@ -17,9 +17,22 @@ const TEXT_SCREEN_Y = 0.46; // where those letters sit on the screen, as a share
 const SHADOW_DX = 24; // cast shadow offset: light from the top left, so it falls to the bottom right
 const SHADOW_DY = 32;
 const MASK_SCALE = 0.5; // the mask is kept at half resolution
-// One rolling resistance for every ball, as on real cloth (ball 118 px = 57 mm: ~0.12 m/s² ≈ 250 px/s²): balls visibly
-// slow down. Start speeds are worked out from it so a ball still gets where it must (off the screen, to the logo).
-const FRICTION = 250; // px/s²
+// One resistance for every ball, as on real cloth: a base part plus a part growing with speed (dv/dt = -(A + K·v)).
+// A fast ball loses speed quickly, the last bit it creeps and stops softly, then settles back a hair in the nap.
+// Start speeds are worked out from it (speedFor) so a ball still gets where it must (off the screen, to the logo).
+const FRICTION = 1; // b.friction: 1 = rolls on the cloth, 0 = no resistance
+const DRAG_A = 60; // px/s²
+const DRAG_K = 0.35; // 1/s
+const CUE_CREEP = 120; // px/s, the cue ball never stops on screen: it creeps off instead (nothing would come for it)
+/** Distance a ball rolls from speed v until it stops. */
+const rollDistance = (v) => v / DRAG_K - (DRAG_A / DRAG_K ** 2) * Math.log(1 + (DRAG_K * v) / DRAG_A);
+/** Start speed that rolls exactly `d` px. */
+function speedFor(d) {
+  let lo = 0;
+  let hi = 20000;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (rollDistance(m) < d) lo = m; else hi = m; }
+  return hi;
+}
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
 const CUSHION_CHANCE = 0.4; // a rolling ball, or each ball after the cue shot, may bounce off an edge once
@@ -463,7 +476,7 @@ export function startSplash(root) {
       // keeps going for 3-4 edges. A ball that stops on screen would wait for a cue shot that may not exist.
       const rally = Math.random() < RALLY_CHANCE;
       const way = hit ? d + 1300 : exitDistance(sx, sy, dx, dy) + 150;
-      const vMin = Math.sqrt(2 * FRICTION * (rally ? Math.max(way, 7000) : way));
+      const vMin = speedFor(rally ? Math.max(way, 7000) : way);
       const luck = Math.random();
       const boost = luck < ROCKET_CHANCE ? ROCKET_SPEED : luck < ROCKET_CHANCE + FAST_CHANCE ? FAST_SPEED : 1;
       const v = Math.max(vMin, hit ? rand(1100, 1500) : rand(900, 1300)) * boost;
@@ -496,7 +509,7 @@ export function startSplash(root) {
       const [sx, sy] = edgePoint();
       if (pathHitsLogo(sx, sy, qx, qy)) continue;
       const d = len(qx - sx, qy - sy);
-      const v = Math.sqrt(2 * FRICTION * d);
+      const v = speedFor(d);
       makeBall(freeNumber(), sx, sy, ((qx - sx) / d) * v, ((qy - sy) / d) * v, FRICTION).slow = true; // stops by the logo
       return true;
     }
@@ -529,8 +542,10 @@ export function startSplash(root) {
   function spawnCue(target) {
     const shot = findShot(target.x, target.y, 600);
     if (shot) {
-      const v = rand(1300, 1700);
-      makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, 0);
+      // the cue rolls on the cloth too; it starts fast enough to arrive with a good hit left in it
+      const way = len(target.x - shot.sx, target.y - shot.sy);
+      const v = Math.max(rand(1300, 1700), speedFor(way + 1500));
+      makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, FRICTION);
       return true;
     }
     // No clean shot this time (the search is random): wait a little and try again, up to 3 times.
@@ -558,15 +573,18 @@ export function startSplash(root) {
   }
 
   function step(b, dt) {
+    if (b.settle) settle(b, dt);
     if (b.resting) return;
     const speed = len(b.vx, b.vy);
     if (b.friction && speed > 0) {
-      const ns = Math.max(0, speed - b.friction * dt);
+      let ns = Math.max(0, speed - (DRAG_A + DRAG_K * speed) * dt);
+      if (b.num === 0) ns = Math.max(ns, Math.min(speed, CUE_CREEP));
       if (ns < 6 && !onScreen(b.x, b.y) && onScreen(b.x, b.y, R)) {
         // Stopping half off screen would make it vanish (see frame()): keep it rolling slowly instead.
         b.vx *= 40 / speed;
         b.vy *= 40 / speed;
       } else if (ns < 6) {
+        b.settle = { t: 0, ux: b.vx / speed, uy: b.vy / speed, done: 0 }; // rocks back a hair in the nap
         b.vx = 0;
         b.vy = 0;
         if (onScreen(b.x, b.y)) {
@@ -633,6 +651,19 @@ export function startSplash(root) {
     b.cushions--;
     b.vx = vx;
     b.vy = vy;
+  }
+
+  /** Right after stopping: the ball rocks back about 2 px within a quarter second and sits. */
+  function settle(b, dt) {
+    const st = b.settle;
+    st.t += dt;
+    const want = 2 * Math.sin((Math.min(1, st.t / 0.25) * Math.PI) / 2);
+    const d = want - st.done;
+    st.done = want;
+    b.x -= st.ux * d;
+    b.y -= st.uy * d;
+    roll(b, -st.ux * d, -st.uy * d);
+    if (st.t >= 0.25 || !b.resting && (b.vx || b.vy)) b.settle = null;
   }
 
   function collide(a, b) {

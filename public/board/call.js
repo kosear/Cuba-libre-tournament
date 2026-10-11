@@ -123,17 +123,17 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-/* important matches: two caution tapes across the screen, the words running in opposite directions (one moving layer
+/* important matches: two neon pink caution tapes across the screen, the words running in opposite directions (one moving layer
    each, transforms only) */
 .fight .tape { position: absolute; left: -240px; width: 2400px; height: 100px; z-index: 5; pointer-events: none; display: none; overflow: hidden;
-  background: #ffd400; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  background: #ff2d95; box-shadow: 0 8px 24px rgba(0,0,0,.45), 0 0 28px rgba(255,45,149,.55); /* neon pink */
   border-top: 15px solid transparent; border-bottom: 15px solid transparent;
-  border-image: repeating-linear-gradient(45deg, #111 0 18px, #ffd400 18px 36px) 15; }
+  border-image: repeating-linear-gradient(45deg, #111 0 18px, #ff2d95 18px 36px) 15; }
 .fight.important .tape { display: block; }
 .fight .tape.t1 { top: -9px; transform: rotate(-1deg); } /* its top stripes just off screen, the words whole */
 .fight.important .sub { top: 152px; } .fight.important .label { top: 284px; } /* room under the top tape */
 .fight .tape.t2 { top: 950px; transform: rotate(2deg); }
-.fight .tape .run { display: flex; width: max-content; will-change: transform; white-space: nowrap; color: #111;
+.fight .tape .run { display: flex; width: max-content; will-change: transform; white-space: nowrap; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.25);
   font-size: 60px; line-height: 70px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 5px; }
 .fight .tape .run span { padding-right: 60px; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }

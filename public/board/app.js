@@ -201,8 +201,9 @@ function slidePlayoff() {
     // (the 3rd place match drops «played before the final» then, to make room for it)
     return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${side(2)}</div>`;
   };
-  // Play-offs on (no queue panel): the slide is 1864 px wide; the final grows to fill the right side, as tall as the
-  // left column. Before (contenders, the queue still on the right) the bracket is 1284 px and the final like a semi-final.
+  // Play-offs on (no queue panel): the slide spans from the logo's left edge to the clock's right edge; the final grows
+  // to fill the right side, as tall as the left column. Before (contenders, the queue still on the right) the final is
+  // like a semi-final.
   const big = T.phase === 'playoff';
   return {
     title: 'Play-off',
@@ -210,7 +211,7 @@ function slidePlayoff() {
     // Lines from the semi-finals to the final, a dashed one from them to the 3rd place match.
     html: `<div class="bracket">
       <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
-      <svg class="lines" viewBox="0 0 ${big ? 1864 : 1284} 888" preserveAspectRatio="none">
+      <svg class="lines" viewBox="0 0 720 888" preserveAspectRatio="none">
         <path d="M500 150 H610 V290 H720" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M500 430 H610 V290" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M610 430 V710 H500" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
@@ -218,7 +219,7 @@ function slidePlayoff() {
       ${box('sf1', 'Semi-final 1', 'left:0;top:50px;width:500px')}
       ${box('sf2', 'Semi-final 2', 'left:0;top:330px;width:500px')}
       ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:0;top:610px;width:500px', 'third')}
-      ${big ? box('final', 'Final', 'left:720px;top:50px;width:1144px;height:752px', 'final big') : box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
+      ${big ? box('final', 'Final', 'left:720px;top:50px;right:0;height:752px', 'final big') : box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
     </div>`,
   };
 }

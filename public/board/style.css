@@ -75,7 +75,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 
 /* play-off bracket */
 .bracket { position: relative; height: 100%; }
-.bracket svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bracket svg.lines { position: absolute; left: 0; top: 0; width: 720px; height: 100%; } /* the lines end at the final's left edge, 720 px */
 .bracket .col-t { position: absolute; top: 0; font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
 .bm { position: absolute; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
 .bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; display: flex; justify-content: space-between; }
@@ -207,6 +207,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 #stage.po main { grid-column: 1 / -1; grid-row: 1; }
 #stage.po main::after { display: none; }
 #stage.po header.top { padding-right: 288px; }
+#stage.po .content { padding-left: 45px; padding-right: 65px; } /* from the logo's left edge (45 px) to the clock's right edge (1855 px) */
 #stage.po aside.queue { grid-column: 2; grid-row: 1; justify-self: end; align-self: start; width: 260px; height: 120px; padding: 0;
   align-items: center; justify-content: center; z-index: 4; box-shadow: -8px 0 24px rgba(19,33,58,.11); }
 #stage.po aside.queue::after, #stage.po .qtitle, #stage.po #qtop, #stage.po .qrest { display: none; }

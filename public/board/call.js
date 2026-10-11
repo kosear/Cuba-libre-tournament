@@ -24,7 +24,7 @@ const MASCOTS = [
   // Bali and around
   ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', '🍔', 'Bald Eagle'],
   // more puns
-  ['🐆', '', '🤫', 'Cheetah'], ['🦓', '', '🎱', 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
+  ['🐆', '', '🤞', 'Cheetah'], ['🦓', '', '🎱', 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
   ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
   ['🐘', '', '🛋️', 'Elephant in the Room'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Hot Shot'],
   ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],

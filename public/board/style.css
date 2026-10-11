@@ -82,7 +82,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bm .p { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
 .bm .p span { overflow: hidden; text-overflow: ellipsis; }
 .bm .p.tbd { color: #a8b2c4; font-style: italic; }
-.bm .p.win { color: var(--green); }
+.bm .p.win { color: var(--ink); } /* the winner stays black, only the loser turns grey */
 .bm .p.lose { color: #a8b2c4; }
 .bm .p .s { font-style: normal; font-size: 18px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 10px; flex: none; }
 .bm.final { border-color: var(--blue); border-width: 3px; box-shadow: 0 6px 20px rgba(47,111,207,.15); }

@@ -197,8 +197,8 @@ function slidePlayoff() {
       <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
       ${cand ? '<div class="col-t cand-note">If the groups ended now</div>' : ''}
       <svg class="lines" viewBox="0 0 1284 888" preserveAspectRatio="none">
-        <path d="M500 205 H610 V385 H720" fill="none" stroke="#9db8e3" stroke-width="4"/>
-        <path d="M500 565 H610 V385" fill="none" stroke="#9db8e3" stroke-width="4"/>
+        <path d="M500 205 H610 V385 H720" fill="none" stroke="#c9d1dd" stroke-width="3"/>
+        <path d="M500 565 H610 V385" fill="none" stroke="#c9d1dd" stroke-width="3"/>
         <path d="M610 475 V700 H720" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
       </svg>
       ${box('sf1', 'Semi-final 1', 'left:0;top:105px;width:500px')}

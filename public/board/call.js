@@ -201,7 +201,7 @@ const LUCKY = {
 /** The player's mascot: a hash of the player id (FNV-1a) into their set (LUCKY or the common pool). */
 function mascotFor(p) {
   const lucky = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
-  if (!p?.id) return MASCOTS[Math.floor(Math.random() * MASCOTS.length)];
+  if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : MASCOTS; return set[Math.floor(Math.random() * set.length)]; }
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; // mix the bits: similar ids land far apart

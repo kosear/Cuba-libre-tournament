@@ -62,6 +62,8 @@ stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/
   <div class="call" id="call" hidden></div>
   <div class="glass" id="glass"></div>`;
 const el = (id) => document.getElementById(id);
+// Until the first state arrives the board does not know what to show: no empty frame, just the background.
+stage.classList.add('loading');
 
 // Clock next to «Play Next»: Bali time (WITA, UTC+8) whatever the TV is set to, 24 h. The DOM is touched only when the minute changes.
 const BALI = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', hour12: false });
@@ -403,7 +405,9 @@ function updateCall() {
   loaded = true;
 }
 
-function onState(state) {
+function onState(state, cached = false) {
+  stage.classList.remove('loading');
+  if (!cached) { try { localStorage.setItem('boardState', JSON.stringify(state)); } catch {} }
   T = state.tournament;
   SETTINGS = state.settings || {};
   updateCall();
@@ -416,8 +420,15 @@ function onState(state) {
   if (changedSlide || !timer) schedule();
 }
 
+// The last state this screen saw: a reload shows the right picture (splash or tournament) at once, the server's
+// state follows. It does not count as «loaded»: a match that changed meanwhile must not pop up the call screen.
+try {
+  const last = JSON.parse(localStorage.getItem('boardState'));
+  if (last?.tournament) { onState(last, true); loaded = false; }
+} catch {}
+
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
-live({ onState });
+live({ onState: (state) => onState(state) });
 // gecko hours too, also during a tournament: that is when the bar is full; «lots of geckos» is switched in the admin page
 startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards });
 

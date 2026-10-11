@@ -79,8 +79,8 @@ table.cross td.loss { color: #111; font-weight: 600; }
 /* left column over the whole height: semi-final 1, semi-final 2, 3rd place, equal gaps */
 .bracket .bcol { width: 500px; flex: none; display: flex; flex-direction: column; justify-content: space-between; }
 .bracket .bfin { flex: none; width: 500px; }
-.bracket.big .bfin { flex: 1; width: auto; display: flex; }
-.bracket.big .bfin > .bm { flex: 1; }
+.bracket.big .bfin { flex: 1; width: auto; min-width: 0; display: flex; } /* never wider than the room left: a long name shrinks instead */
+.bracket.big .bfin > .bm { flex: 1; min-width: 0; }
 .bm { position: relative; background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
 .bm .t { font-size: 17px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 800; padding: 12px 22px 6px; display: flex; justify-content: space-between; }
 .bm .p { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 42px; font-weight: 700; padding: 12px 22px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
@@ -221,7 +221,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .bm.big { display: flex; flex-direction: column; }
 .bm.big .t { font-size: 26px; padding: 20px 32px 14px; }
 .bm.big .t .live-tag { font-size: 62px; right: 28px; }
-.bm.big .p { flex: 1; font-size: 120px; padding: 0 40px; gap: 28px; justify-content: center; } /* names in the middle */
+.bm.big .p { flex: 1; font-size: 180px; padding: 0 40px; gap: 28px; justify-content: center; } /* names in the middle */
 .bm.big .vs { height: 0; position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-start; }
 .bm.big .vs span { transform: translateY(-50%); background: var(--card); color: #a8b2c4; border: 3px solid var(--line); border-radius: 999px;
   padding: 9px 27px 8px; font: 800 36px/1 Inter, system-ui, sans-serif; letter-spacing: 4px; }

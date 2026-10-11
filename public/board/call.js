@@ -51,6 +51,9 @@ const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
 .fight .ring { position: absolute; inset: -60px; will-change: transform; } /* bigger than the stage: shaking never shows the edges */
 .fight .corner { position: absolute; inset: 0; }
+/* everything but the two halves: one group, so the way out fades it as a single layer */
+.fight .stuff { position: absolute; inset: 0; }
+.fight.leaving .rays, .fight.leaving .rays svg { animation-play-state: paused; } /* frozen on the way out */
 .fight .red { background: linear-gradient(115deg, #7a0016 0%, #c8102e 49%, transparent 49.1%); }
 .fight .blue { background: linear-gradient(115deg, transparent 50.9%, #1d4fbf 51%, #0a1f5c 100%); }
 /* the band between the corners: solid Honda Monkey orange, above the background pattern */
@@ -209,10 +212,11 @@ export function createCall(root) {
   document.head.append(style);
   root.innerHTML = `<div class="fight">
     <div class="ring">
-      <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
+      <div class="corner red"></div><div class="corner blue"></div>
+      <div class="stuff"><div class="gap"></div><div class="pattern"></div>${rays()}
       <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
-      <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
+      <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div></div>
     </div>
       <div class="tape t1"><div class="run"></div></div><div class="tape t2"><div class="run"></div></div>
     <div class="flash"></div><div class="bar"></div></div>`;
@@ -320,6 +324,7 @@ export function createCall(root) {
       running = [];
       shown++; // a leave() still running for the previous match must not hide this one
       fight.style.background = '';
+      fight.classList.remove('leaving');
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
@@ -374,36 +379,27 @@ export function createCall(root) {
       running = [];
     },
     /**
-     * The way out (~0.8 s), then done(): the names and mascots fly off sideways, VS shrinks away, the title goes up,
-     * the tapes up and down; the background pattern and rays fade out first, only then the red and blue halves part
-     * like doors and show the board underneath. Transforms and opacity only.
+     * The way out (~0.8 s), then done(): everything freezes; all but the background fades out (one group, 250 ms),
+     * only then the red and blue halves part to the sides like doors and show the board underneath. Few layers move:
+     * a heavier way out (names, VS, tapes flying off one by one) was too much for the TV.
      */
     leave(done) {
       const my = shown;
-      // stop the idle loops on what flies off (title jitter, VS pulse, mascots bobbing): a running loop on the same
-      // property can keep the GPU drawing the old motion instead of the way out
-      const leaving = new Set(['.sub', '.label', '.vs', '.mascot.m1', '.mascot.m2'].map(q));
-      running = running.filter((a) => (leaving.has(a.effect?.target) ? (a.cancel(), false) : true));
-      const out = (el, frames, ms, delay = 0) => el && anim(el, frames, { duration: ms, delay, easing: 'cubic-bezier(.5,0,.9,.4)', fill: 'forwards' });
-      const fade = (el, ms, delay = 0) => out(el, [{ opacity: 1 }, { opacity: 0 }], ms, delay);
-      out(q('.n1'), [{ transform: 'none' }, { transform: 'translateX(-1500px) skewX(18deg)' }], 380);
-      out(q('.n2'), [{ transform: 'none' }, { transform: 'translateX(1500px) skewX(-18deg)' }], 380);
-      out(q('.mascot.m1'), [{ transform: 'none' }, { transform: 'translateX(-1300px) rotate(-20deg)' }], 420, 40);
-      out(q('.mascot.m2'), [{ transform: 'none' }, { transform: 'translateX(1300px) rotate(20deg)' }], 420, 40);
-      out(q('.vs'), [{ transform: 'none', opacity: 1 }, { transform: 'scale(0) rotate(-20deg)', opacity: 0 }], 280);
-      out(q('.sub'), [{ transform: 'none' }, { transform: 'translateY(-420px)' }], 320);
-      out(q('.label'), [{ transform: 'none' }, { transform: 'translateY(-420px)' }], 320);
-      out(q('.tape.t1'), [{ transform: 'rotate(-1deg)' }, { transform: 'rotate(-1deg) translateY(-260px)' }], 340);
-      out(q('.tape.t2'), [{ transform: 'rotate(2deg)' }, { transform: 'rotate(2deg) translateY(260px)' }], 340);
-      fade(q('.bar'), 150);
-      // the pattern and the rays are gone (250 ms) before the halves start to part (300 ms)
-      fade(q('.pattern'), 250);
-      fade(q('.rays'), 250);
-      fight.style.background = 'transparent'; // the halves still cover it all; once they part, the board shows
-      fade(q('.gap'), 150, 300);
-      out(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], 500, 300);
-      out(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], 500, 300);
-      setTimeout(() => { if (my === shown) { running.forEach((a) => a.cancel()); running = []; fight.style.background = ''; done(); } }, 820);
+      running.forEach((a) => a.pause()); // freeze in place: no jumps, nothing else to draw
+      fight.classList.add('leaving');
+      const go = (el, frames, ms, delay = 0, easing = 'ease-out') => anim(el, frames, { duration: ms, delay, easing, fill: 'forwards' });
+      for (const el of [q('.stuff'), q('.tape.t1'), q('.tape.t2'), q('.bar')]) go(el, [{ opacity: 1 }, { opacity: 0 }], 250);
+      fight.style.background = 'transparent'; // the halves still cover it; once they part, the board shows
+      go(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], 480, 300, 'cubic-bezier(.5,0,.8,.5)');
+      go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], 480, 300, 'cubic-bezier(.5,0,.8,.5)');
+      setTimeout(() => {
+        if (my !== shown) return; // a new match came meanwhile: show() has reset everything
+        running.forEach((a) => a.cancel());
+        running = [];
+        fight.classList.remove('leaving');
+        fight.style.background = '';
+        done();
+      }, 800);
     },
   };
 }

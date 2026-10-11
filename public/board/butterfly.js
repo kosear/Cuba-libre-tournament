@@ -189,6 +189,7 @@ export function createButterfly(root) {
   const pool = [0, 1].map(() => {
     const c = document.createElement('canvas');
     c.className = 'butterfly';
+    c.style.zIndex = 2; // under the butterflies and the gecko, still above the balls
     c.width = c.height = BOX;
     c.hidden = true;
     root.append(c);

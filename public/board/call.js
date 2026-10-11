@@ -27,6 +27,9 @@ const MASCOTS = [
   ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', '🪖', '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
   ['👽', '', '🛸', 'Alien Visitor'], ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🌵', '🤠', '', 'Cactus Cowboy'],
   ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'], ['🥑', '🧢', '', 'Avocado Bro'],
+  // pride squad
+  ['🦄', '👑', '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', '🕶️', '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
+  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'],
 ];
 
 const CSS = `

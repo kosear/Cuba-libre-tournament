@@ -203,25 +203,43 @@ function slidePlayoff() {
   };
   // Play-offs on (no queue panel): the slide spans from the logo's left edge to the clock's right edge; the final grows
   // to fill the right side, as tall as the left column. Before (contenders, the queue still on the right) the final is
-  // like a semi-final.
+  // like a semi-final, level with the middle between the semi-finals.
   const big = T.phase === 'playoff';
   return {
     title: 'Play-off',
-    // left: the semi-finals and under them the 3rd place match, the same step of 280 px; right: only the final.
-    // Lines from the semi-finals to the final, a dashed one from them to the 3rd place match.
-    html: `<div class="bracket">
-      <div class="col-t" style="left:0">Semi-finals</div><div class="col-t" style="left:720px">Final</div>
-      <svg class="lines" viewBox="0 0 720 888" preserveAspectRatio="none">
-        <path d="M500 150 H610 V290 H720" fill="none" stroke="#c9d1dd" stroke-width="3"/>
-        <path d="M500 430 H610 V290" fill="none" stroke="#c9d1dd" stroke-width="3"/>
-        <path d="M610 430 V710 H500" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>
-      </svg>
-      ${box('sf1', 'Semi-final 1', 'left:0;top:50px;width:500px')}
-      ${box('sf2', 'Semi-final 2', 'left:0;top:330px;width:500px')}
-      ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:0;top:610px;width:500px', 'third')}
-      ${big ? box('final', 'Final', 'left:720px;top:50px;right:0;height:752px', 'final big') : box('final', 'Final', 'left:720px;top:190px;width:500px', 'final')}
+    // left, spread over the whole height: the semi-finals and the 3rd place match; right: only the final.
+    // The lines (from the semi-finals to the final, dashed to the 3rd place match) are drawn after layout, drawBracket().
+    html: `<div class="bracket${big ? ' big' : ''}">
+      <svg class="lines" aria-hidden="true"></svg>
+      <div class="bcol">
+        ${box('sf1', 'Semi-final 1', '')}
+        ${box('sf2', 'Semi-final 2', '')}
+        ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', '', 'third')}
+      </div>
+      <div class="bfin">${box('final', 'Final', '', big ? 'final big' : 'final')}</div>
     </div>`,
   };
+}
+
+/** Bracket lines from the boxes' real places: semi-finals → final, and a dashed one from them to the 3rd place match. */
+function drawBracket(root) {
+  const br = root.querySelector('.bracket');
+  if (!br) return;
+  const [sf1, sf2, third] = br.querySelectorAll('.bcol > .bm');
+  const fin = br.querySelector('.bfin > .bm');
+  const mid = (b) => b.offsetTop + b.offsetHeight / 2;
+  const y1 = mid(sf1);
+  const y2 = mid(sf2);
+  const yf = (y1 + y2) / 2;
+  if (!br.classList.contains('big')) fin.style.marginTop = `${Math.round(yf - fin.offsetHeight / 2)}px`;
+  const x0 = sf1.offsetLeft + sf1.offsetWidth; // right edge of the left column
+  const x2 = fin.offsetLeft;
+  const xj = Math.round((x0 + x2) / 2); // the joint, halfway to the final
+  const svg = br.querySelector('svg.lines');
+  svg.setAttribute('viewBox', `0 0 ${br.clientWidth} ${br.clientHeight}`);
+  svg.innerHTML = `<path d="M${x0} ${y1} H${xj} V${yf} H${x2}" fill="none" stroke="#c9d1dd" stroke-width="3"/>
+    <path d="M${x0} ${y2} H${xj} V${yf}" fill="none" stroke="#c9d1dd" stroke-width="3"/>
+    <path d="M${xj} ${y2} V${mid(third)} H${x0}" fill="none" stroke="#c9d3e3" stroke-width="3" stroke-dasharray="10 8"/>`;
 }
 
 // ---------- queue panel (persistent) ----------
@@ -317,6 +335,7 @@ function renderSlide() {
   fitText(el('content'));
   fitLive(el('content'));
   fitFinal(el('content'));
+  drawBracket(el('content'));
   alignGroupRows(el('content'));
   renderQueue();
   if (old) slideTransition(old, el('content'));

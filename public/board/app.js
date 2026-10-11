@@ -80,6 +80,15 @@ setInterval(tickClock, 1000);
 const label = (m) => (m ? m.label : '');
 const name = (p) => (p ? esc(p.name) : 'TBD');
 
+/** A name with LIVE before it gets smaller, down to 70%, before it is cut with «…». Not on a group's slide: LIVE is above the name there. */
+function fitLive(root) {
+  root.querySelectorAll('.live-tag + .ln').forEach((name) => {
+    if (name.closest('.group-one')) return;
+    const box = name.parentElement;
+    for (let k = 1; k > 0.7 && box.scrollWidth > box.clientWidth + 1; ) name.style.fontSize = `${(k -= 0.03).toFixed(2)}em`;
+  });
+}
+
 /** Shrink the font of every .fit element until its content fits its box. */
 function fitText(root) {
   root.querySelectorAll('.fit').forEach((el) => {
@@ -107,9 +116,14 @@ function buildSlides(t) {
   return out;
 }
 
+// LIVE before the names of the two players at the table right now: a blinking red «recording» dot and a red label.
+const LIVE = '<i class="live-tag"><b></b><span>Live</span></i>';
+const isLive = (id) => !!id && (T.current?.p1?.id === id || T.current?.p2?.id === id);
+const liveName = (name) => `${LIVE}<span class="ln">${esc(name)}</span>`;
+
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
-    <td class="name">${esc(r.name)}${r.leader ? ' 🏆' : ''}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.approx ? '≈' : ''}${r.balls}</td></tr>`).join('');
+    <td class="name">${isLive(r.id) ? liveName(r.name) : esc(r.name)}${r.leader ? ' 🏆' : ''}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.approx ? '≈' : ''}${r.balls}</td></tr>`).join('');
   return `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
@@ -172,7 +186,7 @@ function slidePlayoff() {
       const p = m?.[`p${n}`];
       if (!p) return `<div class="p tbd"><span>${esc(fallback[slot][n - 1])}</span></div>`;
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
-      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '✓' : ''}</div>`;
+      return `<div class="p ${cls}"><span>${live ? liveName(p.name) : esc(p.name)}</span>${m.winner === n ? '✓' : ''}</div>`;
     };
     return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span></div>${side(1)}${side(2)}</div>`;
   };
@@ -285,6 +299,7 @@ function renderSlide() {
   const old = slideIn ? snapshotContent() : null;
   el('content').innerHTML = view.html;
   fitText(el('content'));
+  fitLive(el('content'));
   alignGroupRows(el('content'));
   renderQueue();
   if (old) slideTransition(old, el('content'));

@@ -17,6 +17,9 @@ const SLOTS = ['sf1', 'sf2', 'third', 'final'];
 let server = null; // last { tournament, journal, raw, head, tournamentId } from /api/admin/state
 let S = null; // what the page shows: the server state plus the actions not sent yet
 let online = false;
+let offlineSince = Date.now(); // the «no connection» bar waits OFFLINE_DELAY: opening the page takes a moment to connect
+const OFFLINE_DELAY = 800;
+let statusTimer = 0;
 const outbox = loadJson('outbox', []); // actions not yet accepted by the server, oldest first
 let me = null;
 let tab = load('tab', 'game');
@@ -96,6 +99,7 @@ async function flush() {
       try {
         res = await api('/api/admin/actions', { method: 'POST', body: JSON.stringify({ clientId: a.clientId, type: a.type, payload: a.payload, base: a.base, tournamentId: a.tournamentId }) });
       } catch {
+        if (online) offlineSince = Date.now();
         online = false; // no connection (or logged out): keep the outbox
         break;
       }
@@ -139,7 +143,11 @@ function compose() {
 function showStatus() {
   const el = $('offline');
   const n = outbox.length;
-  el.hidden = online && !n;
+  // offline only shows after OFFLINE_DELAY: no flash of «no connection» while the page connects
+  const wait = online ? 0 : OFFLINE_DELAY - (Date.now() - offlineSince);
+  clearTimeout(statusTimer);
+  if (wait > 0) statusTimer = setTimeout(showStatus, wait + 20);
+  el.hidden = online ? !n : wait > 0;
   el.classList.toggle('sending', online);
   el.textContent = online ? t('sending', { n }) : n ? t('offlinePending', { n }) : t('offline');
   renderChrome();
@@ -766,6 +774,7 @@ const conn = live({
   onState: (state) => { onState(state); flush(); },
   onStatus: (on) => {
     if (on === online) return;
+    if (!on) offlineSince = Date.now();
     online = on;
     showStatus();
     if (on) flush();

@@ -30,7 +30,7 @@ const MASCOTS = [
   ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🥊', 'Boxing Kangaroo'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🍹', 'Party Flamingo'], ['🐊', '', '🦷', 'Smiley Croc'],
   ['🦔', '', '🎈', 'Birthday Hedgehog'], ['🐋', '', '🎱', 'Killer Whale'], ['🐌', '', '✉️', 'Snail Mail'],
-  ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
+  ['🐰', '🎩', '🪄', 'Magic Bunny'], ['🐗', ['🪖', -0.12, 0.1, -10], '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
   ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
 ];

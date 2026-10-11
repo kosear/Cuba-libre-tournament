@@ -12,7 +12,8 @@
 // - classic: the butterfly struggles in its jaws, a head shake tears a wing off (it flutters down and lies there),
 //   a few bites, a swallow with the eyes squeezed shut (lizards push food down with their eyes), a lip lick;
 // - gulp: swallowed whole in three quick jerks, then a content blink;
-// - escape: it slips out of the jaws, flutters a few centimetres, the gecko snaps it again and eats it the classic way;
+// - escape: it slips out of the jaws, flutters a few centimetres and lands; at the second snap it mostly gets away
+//   (ESCAPE), otherwise the gecko eats it the classic way;
 // - slam: beaten against the table left and right (tokays stun big prey so), both wings come off, one lies there and
 //   the other is carried off the screen; many small bites, a lick over both eyes;
 // - run-off: the gecko dashes off with the butterfly flapping in its mouth.
@@ -83,6 +84,7 @@ export function startLizard(root) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const fast = mode === 'fast' ? 40 : 1;
   const test = mode !== null && fast === 1;
+  const ESCAPE = fast > 1 ? 0 : 0.8; // after slipping out of the jaws, the share that gets away at the second snap
   const CATCH = fast > 1 ? 0.7 : 0.15; // share of long sits that end in a catch; in the fast mode catches are the rule
   const huntTest = mode === 'hunt';
   const huntAll = huntTest || DEMO;
@@ -339,7 +341,7 @@ export function startLizard(root) {
       // escape: the second snap, at the spot where it landed
       g.reach = h.k * (t < 0.08 ? smooth(t / 0.08) : t < 0.16 ? 1 : t < 0.5 ? 1 - smooth((t - 0.16) / 0.34) : 0);
       if (!h.prey && !h.lost && t >= 0.08) {
-        h.prey = bf.grab();
+        h.prey = h.escaped ? null : bf.grab();
         if (h.prey) Object.assign(h.prey, { depth: 0, span: 1, crumple: 0, torn: 0 });
         else h.lost = true;
       }
@@ -453,6 +455,11 @@ export function startLizard(root) {
       h.k = Math.max(0.3, Math.min(1.8, (d - 6) / REACH));
       h.phase = 'lunge2';
       h.t = 0;
+      if (Math.random() < ESCAPE) { // off just in time: the snap closes on air
+        h.escaped = true;
+        const [nx, ny] = at(g, g.s - 4 * SEG);
+        bf.flee([nx * g.k, ny * g.k]);
+      }
     } else if (t - h.t0 > 4) {
       // never settled: give up, like a miss, and the butterfly goes its way
       const [nx, ny] = at(g, g.s - 4 * SEG);

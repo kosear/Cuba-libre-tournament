@@ -24,6 +24,12 @@ const FRICTION = 1; // b.friction: 1 = rolls on the cloth, 0 = no resistance
 const DRAG_A = 60; // px/s²
 const DRAG_K = 0.35; // 1/s
 const CUE_CREEP = 120; // px/s, the cue ball never stops on screen: it creeps off instead (nothing would come for it)
+// Spin. Each ball has its velocity v and its «roll velocity» u: how fast its surface turns (u = v when it rolls).
+// While they differ the ball slides, and the cloth pulls them together: v changes by SLIDE·dt against the slip, u by
+// 5/2 of that (a solid ball). The number on the ball turns with u, so a ball sliding with backspin visibly spins
+// the wrong way. Hits exchange velocities but not spin, so follow, stun and draw come out by themselves.
+const SLIDE = 600; // px/s², sliding friction on the cloth: low enough for the cue to keep its spin from the screen edge
+const CUE_SHOTS = [['follow', 1.5, 0.4], ['stun', 0, 0.3], ['draw', -0.9, 0.3]]; // cue spin at the hit as u/v, chance
 /** Distance a ball rolls from speed v until it stops. */
 const rollDistance = (v) => v / DRAG_K - (DRAG_A / DRAG_K ** 2) * Math.log(1 + (DRAG_K * v) / DRAG_A);
 /** Start speed that rolls exactly `d` px. */
@@ -32,6 +38,33 @@ function speedFor(d) {
   let hi = 20000;
   for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (rollDistance(m) < d) lo = m; else hi = m; }
   return hi;
+}
+
+/** Spin state that makes a ball simply roll with its velocity (after bounces and pushes). */
+const rollOn = (b) => { b.ux = b.vx; b.uy = b.vy; };
+
+/**
+ * The cue's starting spin (u/v at the start), so that after rolling `d` px it reaches the ball with spin ratio `r`
+ * (1.5 overspin = follow, 0 = stun, -0.9 = draw). Straight-line simulation with the same rules as step().
+ */
+function cueSpin(v0, d, r) {
+  const at = (q) => {
+    let v = v0;
+    let u = v0 * q;
+    let x = 0;
+    const dt = 1 / 120;
+    for (let i = 0; i < 2000 && x < d; i++) {
+      const sl = v - u;
+      if (Math.abs(sl) > 4) { const a = Math.min(SLIDE * dt, Math.abs(sl) / 3.5) * Math.sign(sl); v -= a; u += 2.5 * a; }
+      else { v = Math.max(0, v - (DRAG_A + DRAG_K * v) * dt); u = v; }
+      x += v * dt;
+    }
+    return v > 0 ? u / v : -10; // stopped and came back before the hit: far too much backspin
+  };
+  let lo = -4;
+  let hi = 4;
+  for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (at(m) < r) lo = m; else hi = m; }
+  return (lo + hi) / 2;
 }
 const RESTITUTION = 0.85;
 const CUSHION = 0.8; // speed kept after bouncing off a screen edge
@@ -397,7 +430,7 @@ export function startSplash(root) {
     const b = {
       num, el, shadow, ctx, img: ctx.createImageData(RES, RES), color: num ? rgb(COLORS[(num - 1) % 8]) : [246, 246, 240],
       tex: num ? digitTexture(num) : null, n, t, q, dirty: true,
-      x, y, vx, vy, friction, resting: false, restAt: 0, entered: false,
+      x, y, vx, vy, ux: vx, uy: vy, friction, resting: false, restAt: 0, entered: false,
     };
     balls.push(b);
     place(b);
@@ -545,7 +578,13 @@ export function startSplash(root) {
       // the cue rolls on the cloth too; it starts fast enough to arrive with a good hit left in it
       const way = len(target.x - shot.sx, target.y - shot.sy);
       const v = Math.max(rand(1300, 1700), speedFor(way + 1500));
-      makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, FRICTION);
+      const cue = makeBall(0, shot.sx, shot.sy, shot.vx * v, shot.vy * v, FRICTION);
+      // follow, stun or draw: the cue is struck with the spin that turns into the wanted one by the time it hits
+      let r = Math.random();
+      const [, ratio] = CUE_SHOTS.find(([, , p]) => (r -= p) < 0) || CUE_SHOTS[0];
+      const q = cueSpin(v, way - 2 * R, ratio);
+      cue.ux = cue.vx * q;
+      cue.uy = cue.vy * q;
       return true;
     }
     // No clean shot this time (the search is random): wait a little and try again, up to 3 times.
@@ -563,6 +602,7 @@ export function startSplash(root) {
     const d = len(target.x - cx, target.y - cy) || 1;
     target.vx = ((target.x - cx) / d) * 600;
     target.vy = ((target.y - cy) / d) * 600;
+    rollOn(target);
     return true;
   }
 
@@ -575,8 +615,20 @@ export function startSplash(root) {
   function step(b, dt) {
     if (b.settle) settle(b, dt);
     if (b.resting) return;
+    // sliding: the cloth works on the slip between velocity and spin until the ball rolls
+    const slx = b.vx - b.ux;
+    const sly = b.vy - b.uy;
+    const sl = len(slx, sly);
+    const sliding = b.friction && sl > 4;
+    if (sliding) {
+      const a = Math.min(SLIDE * dt, sl / 3.5);
+      b.vx -= (slx / sl) * a;
+      b.vy -= (sly / sl) * a;
+      b.ux += (slx / sl) * a * 2.5;
+      b.uy += (sly / sl) * a * 2.5;
+    }
     const speed = len(b.vx, b.vy);
-    if (b.friction && speed > 0) {
+    if (b.friction && !sliding && speed > 0) {
       let ns = Math.max(0, speed - (DRAG_A + DRAG_K * speed) * dt);
       if (b.num === 0) ns = Math.max(ns, Math.min(speed, CUE_CREEP));
       if (ns < 6 && !onScreen(b.x, b.y) && onScreen(b.x, b.y, R)) {
@@ -587,6 +639,7 @@ export function startSplash(root) {
         b.settle = { t: 0, ux: b.vx / speed, uy: b.vy / speed, done: 0 }; // rocks back a hair in the nap
         b.vx = 0;
         b.vy = 0;
+        rollOn(b);
         if (onScreen(b.x, b.y)) {
           b.resting = true;
           b.cueSent = false; // a fresh wait: the cue will come for it
@@ -599,10 +652,11 @@ export function startSplash(root) {
         b.vx *= ns / speed;
         b.vy *= ns / speed;
       }
-    }
+      rollOn(b);
+    } else if (!b.friction) rollOn(b);
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    roll(b, b.vx * dt, b.vy * dt);
+    roll(b, b.ux * dt, b.uy * dt); // the number turns with the spin, not with the travel
     if (b.cushions) bounceOffEdge(b);
 
     const n = logoContact(b.x, b.y);
@@ -611,6 +665,7 @@ export function startSplash(root) {
       if (vn < 0) {
         b.vx -= (1 + RESTITUTION) * vn * n[0];
         b.vy -= (1 + RESTITUTION) * vn * n[1];
+        rollOn(b);
         const hit = -vn; // speed into the logo: everything below follows it
         wobble(n[0], n[1], hit);
         drift.vx -= n[0] * hit * LOGO_PUSH; // n points out of the logo, the push goes the other way
@@ -644,13 +699,14 @@ export function startSplash(root) {
     const dx = vx / sp;
     const dy = vy / sp;
     const dist = exitDistance(b.x, b.y, dx, dy);
-    if ((b.friction && sp * sp < 2 * b.friction * (dist + 150)) || pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) {
+    if ((b.friction && rollDistance(sp) < dist + 150) || pathHitsLogo(b.x, b.y, b.x + dx * dist, b.y + dy * dist, R)) {
       b.cushions = 0; // no clean bounce: it leaves
       return;
     }
     b.cushions--;
     b.vx = vx;
     b.vy = vy;
+    rollOn(b);
   }
 
   /** Right after stopping: the ball rocks back about 2 px within a quarter second and sits. */
@@ -681,16 +737,13 @@ export function startSplash(root) {
     b.x += nx * push;
     b.y += ny * push;
     if (rel <= 0) return;
-    // Equal masses, elastic: the normal components are exchanged. But the balls roll on cloth: right after the hit each
-    // one still spins as it did before, and the cloth turns that slide back into rolling within a moment. The result,
-    // applied at once: v = 5/7·(velocity after the hit) + 2/7·(velocity before). So a rolling cue ball follows on
-    // (about 30° off its line on a half-ball hit, not the 90° of sliding discs), and the struck ball rolls off at 5/7.
-    const ab = [a.vx, a.vy];
-    const bb = [b.vx, b.vy];
-    a.vx = (5 / 7) * (a.vx - rel * nx) + (2 / 7) * ab[0];
-    a.vy = (5 / 7) * (a.vy - rel * ny) + (2 / 7) * ab[1];
-    b.vx = (5 / 7) * (b.vx + rel * nx) + (2 / 7) * bb[0];
-    b.vy = (5 / 7) * (b.vy + rel * ny) + (2 / 7) * bb[1];
+    // Equal masses, elastic: the normal components of the velocities are exchanged; the spins stay as they were.
+    // step() then lets the cloth turn the slip into rolling: a rolling cue ball follows on (about 30° off its line on
+    // a half-ball hit), a stunned one leaves along the tangent, a drawn one comes back; the struck ball rolls off at 5/7.
+    a.vx -= rel * nx;
+    a.vy -= rel * ny;
+    b.vx += rel * nx;
+    b.vy += rel * ny;
     for (const x of [a, b]) {
       if (x.resting) x.resting = false;
       if (x.num !== 0) x.friction = FRICTION;
@@ -780,7 +833,7 @@ export function startSplash(root) {
     for (const b of balls) {
       if (!b.resting) continue;
       const n = logoContact(b.x, b.y);
-      if (n) { b.resting = false; b.friction = FRICTION; b.vx = n[0] * 160; b.vy = n[1] * 160; }
+      if (n) { b.resting = false; b.friction = FRICTION; b.vx = n[0] * 160; b.vy = n[1] * 160; rollOn(b); }
     }
   }
 

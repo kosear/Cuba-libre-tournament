@@ -1,11 +1,11 @@
 // Podium after the final: a bright full-screen «poster» (docs/requirements.md, «После финала», variant C).
-// Blue-to-orange gradient, slow rays behind a golden trophy, the champion's name in big 3D gold letters,
-// 2nd and 3rd at the sides, a caption with the date. The entrance plays once per appearance; after it only
+// Neon gradient, slow rays behind a big golden trophy, the champion's name in huge 3D gold letters,
+// a caption with the date. Only the champion: no 2nd and 3rd places (customer's decision 2026-10-11). The entrance plays once per appearance; after it only
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
 const W = 1920;
-const ENTRANCE = { third: 300, second: 900, trophy: 1700, flash: 2350, champion: 2450, label: 2700, caption: 3100 };
+const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, caption: 1900 };
 const FIREWORK_EVERY = [18000, 32000]; // ms between idle fireworks
 const COLORS = ['#ffd84a', '#ff9500', '#ffffff', '#8fc1ff', '#ff6b4a'];
 
@@ -54,20 +54,15 @@ const TROPHY = `<svg class="pz-cup" viewBox="0 0 320 340" aria-hidden="true">
 </svg>`;
 
 export function createPoster(root) {
-  let shown = null; // names key of what is on screen
+  let shown = null; // id of the champion on screen
   let fireTimer = null;
   let anims = [];
 
-  function build(p1, p2, p3) {
-    const place = (cls, p, medal, label) => (p
-      ? `<div class="pz-place ${cls}"><div class="pz-medal">${medal}</div><div class="pz-plabel">${label}</div><div class="pz-pname"><span>${esc(p.name)}</span></div></div>`
-      : '');
+  function build(p1) {
     root.innerHTML = `<div class="pz-bg"></div>
       <div class="pz-rays">${raysSvg()}</div>
       <div class="pz-glow"></div>
       <div class="pz-sparks"></div>
-      ${place('second', p2, '2', '2nd place')}
-      ${place('third', p3, '3', '3rd place')}
       <div class="pz-trophy">${TROPHY}</div>
       <div class="pz-label">Champion</div>
       <div class="pz-name"><span>${esc(p1?.name ?? '')}</span></div>
@@ -76,15 +71,12 @@ export function createPoster(root) {
     fitName();
   }
 
-  /** Names on one line, as big as fits: the champion 180 px down to 80, the 2nd and 3rd 68 px down to 36. */
+  /** The champion's name on one line, as big as fits: 240 px down to 90. */
   function fitName() {
-    const fit = (node, size, min, width) => {
-      if (!node) return;
-      node.style.fontSize = `${size}px`;
-      while (size > min && node.offsetWidth > width) node.style.fontSize = `${(size -= 2)}px`;
-    };
-    fit(root.querySelector('.pz-name span'), 180, 80, W - 260);
-    for (const n of root.querySelectorAll('.pz-pname span')) fit(n, 68, 36, 620);
+    const node = root.querySelector('.pz-name span');
+    let size = 240;
+    node.style.fontSize = `${size}px`;
+    while (size > 90 && node.offsetWidth > W - 160) node.style.fontSize = `${(size -= 3)}px`;
   }
 
   const q = (sel) => root.querySelector(sel);
@@ -95,11 +87,8 @@ export function createPoster(root) {
   };
 
   function entrance() {
-    const rise = [{ transform: 'translateY(320px)', opacity: 0 }, { transform: 'translateY(-18px)', opacity: 1, offset: 0.75 }, { transform: 'none', opacity: 1 }];
     run('.pz-bg', [{ opacity: 0 }, { opacity: 1 }], { duration: 500 });
     run('.pz-rays', [{ opacity: 0 }, { opacity: 1 }], { duration: 1200, delay: 200 });
-    run('.pz-place.third', rise, { duration: 700, delay: ENTRANCE.third });
-    run('.pz-place.second', rise, { duration: 700, delay: ENTRANCE.second });
     run('.pz-trophy', [
       { transform: 'translateY(-700px) scale(.6)', opacity: 0 },
       { transform: 'translateY(30px) scale(1.08)', opacity: 1, offset: 0.7 },
@@ -117,9 +106,10 @@ export function createPoster(root) {
     run('.pz-caption', [{ opacity: 0 }, { opacity: 1 }], { duration: 800, delay: ENTRANCE.caption });
     setTimeout(() => {
       if (!shown) return;
-      firework(560, 300);
-      setTimeout(() => shown && firework(1360, 280), 250);
-      setTimeout(() => shown && firework(960, 160), 520);
+      firework(420, 330);
+      setTimeout(() => shown && firework(1500, 300), 250);
+      setTimeout(() => shown && firework(300, 860), 520);
+      setTimeout(() => shown && firework(1620, 880), 780);
     }, ENTRANCE.champion + 200);
   }
 
@@ -166,16 +156,16 @@ export function createPoster(root) {
   }
 
   return {
-    /** podium = [1st, 2nd, 3rd] from the snapshot. The entrance plays only when the poster appears. */
+    /** podium = [1st, 2nd, 3rd] from the snapshot; only the champion is shown. The entrance plays only when the poster appears. */
     show(podium) {
-      const [p1, p2, p3] = podium || [];
-      const key = [p1, p2, p3].map((p) => p?.id ?? '').join('|');
+      const [p1] = podium || [];
+      const key = p1?.id ?? '';
       if (key === shown) return;
       const first = shown === null;
       root.hidden = false; // visible before building: the names are measured to fit
-      build(p1, p2, p3);
+      build(p1);
       shown = key;
-      if (first) entrance(); // a corrected result only redraws the names
+      if (first) entrance(); // a corrected final only redraws the name
       idleFireworks();
     },
     hide() {

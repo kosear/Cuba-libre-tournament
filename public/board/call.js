@@ -1,7 +1,8 @@
 // «Now playing» call screen, fight-night style (designed in /lab/): who goes to the table right now.
 // Red corner left, blue corner right, a random background pattern, two random mascots, the names punch in
-// from opposite sides, VS slams down, then an idle motion. Important matches: two caution tapes run across the screen
-// saying why the match matters (FINAL, TIE-BREAK…). (Shock waves and a harder slam were tried: too heavy for the TV.)
+// from opposite sides, VS slams down, then an idle motion. Important matches: instead of «Now playing», why the match
+// matters (★ FINAL ★, ★ TIE-BREAK ★…) in big shiny gold letters. (Caution tapes, shock waves and a harder slam were
+// tried: the tapes looked like a police line, the rest was too heavy for the TV.)
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
 const PATTERNS = [
@@ -123,19 +124,14 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-/* important matches: two neon pink caution tapes across the screen, the words running in opposite directions (one moving layer
-   each, transforms only) */
-.fight .tape { position: absolute; left: -240px; width: 2400px; height: 100px; z-index: 5; pointer-events: none; display: none; overflow: hidden;
-  background: #ff2d95; box-shadow: 0 8px 24px rgba(0,0,0,.45), 0 0 28px rgba(255,45,149,.55); /* neon pink */
-  border-top: 15px solid transparent; border-bottom: 15px solid transparent;
-  border-image: repeating-linear-gradient(45deg, #ffd400 0 18px, #ff2d95 18px 36px) 15; } /* yellow stripes along the edges */
-.fight.important .tape { display: block; }
-.fight .tape.t1 { top: -9px; transform: rotate(-1deg); } /* its top stripes just off screen, the words whole */
-.fight.important .sub { top: 152px; } .fight.important .label { top: 284px; } /* room under the top tape */
-.fight .tape.t2 { top: 950px; transform: rotate(2deg); }
-.fight .tape .run { display: flex; width: max-content; will-change: transform; white-space: nowrap; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.25);
-  font-size: 60px; line-height: 70px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 5px; }
-.fight .tape .run span { padding-right: 60px; }
+/* important matches: the title says why, in shiny gold. The element itself draws a dark brown outline and shadow,
+   its ::after copy on top fills the letters with a gold gradient (the outline stays outside the letters, as with VS) */
+.fight.important .sub { top: 112px; font-size: 132px; font-style: italic; letter-spacing: 4px; color: #4a2a00; -webkit-text-stroke: 16px #4a2a00;
+  text-shadow: 0 10px 0 rgba(0,0,0,.45), 0 0 40px rgba(255,190,0,.55); }
+.fight.important .sub::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; color: transparent; -webkit-text-stroke: 0;
+  text-shadow: none; background: linear-gradient(180deg, #fffbe0 0%, #ffe066 30%, #f5b800 52%, #fff1a8 64%, #d99a00 82%, #a86d00 100%);
+  -webkit-background-clip: text; background-clip: text; }
+.fight.important .label { top: 272px; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
@@ -214,7 +210,6 @@ export function createCall(root) {
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
-      <div class="tape t1"><div class="run"></div></div><div class="tape t2"><div class="run"></div></div>
     <div class="flash"></div><div class="bar"></div></div>`;
   const q = (sel) => root.querySelector(sel);
   const fight = q('.fight');
@@ -264,18 +259,20 @@ export function createCall(root) {
     anim(q('.flash'), [{ opacity: Math.min(0.7, power / 60) }, { opacity: 0 }], { duration: 260, delay: at, easing: 'ease-out' }); // never a blank white screen
   }
 
-  /** The tapes: the words repeated past twice the tape's width, the row runs by exactly one half, so it loops seamlessly. */
-  function tapes(text) {
-    const words = Array.from({ length: 16 }, () => `<span>${text.replace(/[&<>]/g, '')} ★</span>`).join('');
-    [['.t1', -1], ['.t2', 1]].forEach(([sel, dir]) => {
-      const tape = q(`.tape${sel}`);
-      const row = tape.querySelector('.run');
-      row.innerHTML = words + words;
-      // on screen from the first moment, with everything else (a whip-in came late on the TV); the words keep running
-      const half = row.scrollWidth / 2;
-      anim(row, dir < 0 ? [{ transform: 'translateX(0)' }, { transform: `translateX(${-half}px)` }] : [{ transform: `translateX(${-half}px)` }, { transform: 'translateX(0)' }],
-        { duration: half * 9, iterations: Infinity, easing: 'linear' });
-    });
+  /** The title: «Now playing», or for a big match why it is big, in gold with stars, as large as fits (132 px down to 60). */
+  function title(hype) {
+    const sub = q('.sub');
+    const text = hype ? `★ ${hype} ★` : 'Now playing';
+    sub.textContent = text;
+    sub.dataset.text = text;
+    sub.style.fontSize = '';
+    if (!hype) return;
+    // the letters' own width (a range over the text) against the full-width box, both as drawn on the scaled stage
+    const range = document.createRange();
+    range.selectNodeContents(sub);
+    const box = sub.getBoundingClientRect().width;
+    let size = parseFloat(getComputedStyle(sub).fontSize);
+    while (size > 60 && range.getBoundingClientRect().width > box * 0.92) sub.style.fontSize = `${(size -= 4)}px`;
   }
 
   const loop = (el, frames, ms, delay, extra = {}) => anim(el, frames, { duration: ms, delay, iterations: Infinity, easing: 'ease-in-out', ...extra });
@@ -313,16 +310,17 @@ export function createCall(root) {
   }
 
   return {
-    /** m: match view (p1, p2, label); hype: why it is a big match ('' if not), for the tapes; ms: how long the screen stays; players: all, in join order. */
+    /** m: match view (p1, p2, label); hype: why it is a big match ('' if not), shown as the title; ms: how long the screen stays; players: all, in join order. */
     show(m, hype, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
-      const important = !!hype;
-      fight.classList.toggle('important', important);
-      if (important) tapes(hype);
+      fight.classList.toggle('important', !!hype);
+      title(hype);
+      // the small line under it: dropped when it only repeats the big one («Final» under «★ FINAL ★»)
+      if (hype && (m.label || '').toLowerCase() === hype.toLowerCase()) q('.label').textContent = '';
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
       // tournament, so next time the same name most likely gets another one
       // no two players of the tournament share a mascot; each keeps theirs for the whole tournament

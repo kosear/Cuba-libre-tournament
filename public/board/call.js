@@ -111,7 +111,11 @@ const CSS = `
 .fight .n1 { left: 180px; top: 380px; }
 .fight .n2 { right: 180px; top: 640px; }
 .fight .vs { position: absolute; z-index: 3; left: 0; right: 0; top: 510px; text-align: center; font-size: 220px; line-height: 220px; font-weight: 900; font-style: italic;
-  color: #ffd400; text-shadow: 0 0 50px rgba(0,0,0,.45); will-change: transform; }
+  color: #ffd400; will-change: transform; }
+/* white outline OUTSIDE the letters: a white copy with a thick stroke lies under the yellow text, which covers the stroke's
+   inner half. (paint-order: stroke fill would do it in one layer, but the TV ignores it and the stroke eats the letters.) */
+.fight .vs::before { content: 'VS'; position: absolute; left: 0; right: 0; top: 0; z-index: -1; color: #fff; -webkit-text-stroke: 22px #fff;
+  text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }

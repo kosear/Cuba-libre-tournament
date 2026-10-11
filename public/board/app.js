@@ -190,6 +190,7 @@ function slidePlayoff() {
       return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '✓' : ''}</div>`;
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
+    // (the 3rd place match drops «played before the final» then, to make room for it)
     return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${side(2)}</div>`;
   };
   return {
@@ -204,8 +205,8 @@ function slidePlayoff() {
       </svg>
       ${box('sf1', 'Semi-final 1', 'left:0;top:105px;width:500px')}
       ${box('sf2', 'Semi-final 2', 'left:0;top:465px;width:500px')}
-      ${box('final', 'Final', 'left:720px;top:285px;width:564px', 'final')}
-      ${box('third', '3rd place · played before the final', 'left:720px;top:610px;width:564px', 'third')}
+      ${box('final', 'Final', 'left:720px;top:285px;width:500px', 'final')}
+      ${box('third', T.current?.id === 'third' ? '3rd place' : '3rd place · played before the final', 'left:720px;top:610px;width:500px', 'third')}
     </div>`,
   };
 }

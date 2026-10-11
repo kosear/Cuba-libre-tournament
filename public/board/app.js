@@ -157,7 +157,7 @@ function crossTable(g) {
     if (c.id === r.id) return '<td class="diag"></td>';
     const x = g.cross[r.id]?.[c.id];
     if (!x) return r.out || c.out ? '<td class="none">—</td>' : `<td class="none">${HOURGLASS}</td>`; // dash: will not be played
-    return x.win ? `<td class="win">${x.approx ? '≈' : ''}${x.balls}</td>` : '<td class="loss">0</td>';
+    return x.win ? `<td class="win">${x.approx ? '≈' : ''}+${x.balls}</td>` : '<td class="loss">L</td>'; // green +balls, red L
   }).join('')}</tr>`).join('');
   return `<table class="cross">${head}${body}</table>`;
 }
@@ -165,7 +165,8 @@ function crossTable(g) {
 function slideGroups(s) {
   const groups = T.groups.slice(s.page * GROUPS_PER_SLIDE, (s.page + 1) * GROUPS_PER_SLIDE);
   const title = s.pages > 1 ? `Group stage ${s.page + 1}/${s.pages}` : 'Group stage';
-  const cards = groups.map((g) => `<div class="card"><h3>${esc(g.name)}</h3><div class="fit">${groupTable(g)}</div></div>`).join('');
+  // the group whose match is being played now is lifted a little, like the live box in the bracket
+  const cards = groups.map((g) => `<div class="card${g.rows.some((r) => isLive(r.id)) ? ' live' : ''}"><h3>${esc(g.name)}</h3><div class="fit">${groupTable(g)}</div></div>`).join('');
   return { title, html: `<div class="groups n${groups.length}">${cards}</div>` };
 }
 
@@ -178,7 +179,7 @@ function slideGroup(s) {
     html: `<div class="group-one">
       <div class="card"><h3>Standings</h3><div class="fit">${groupTable(g)}</div></div>
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
-        <div class="legend"><span><b class="g">3</b> win, balls</span><span><b class="k">0</b> loss</span><span>${HOURGLASS} to be played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
+        <div class="legend"><span><b class="g">+3</b> win, balls</span><span><b class="k">L</b> loss</span><span>${HOURGLASS} to be played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
   };
 }
@@ -210,7 +211,7 @@ function slidePlayoff() {
   };
   // Play-offs on (no queue panel): the slide spans from the logo's left edge to the clock's right edge; the final grows
   // to fill the right side, as tall as the left column. Before (contenders, the queue still on the right) the final is
-  // like a semi-final, level with the middle between the semi-finals.
+  // as wide as a semi-final and as tall as the left column.
   const big = T.phase === 'playoff';
   return {
     title: 'Play-off',
@@ -240,7 +241,6 @@ function drawBracket(root) {
   const y1 = mid(sf1);
   const y2 = mid(sf2);
   const yf = (y1 + y2) / 2;
-  if (!br.classList.contains('big')) fin.style.marginTop = `${Math.round(yf - fin.offsetHeight / 2)}px`;
   const x0 = sf1.offsetLeft + sf1.offsetWidth; // right edge of the left column
   const x2 = fin.offsetLeft;
   const xj = Math.round((x0 + x2) / 2); // the joint, halfway to the final

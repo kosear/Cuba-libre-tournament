@@ -27,6 +27,7 @@ header.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 
 
 /* cards and tables */
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px 18px; box-shadow: 0 2px 10px rgba(19,33,58,.05); min-height: 0; overflow: hidden; }
+.card.live { box-shadow: 0 12px 30px rgba(19,33,58,.16), 0 3px 8px rgba(19,33,58,.08); } /* the group playing now, lifted a little */
 .card h3 { font-size: 30px; line-height: 36px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
 .card h3::before { content: ''; width: 10px; height: 28px; border-radius: 3px; background: var(--red); flex: none; }
 table.std { width: 100%; table-layout: fixed; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -58,7 +59,7 @@ table.cross td.diag { background: #d9dee7; }
 table.cross td.none { color: #c3cbd8; font-weight: 400; } /* not played yet */
 .hg { width: .7em; height: .7em; vertical-align: -.08em; color: #8a94a8; opacity: .45; }
 table.cross td.win { color: var(--green); font-weight: 800; }
-table.cross td.loss { color: #111; font-weight: 600; }
+table.cross td.loss { color: var(--red); font-weight: 800; } /* L */
 .legend { margin-top: 16px; font-size: 19px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 28px; }
 .legend span { white-space: nowrap; }
 /* LIVE: the players at the table right now (group tables only); the dot blinks like a camera recording */
@@ -70,7 +71,7 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .group-one td.name .live-tag { display: flex; width: fit-content; margin: 0 0 .12em; } /* narrow card, tall rows: LIVE above the name */
 @keyframes rec { 50% { opacity: 0; } }
 .legend b.g { color: var(--green); }
-.legend b.k { color: #111; }
+.legend b.k { color: var(--red); }
 
 
 /* play-off bracket */
@@ -78,7 +79,9 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bracket svg.lines { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 /* left column over the whole height: semi-final 1, semi-final 2, 3rd place, equal gaps */
 .bracket .bcol { width: 500px; flex: none; display: flex; flex-direction: column; justify-content: space-between; }
-.bracket .bfin { flex: none; width: 500px; }
+.bracket .bfin { flex: none; width: 500px; display: flex; }
+.bracket .bfin > .bm { flex: 1; display: flex; flex-direction: column; } /* the final as tall as the left column */
+.bracket .bfin > .bm .p { flex: 1; }
 .bracket.big .bfin { flex: 1; width: auto; min-width: 0; display: flex; } /* never wider than the room left: a long name shrinks instead */
 .bracket.big .bfin > .bm { flex: 1; min-width: 0; }
 /* play-offs before the final: the left column takes more room, bigger names; the final shrinks to what is left */
@@ -125,6 +128,7 @@ aside.queue::before { content: ''; position: absolute; top: 0; bottom: 0; left: 
 aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; right: 30px; height: 3px; background: #c3d1e8; }
 #qtop { display: flex; flex-direction: column; gap: 14px; margin-top: 64.5px; } /* the Next card top at 41.5+36+18+64.5 = 160 px, level with the slide cards on the left */ /* the three cards stand apart */
 .qbig { border-radius: 18px; padding: 20px 24px; }
+.qbig .qp { font-weight: 900; } /* Next and After next: the boldest names */
 /* Next stands out, After next is grey. The match being played is not shown. */
 .qbig.next { background: #5b8fdb; color: #fff; } /* softer than --blue */
 .qbig.next .qp { text-transform: uppercase; letter-spacing: 2px; } /* names in capitals only on the Next card */

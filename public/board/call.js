@@ -124,13 +124,12 @@ const CSS = `
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
-/* important matches: the title says why, in shiny gold. The element itself draws a dark brown outline and shadow,
-   its ::after copy on top fills the letters with a gold gradient (the outline stays outside the letters, as with VS) */
+/* important matches: the title says why, in gold. The element itself draws a dark brown outline and shadow,
+   its ::after copy on top fills the letters (the outline stays outside the letters, as with VS) */
 .fight.important .sub { top: 112px; font-size: 132px; font-style: italic; letter-spacing: 4px; color: #4a2a00; -webkit-text-stroke: 16px #4a2a00;
   text-shadow: 0 10px 0 rgba(0,0,0,.45), 0 0 40px rgba(255,190,0,.55); }
-.fight.important .sub::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; color: transparent; -webkit-text-stroke: 0;
-  text-shadow: none; background: linear-gradient(180deg, #fffbe0 0%, #ffe066 30%, #f5b800 52%, #fff1a8 64%, #d99a00 82%, #a86d00 100%);
-  -webkit-background-clip: text; background-clip: text; }
+.fight.important .sub::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; color: #ffd23f; -webkit-text-stroke: 0;
+  text-shadow: none; } /* plain gold: a gradient clipped to the letters (background-clip: text) came out broken on the TV */
 .fight.important .label { top: 272px; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
@@ -319,8 +318,7 @@ export function createCall(root) {
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!hype);
       title(hype);
-      // the small line under it: dropped when it only repeats the big one («Final» under «★ FINAL ★»)
-      if (hype && (m.label || '').toLowerCase() === hype.toLowerCase()) q('.label').textContent = '';
+      if (hype) q('.label').textContent = ''; // the big gold title says it already: no small line under it
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
       // tournament, so next time the same name most likely gets another one
       // no two players of the tournament share a mascot; each keeps theirs for the whole tournament

@@ -8,6 +8,8 @@ const H = 1080;
 const BOX = 180;
 const SPEED = 240; // px/s
 const SHADOW = 'rgba(0,0,0,0.15)';
+const WING_LIES = 30; // s a torn-off wing stays on the table after landing, the last WING_FADE of them fading
+const WING_FADE = 4;
 
 // species seen in Bali; each wing pair is a gradient from the base to the tip
 export const KINDS = [
@@ -330,14 +332,14 @@ export function createButterfly(root) {
       w.y += (w.vy + Math.cos(w.t * 5) * 40) * dt;
       w.heading += w.spin * dt;
       if (!w.h) w.lay = w.t;
-    } else if (w.t - w.lay > 4.5) {
+    } else if (w.t - w.lay > WING_LIES) {
       w = null;
       wel.hidden = true;
     }
   }
 
   function drawWing() {
-    const fade = w.h ? 1 : Math.min(1, Math.max(0, (4.5 - (w.t - w.lay)) / 1.5));
+    const fade = w.h ? 1 : Math.min(1, Math.max(0, (WING_LIES - (w.t - w.lay)) / WING_FADE));
     wel.style.transform = `translate(${Math.round(w.x - BOX / 2)}px, ${Math.round(w.y - BOX / 2)}px)`;
     wel.style.opacity = fade;
     wctx.setTransform(1, 0, 0, 1, 0, 0);

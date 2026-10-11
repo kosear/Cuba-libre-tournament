@@ -6,34 +6,35 @@
 
 const W = 1920;
 const H = 1080;
-const BOX = 180;
+const BOX = 240; // also in style.css (.butterfly)
 const SPEED = 240; // px/s
 const SHADOW = 'rgba(0,0,0,0.15)';
 const WING_LIES = 15 * 60; // s a torn-off wing stays after landing (the next gecko eats it long before), then fades
 const WING_FADE = 4;
 
-// species seen in Bali; each wing pair is a gradient from the base to the tip
+// species seen in Bali; each wing pair is a gradient from the base to the tip; `size`: how big it is next to the others
+// (true to the real wingspans, squeezed: birdwings are the giants, emigrants the small ones), each one a little off that
 export const KINDS = [
   { // monarch-like (Danaus): orange, black veins and border with white dots
-    fore: ['#b9520e', '#f28a22'], hind: ['#c45c10', '#f39a35'], edge: '#17110b', vein: '#1d140c', band: 7, dots: '#fff6e2',
+    size: 1, fore: ['#b9520e', '#f28a22'], hind: ['#c45c10', '#f39a35'], edge: '#17110b', vein: '#1d140c', band: 7, dots: '#fff6e2',
   },
   { // Papilio ulysses: electric blue, wide black border
-    fore: ['#0a2f7a', '#2b8ff2'], hind: ['#0b3486', '#3a9cf5'], edge: '#0b0e16', vein: null, band: 10, dots: null,
+    size: 1.2, fore: ['#0a2f7a', '#2b8ff2'], hind: ['#0b3486', '#3a9cf5'], edge: '#0b0e16', vein: null, band: 10, dots: null,
   },
   { // birdwing (Troides): black forewings with pale veins, golden hindwings
-    fore: ['#121010', '#2c2724'], hind: ['#c98a0c', '#f6d235'], edge: '#121010', vein: '#5e574d', band: 5, dots: null,
+    size: 1.35, fore: ['#121010', '#2c2724'], hind: ['#c98a0c', '#f6d235'], edge: '#121010', vein: '#5e574d', band: 5, dots: null,
   },
   { // lemon emigrant (Catopsilia): pale yellow, thin dark edge
-    fore: ['#e2c63a', '#f7ec98'], hind: ['#e6cd45', '#f8efa6'], edge: '#6f6022', vein: '#cdb43e', band: 1.5, dots: null,
+    size: 0.8, fore: ['#e2c63a', '#f7ec98'], hind: ['#e6cd45', '#f8efa6'], edge: '#6f6022', vein: '#cdb43e', band: 1.5, dots: null,
   },
   { // lacewing (Cethosia): red, black border with white dots
-    fore: ['#8f1a12', '#e2452c'], hind: ['#a3221a', '#ec5c36'], edge: '#140d0b', vein: '#2a120d', band: 6, dots: '#ffffff',
+    size: 0.95, fore: ['#8f1a12', '#e2452c'], hind: ['#a3221a', '#ec5c36'], edge: '#140d0b', vein: '#2a120d', band: 6, dots: '#ffffff',
   },
   { // tailed jay (Graphium): green on black
-    fore: ['#2b6427', '#8fd06a'], hind: ['#2c6629', '#9ad874'], edge: '#101410', vein: '#183018', band: 6, dots: '#d4f5ae',
+    size: 0.85, fore: ['#2b6427', '#8fd06a'], hind: ['#2c6629', '#9ad874'], edge: '#101410', vein: '#183018', band: 6, dots: '#d4f5ae',
   },
   { // crow (Euploea): dark violet sheen, white dots
-    fore: ['#1b1430', '#4c3c90'], hind: ['#1c1530', '#3c2f70'], edge: '#0d0a14', vein: null, band: 4, dots: '#ece6ff',
+    size: 1, fore: ['#1b1430', '#4c3c90'], hind: ['#1c1530', '#3c2f70'], edge: '#0d0a14', vein: null, band: 4, dots: '#ece6ff',
   },
 ];
 
@@ -210,12 +211,18 @@ export function createButterfly(root) {
     return best;
   }
 
+  /** A new butterfly's look: a species never twice in a row, its size a little off the species'. */
+  function pick() {
+    const k = KINDS[lastKind = (lastKind + 1 + Math.floor(Math.random() * (KINDS.length - 1))) % KINDS.length];
+    return { ...k, size: k.size * rand(0.92, 1.08) };
+  }
+
   function spawn(near, at, kind) {
     const [x, y] = at || edgePoint(near);
     const a = Math.atan2(H / 2 - y, W / 2 - x);
     b = {
       x, y, vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED, h: 1, heading: a, t: rand(0, 10), flap: 0, beat: rand(8, 11),
-      kind: kind || KINDS[lastKind = (lastKind + 1 + Math.floor(Math.random() * (KINDS.length - 1))) % KINDS.length], // never twice in a row
+      kind: kind || pick(),
       mode: 'fly', goal: null, land: false, sitFor: 0, speed: SPEED,
       onLand: null, after: null, hops: 0,
     };
@@ -377,7 +384,7 @@ export function createButterfly(root) {
         const ph = (b.flap / (2 * Math.PI)) % 1;
         span = ph < 0.4 ? 1 - (ph / 0.4) * 0.9 : 0.1 + ((ph - 0.4) / 0.6) * 0.9;
       }
-      const s = 0.85 * (1 + 0.15 * b.h);
+      const s = 0.85 * b.kind.size * (1 + 0.15 * b.h);
       // the higher it flies, the further its shadow falls (light from the top left, like the balls)
       drawButterfly(ctx, BOX / 2 + 4 + 26 * b.h, BOX / 2 + 6 + 32 * b.h, b.heading, s * 0.95, span, null);
       drawButterfly(ctx, BOX / 2, BOX / 2, b.heading, s, span, b.kind);
@@ -420,7 +427,7 @@ export function createButterfly(root) {
       wctx.save();
       wctx.translate(BOX / 2 + (kind ? 0 : 3 + 40 * w.h), BOX / 2 + (kind ? 0 : 4 + 50 * w.h));
       wctx.scale(tumble, 1);
-      drawWing(wctx, 0, 0, w.heading, 0.85, kind, w.side);
+      drawWing(wctx, 0, 0, w.heading, 0.85 * w.kind.size, kind, w.side);
       wctx.restore();
     }
   }

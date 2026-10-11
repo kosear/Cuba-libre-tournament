@@ -629,9 +629,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
 
   /** A catch eaten: rounder; then the wing it dropped, another hunt for a glutton, or on with the sit. */
   function finish(g) {
+    const size = g.hunt?.prey?.kind.size ?? 1;
     g.hunt = null; g.lick = 0; g.squint = 0; g.gulp = 0; g.lips = 0;
     g.eaten++;
-    fatter(g);
+    fatter(g, size); // a big butterfly fills it out more
     if (!g.scene && bf.wing && toWing(g, bf.wing, glutton ? 1 : WING_EAT)) return;
     if (g.scene || !huntMore(g)) g.look = g.until - rand(1, 2);
   }
@@ -846,7 +847,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   function preyPlace(g, prey, p = spine(g)) {
     const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
     // held by the thorax, the abdomen in the mouth, head and wings outside; each bite pulls it in under the head
-    const s = (0.85 * (1 - 0.35 * prey.depth)) / g.k; // the butterfly keeps its size, whatever the gecko's
+    const s = (0.85 * prey.kind.size * (1 - 0.35 * prey.depth)) / g.k; // the butterfly keeps its size, whatever the gecko's
     const out = 6 + 2 - 3 * s - prey.depth * 40;
     return [p[0][0] + hx * out, p[0][1] + hy * out, Math.atan2(hy, hx), s];
   }
@@ -1525,7 +1526,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       const back = 2 + piece.depth * 26;
       const x = p[0][0] + hx * (6 - back);
       const y = p[0][1] + hy * (6 - back);
-      const sc = (0.85 * (1 - 0.45 * piece.depth)) / k;
+      const sc = (0.85 * piece.kind.size * (1 - 0.45 * piece.depth)) / k;
       drawWing(ctx, x + 5 / k, y + 7 / k, Math.atan2(hy, hx), sc, null, piece.side, true);
       drawWing(ctx, x, y, Math.atan2(hy, hx), sc, piece.kind, piece.side, true);
     }

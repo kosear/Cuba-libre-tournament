@@ -305,11 +305,11 @@ export function startSplash(root) {
   const DOT = Math.cos(0.17); // cue ball red dot
   const BAND = Math.sin(0.56); // stripe: |N·q| below this (~32° to each side of the equator) is coloured, above is white
   const DISC_R = Math.sin(0.42);
-  // Light: a lamp hanging over the table, a bit up and left of the screen centre (other shadows fall down-right too).
-  // Each ball is lit from where it is: under the lamp the highlight sits near the middle of the ball, towards an edge
-  // it slides over to the lamp's side, and the ball gets dimmer. The highlight is the lamp's sharp reflection in the
-  // glossy ball plus a faint broad sheen.
-  const LAMP = [860, 380, 900]; // x, y on the screen and height above the table, px
+  // Light: from the top left, the same as the logo's shadow (24 px right, 32 px down): a lamp far beyond the top left
+  // corner, in that direction, high enough that a ball's cast shadow falls about as far as the logo's. Each ball is
+  // still lit from where it is, so the highlight shifts a little across the screen. The highlight is the lamp's sharp
+  // reflection in the glossy ball plus a faint broad sheen.
+  const LAMP = [960 - 2000, 540 - 2667, 5500]; // x, y on the screen and height above the table, px
   const lampDir = (x, y) => { const d = [LAMP[0] - x, LAMP[1] - y, LAMP[2]]; const k = Math.hypot(...d); return d.map((v) => v / k); };
 
   const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
@@ -410,7 +410,7 @@ export function startSplash(root) {
     const L = lampDir(x, y);
     const Hk = Math.hypot(L[0], L[1], L[2] + 1);
     const H = [L[0] / Hk, L[1] / Hk, (L[2] + 1) / Hk]; // half-way between the light and the viewer
-    const bright = 1 - 0.22 * Math.min(1, Math.hypot(x - LAMP[0], y - LAMP[1]) / 1400);
+    const bright = 1 - 0.15 * Math.min(1, Math.max(0, (Math.hypot(x - LAMP[0], y - LAMP[1]) - 2500) / 2500)); // a bit dimmer far from it
     const lit = new Float32Array(NORMALS.length);
     const sp = new Float32Array(NORMALS.length);
     for (let j = 0; j < NORMALS.length; j++) {

@@ -1158,9 +1158,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const nudge = 0.1 * smooth(Math.min(1, Math.max(0, u - 0.7) / 0.8));
           a.yaw = a.yawTo = sc.base[0] + nudge;
           b.yaw = b.yawTo = sc.base[1] + nudge;
-          // how far each neck must stretch (the same length for both) for the drawn snouts to be 1 px apart, whichever
-          // way the heads point: found by halving, on the outlines themselves
-          const half = snoutsAt(a, b, 1);
+          // how far each neck must stretch (the same length for both) for the drawn snouts, outline strokes included,
+          // to just touch with no overlap, whichever way the heads point: found by halving, on the outlines themselves
+          const half = snoutsAt(a, b, 1.25 * (a.k + b.k) + 1);
           f.reach = (half / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
           o.reach = (half / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
           for (const g of both) g.curl = 1;
@@ -1245,7 +1245,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   /** The front of the head as drawn (the outline round the nose), in screen px. */
   function snoutW(g) {
     const o = outline(g, spine(g));
-    const pts = [...o.slice(o.length - 4), ...o.slice(0, 5)]; // right side, nose, left side
+    const pts = [...o.slice(o.length - 7), ...o.slice(0, 8)]; // right side, nose, left side: the whole head
     return pts.map((q) => [q[0] * g.k, q[1] * g.k]);
   }
   /** Shortest distance between two polylines (screen px). */
@@ -1256,6 +1256,13 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
       return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t);
     };
+    const cross = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+    for (let i = 1; i < A.length; i++) {
+      for (let j = 1; j < B.length; j++) {
+        const [p1, p2, q1, q2] = [A[i - 1], A[i], B[j - 1], B[j]];
+        if (cross(p1, p2, q1) * cross(p1, p2, q2) < 0 && cross(q1, q2, p1) * cross(q1, q2, p2) < 0) return 0; // they cross
+      }
+    }
     let m = Infinity;
     for (let i = 1; i < A.length; i++) for (const q of B) m = Math.min(m, seg(q, A[i - 1], A[i]));
     for (let i = 1; i < B.length; i++) for (const q of A) m = Math.min(m, seg(q, B[i - 1], B[i]));

@@ -203,7 +203,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* Cast shadow of a ball lit from the top left: an ellipse stretched along the light (rotated in splash.js), dark core,
    soft edge; ::before is the small contact shadow where the ball touches the table (towards the ball's centre). */
 /* ball shadows, placed by splash.js away from the lamp: a soft cast shadow and a dark crisp contact spot */
-.ball-shadow { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(10,18,36,.42), rgba(10,18,36,.28) 50%, rgba(10,18,36,.08) 85%, rgba(10,18,36,0)); will-change: transform; pointer-events: none; }
-.ball-contact { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0,0,0,.78) 84%, rgba(0,0,0,.35) 94%, rgba(0,0,0,0)); will-change: transform; pointer-events: none; }
+.ball-shadow { position: absolute; left: 0; top: 0; width: calc(var(--ball, 118px) * 1.15); height: calc(var(--ball, 118px) * 1.15); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(10,18,36,.45), rgba(10,18,36,.32) 75%, rgba(10,18,36,.14) 88%, rgba(10,18,36,0)); will-change: transform; pointer-events: none; }
+.ball-contact { position: absolute; left: 0; top: 0; width: calc(var(--ball, 118px) * 1.1); height: calc(var(--ball, 118px) * 1.1); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0,0,0,.7) 80%, rgba(0,0,0,.38) 88%, rgba(0,0,0,.1) 95%, rgba(0,0,0,0)); will-change: transform; pointer-events: none; }

@@ -33,9 +33,9 @@
 //   or both miss and it flies off; they stare at each other and go their ways;
 // - steal: one catches a butterfly, another dashes in from the side, snatches it from its jaws and runs off with it,
 //   the robbed one looks after it, licks its eye and gives chase;
-// - fight: they meet head-on, puff up, open their mouths, lash their tails and bob their heads; of two sizes the
-//   small one wins in SMALL_WINS (the other flees, the winner chases it off), of one size it is a scuffle and both
-//   run off;
+// - fight: slow dashes towards each other with freezes, a frozen stare (only the tail tips curl), snout against
+//   snout with two shoves; of two sizes the small one wins in SMALL_WINS (the other jerks back and flees, the winner
+//   snaps after it and chases it off), of one size they lock jaws for a moment, twist, part and both run off;
 // - family: a mother and her baby of the same colour, the baby trotting after her on her path; she catches a butterfly,
 //   the baby runs up alongside, tears off a wing for itself and eats it.
 // The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
@@ -306,7 +306,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       mode: 'run', until: rand(0.6, 1.3), top: rand(550, 750), stops: 0, sit: 0, col,
       limit: glutton || Math.random() < GLUTTON ? 2 + (Math.random() < 0.5 ? 1 : 0) : 1, eaten: 0, fat: 0, fatTo: 0,
       t: 0, yaw: 0, yawTo: 0, spots, hunt: null, reach: 0, twitch: 0, chew: 0, gulp: 0, lick: 0, squint: 0, lips: 0, creep: 0,
-      gape: 0, puff: 0, wave: 0,
+      puff: 0, wave: 0, curl: 0,
     };
   }
 
@@ -1064,76 +1064,99 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     },
 
     fight() {
+      // slow dashes towards each other, a frozen stare, snout against snout, then it breaks: no comedy, an animal's way
       const m = middle();
       const th = rand(0, 2 * Math.PI);
-      let ka = pickSize();
-      let kb = pickSize();
-      if (Math.random() < 0.5) kb = ka; // half of them: one size, a scuffle
-      const gap = rand(150, 200);
+      const ka = pickSize();
+      const kb = Math.random() < 0.5 ? ka : pickSize(); // half of them: one size, they lock jaws
+      const G = 55 * (ka + kb) + 40; // the stare: heads this far apart (px)
+      const touch = 16 * (ka + kb) + 4; // snouts together
       let arrived = 0;
       const here = () => { arrived++; };
-      const a = comer(m, th, ka, gap / 2, here);
-      const b = comer(m, th + Math.PI + rand(-0.25, 0.25), kb, gap / 2, here);
+      const a = comer(m, th, ka, G / 2 + 220, here);
+      const b = comer(m, th + Math.PI + rand(-0.2, 0.2), kb, G / 2 + 220, here);
       sync(a, b);
       const even = Math.abs(ka - kb) < 0.1;
       const [small, big] = ka < kb ? [a, b] : [b, a];
       const winner = even ? null : Math.random() < SMALL_WINS ? small : big;
       const loser = winner && (winner === a ? b : a);
+      const both = [a, b];
+      const other = (g) => (g === a ? b : a);
+      const gap = () => { const p = headW(a); const q = headW(b); return Math.hypot(p[0] - q[0], p[1] - q[1]); };
+      const look = (g) => { g.yawTo = clampYaw(aim(g, headW(other(g)).map((c) => c / g.k))); };
+      const pace = both.map(() => ({ t: rand(0, 0.4), go: false }));
       const sc = { a, b, step: 'come' };
-      const ph = [rand(0, 6), rand(0, 6)];
+      const next = (step) => { sc.step = step; sc.t0 = sc.t; };
       sc.update = (dt) => {
-        if (sc.step === 'come' && arrived === 2) { sc.step = 'show'; sc.t0 = sc.t; sc.len = rand(2.6, 3.6); }
         const u = sc.t - (sc.t0 || 0);
-        if (sc.step === 'show') {
-          // the threat display: puffed up, mouths open, tails lashing, heads bobbing
-          [a, b].forEach((g, i) => {
-            const o = i ? a : b;
-            g.yawTo = clampYaw(aim(g, headW(o).map((c) => c / g.k)));
-            g.puffTo = 1;
-            g.waveTo = 1;
-            g.twitch = 1;
-            g.gape = Math.max(0, Math.sin(u * 1.9 + ph[i])) ** 0.5;
-            g.reach = 0.14 * Math.max(0, Math.sin(u * 11)) * (Math.sin(u * 1.3 + ph[i]) > 0.2 ? 1 : 0);
+        if (sc.step === 'come' && arrived === 2) next('stalk');
+        else if (sc.step === 'stalk') {
+          // short slow dashes and freezes, each its own, eyes on the other
+          both.forEach((g, i) => {
+            const pc = pace[i];
+            if ((pc.t -= dt) <= 0) { pc.go = !pc.go; pc.t = pc.go ? rand(0.35, 0.7) : rand(0.4, 1); }
+            g.creep = pc.go ? 140 / g.k : 0;
+            g.puffTo = 0.5;
+            look(g);
           });
-          if (u > sc.len) {
-            sc.step = even ? 'close' : 'flee';
-            sc.t0 = sc.t;
-            for (const g of [a, b]) { g.gape = 0; g.reach = 0; }
-            if (!even) {
-              // the loser gives up and runs, the winner after it
-              loser.puffTo = 0;
-              loser.waveTo = 0;
-              loser.twitch = 0;
-              turnOff(loser, apart(loser, winner)[0] * rand(1.4, 1.8), 1150, true);
-              sc.later = [0.6, () => {
-                chase(winner, loser, 1000); // on its track, slower, so it never runs into it
-                winner.waveTo = 0;
-                winner.twitch = 0;
-                winner.puffTo = 0;
-              }];
+          if (gap() <= G || u > 12) { for (const g of both) g.creep = 0; next('stare'); sc.len = rand(2, 3); }
+        } else if (sc.step === 'stare') {
+          // frozen, a little puffed up; only the tail tips curl slowly
+          for (const g of both) { g.creep = 0; g.curl = 1; g.puffTo = 0.7; look(g); }
+          if (u > sc.len) next('close');
+        } else if (sc.step === 'close') {
+          // slowly in, until the snouts touch
+          const far = gap() > touch;
+          for (const g of both) g.creep = far ? 35 / g.k : 0;
+          if (!far || u > 5) { for (const g of both) g.creep = 0; next('push'); sc.strong = winner || (Math.random() < 0.5 ? a : b); }
+        } else if (sc.step === 'push') {
+          // two shoves, snout against snout: the weaker one gives a little ground each time
+          const w = other(sc.strong);
+          const on = u % 1.1 < 0.4;
+          sc.strong.creep = on ? 28 / sc.strong.k : 0;
+          w.creep = on ? -28 / w.k : 0;
+          if (u > 2.2) { for (const g of both) g.creep = 0; next(even ? 'lock' : 'break'); }
+        } else if (sc.step === 'break') {
+          // the loser jerks back and flees; the winner snaps after it, just short, and gives chase
+          if (!sc.fled) {
+            sc.fled = true;
+            Object.assign(loser, { creep: -280 / loser.k, puffTo: 0, curl: 0 });
+            sc.later = [0.32, () => {
+              turnOff(loser, apart(loser, winner)[0] * rand(1.9, 2.2), 1150, true);
+              sc.strike = { t: 0, k: Math.max(0, Math.min(0.6, (gap() - touch - 30) / (REACH * winner.k))) }; // well short of it
+            }];
+          }
+          if (sc.strike) {
+            const t = (sc.strike.t += dt);
+            winner.reach = sc.strike.k * lunge(t);
+            if (t > 0.5) {
+              sc.strike = null;
+              winner.reach = 0;
+              sc.later = [0.35, () => { Object.assign(winner, { puffTo: 0, curl: 0 }); chase(winner, loser, 1000); }];
             }
           }
-        } else if (sc.step === 'close') {
-          // one size: they rush at each other
-          const [pa, pb] = [headW(a), headW(b)];
-          const near = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) < 85;
-          for (const g of [a, b]) g.creep = near ? 0 : 160 / g.k;
-          if (near || u > 2) { sc.step = 'scuffle'; sc.t0 = sc.t; sc.base = [a.yaw, b.yaw]; }
-        } else if (sc.step === 'scuffle') {
-          [a, b].forEach((g, i) => {
-            g.creep = 0;
-            g.reach = 0.45 * Math.abs(Math.sin(u * 13 + ph[i]));
-            g.yaw = g.yawTo = sc.base[i] + 0.35 * Math.sin(u * 21 + ph[i]);
-            g.gape = Math.abs(Math.sin(u * 9 + ph[i]));
-          });
-          if (u > 1.8) {
-            sc.step = 'gone';
-            // nose to nose: each turns well round, away from the other, one a moment after the other
-            const sides = apart(a, b);
-            const off = (g, i) => turnOff(g, sides[i] * rand(1.9, 2.2), 1100, true);
-            [a, b].forEach((g) => { Object.assign(g, { reach: 0, gape: 0, puffTo: 0, waveTo: 0, twitch: 0 }); g.squint = 0; });
-            off(a, 0);
-            sc.later = [0.25, () => off(b, 1)];
+        } else if (sc.step === 'lock') {
+          // one strikes, the other answers: jaws locked, the heads twist together, the tails lash
+          if (!sc.base) { sc.base = [a.yaw, b.yaw]; sc.first = Math.random() < 0.5 ? a : b; sc.len = rand(1.2, 1.6); }
+          const f = sc.first;
+          const o = other(f);
+          f.reach = u < 0.12 ? 0.22 * smooth(u / 0.12) : 0.16;
+          o.reach = u < 0.15 ? 0 : 0.16 * smooth(Math.min(1, (u - 0.15) / 0.1));
+          const tw = u > 0.3 ? 0.3 * Math.sin((u - 0.3) * 6) : 0;
+          a.yaw = a.yawTo = sc.base[0] + tw;
+          b.yaw = b.yawTo = sc.base[1] - tw; // facing each other: both heads swing to the same side
+          for (const g of both) g.waveTo = u > 0.3 ? 1 : 0;
+          if (u > sc.len + 0.3) next('part');
+        } else if (sc.step === 'part') {
+          // both jerk back and run off to opposite sides, one a moment after the other
+          if (!sc.parted) {
+            sc.parted = true;
+            for (const g of both) Object.assign(g, { reach: 0, creep: -260 / g.k, waveTo: 0, puffTo: 0, curl: 0 });
+            sc.later = [0.3, () => {
+              const sides = apart(a, b);
+              turnOff(a, sides[0] * rand(1.9, 2.2), 1100, true);
+              sc.later = [0.25, () => turnOff(b, sides[1] * rand(1.9, 2.2), 1100, true)];
+            }];
           }
         }
       };
@@ -1214,6 +1237,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       if (i >= 3 && i <= 13) off = 13 * pace * Math.sin(phi) * Math.sin((Math.PI * (i - 3)) / 10); // the body's S-bend
       if (i > 13) off = (18 * pace + 5) * Math.sin(phi - (i - 13) * 0.45 + g.t * (1 - pace) * 2) * ((i - 13) / 12);
       if (i > 20 && g.twitch) off += 5 * Math.sin(g.t * 16) * ((i - 20) / 5); // the tail tip twitches while it stalks
+      if (i > 17 && g.curl) off += g.curl * 9 * Math.sin(g.t * 1.6 - i * 0.25) * ((i - 17) / 8); // a slow curl of the tip, a cat before it pounces
       if (i > 13 && g.wave) off += g.wave * 16 * Math.sin(g.t * 8 - (i - 13) * 0.5) * ((i - 13) / 12); // a threat: the tail lashes
       p.push([x - dy * off, y + dx * off]);
     }
@@ -1450,20 +1474,6 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
 
     const [hx, hy] = unit(p[0][0] - p[3][0], p[0][1] - p[3][1]);
     const nose = [p[0][0] + hx * 6, p[0][1] + hy * 6];
-    if (g.gape > 0.03) {
-      // the mouth wide open, a threat: the pink inside between the jaws
-      const o = g.gape;
-      ctx.beginPath();
-      ctx.moveTo(p[2][0], p[2][1]);
-      ctx.lineTo(nose[0] + nx * 10 * o, nose[1] + ny * 10 * o);
-      ctx.quadraticCurveTo(nose[0] + hx * 5, nose[1] + hy * 5, nose[0] - nx * 10 * o, nose[1] - ny * 10 * o);
-      ctx.closePath();
-      ctx.fillStyle = '#d2475f';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = OUTLINE;
-      ctx.stroke();
-    }
     // after eating: the tongue flicks out and sweeps over the lips, left and right
     if (g.lips > 0) {
       const len = 16 * Math.sin(g.lips * Math.PI);

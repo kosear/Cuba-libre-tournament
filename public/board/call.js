@@ -208,9 +208,9 @@ function mascotFor(p, players = []) {
 
 // The slow way out at the end of the screen: the action slows down to a stop, all but the background fades out,
 // then the two halves part. LEAVE_SLOW ms in all, taken from the end of the screen's time (app.js).
-const SLOWDOWN = 5000;
-const FADE = 2000;
-const PART = 3000;
+const SLOWDOWN = 2000; // seconds 14-16 of the 20 s screen
+const FADE = 2000; // 16-18
+const PART = 2000; // 18-20
 export const LEAVE_SLOW = SLOWDOWN + FADE + PART;
 
 export function createCall(root) {
@@ -336,6 +336,7 @@ export function createCall(root) {
       leaveTimers = [];
       fight.getAnimations({ subtree: true }).forEach((a) => { if (a instanceof CSSAnimation) { a.playbackRate = 1; a.play(); } }); // the rays, if a slowdown stopped them
       fight.style.background = '';
+      root.style.background = '';
       fight.classList.remove('leaving');
       q('.label').textContent = m.label || '';
 
@@ -421,7 +422,9 @@ export function createCall(root) {
         moving().forEach((a) => a.pause()); // at rest
         fight.classList.add('leaving');
         for (const el of [q('.stuff'), q('.tape.t1'), q('.tape.t2')]) go(el, [{ opacity: 1 }, { opacity: 0 }], fade, 0, 'ease-in-out');
-        fight.style.background = 'transparent'; // the halves still cover it; once they part, the board shows
+        // the halves still cover it; once they part, the board shows (the call box in app.js has a dark background too)
+        fight.style.background = 'transparent';
+        root.style.background = 'transparent';
         const ease = slow ? 'cubic-bezier(.6,0,.4,1)' : 'cubic-bezier(.5,0,.8,.5)';
         go(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], part, fade + (slow ? 0 : 50), ease);
         go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], part, fade + (slow ? 0 : 50), ease);
@@ -431,6 +434,7 @@ export function createCall(root) {
           running = [];
           fight.classList.remove('leaving');
           fight.style.background = '';
+          root.style.background = '';
           done();
         }, fade + part + 70);
       }, slowdown);

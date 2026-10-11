@@ -206,6 +206,13 @@ function mascotFor(p, players = []) {
   return set[k];
 }
 
+// The slow way out at the end of the screen: the action slows down to a stop, all but the background fades out,
+// then the two halves part. LEAVE_SLOW ms in all, taken from the end of the screen's time (app.js).
+const SLOWDOWN = 5000;
+const FADE = 2000;
+const PART = 3000;
+export const LEAVE_SLOW = SLOWDOWN + FADE + PART;
+
 export function createCall(root) {
   const style = document.createElement('style');
   style.textContent = CSS;
@@ -225,6 +232,8 @@ export function createCall(root) {
   const ring = q('.ring');
   let running = []; // animations of the current show, cancelled by the next one
   let shown = 0; // counts show() calls
+  let barAnim = null; // the countdown keeps running while everything else slows down
+  let leaveTimers = []; // timers of a leave() in progress, dropped by the next show()
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -323,6 +332,9 @@ export function createCall(root) {
       running.forEach((a) => a.cancel());
       running = [];
       shown++; // a leave() still running for the previous match must not hide this one
+      leaveTimers.forEach(clearTimeout);
+      leaveTimers = [];
+      fight.getAnimations({ subtree: true }).forEach((a) => { if (a instanceof CSSAnimation) { a.playbackRate = 1; a.play(); } }); // the rays, if a slowdown stopped them
       fight.style.background = '';
       fight.classList.remove('leaving');
       q('.label').textContent = m.label || '';
@@ -372,34 +384,56 @@ export function createCall(root) {
           900 + n * 120, delay + 500);
       }
       idle(pick(IDLES), TV + 600, ms - TV - 600);
-      anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
+      barAnim = anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
     },
     /**
-     * The way out (~0.8 s), then done(): everything freezes; all but the background fades out (one group, 250 ms),
-     * only then the red and blue halves part to the sides like doors and show the board underneath. Few layers move:
-     * a heavier way out (names, VS, tapes flying off one by one) was too much for the TV.
+     * The way out, then done(). slow (at the end of the screen, LEAVE_SLOW ms): the action slows down to a stop
+     * (SLOWDOWN), all but the background fades out as one layer (FADE), then the red and blue halves part to the sides
+     * like doors and show the board underneath (PART); the countdown runs to the end. Fast (~0.8 s, the match left the
+     * queue early): the same, at once. Few layers move: a heavier way out (names, VS, tapes flying off one by one) was
+     * too much for the TV.
      */
-    leave(done) {
+    leave(done, slow = false) {
       const my = shown;
-      running.forEach((a) => a.pause()); // freeze in place: no jumps, nothing else to draw
-      fight.classList.add('leaving');
-      const go = (el, frames, ms, delay = 0, easing = 'ease-out') => anim(el, frames, { duration: ms, delay, easing, fill: 'forwards' });
-      for (const el of [q('.stuff'), q('.tape.t1'), q('.tape.t2'), q('.bar')]) go(el, [{ opacity: 1 }, { opacity: 0 }], 250);
-      fight.style.background = 'transparent'; // the halves still cover it; once they part, the board shows
-      go(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], 480, 300, 'cubic-bezier(.5,0,.8,.5)');
-      go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], 480, 300, 'cubic-bezier(.5,0,.8,.5)');
-      setTimeout(() => {
-        if (my !== shown) return; // a new match came meanwhile: show() has reset everything
-        running.forEach((a) => a.cancel());
-        running = [];
-        fight.classList.remove('leaving');
-        fight.style.background = '';
-        done();
-      }, 800);
+      const later = (fn, ms) => leaveTimers.push(setTimeout(() => { if (my === shown) fn(); }, ms));
+      const go = (el, frames, ms, delay, easing) => anim(el, frames, { duration: ms, delay, easing, fill: 'forwards' });
+      // everything that moves, the rays' CSS animations too; not the countdown
+      const moving = () => fight.getAnimations({ subtree: true }).filter((a) => a !== barAnim && a.playState === 'running');
+      const [slowdown, fade, part] = slow ? [SLOWDOWN, FADE, PART] : [0, 250, 480];
+      let atRest = false; // the slowdown is over: its last step must not touch the fade and the doors
+      if (slowdown) {
+        // the speed falls from 1 to 0 in small steps, a little faster at first: a smooth coming to rest
+        const t0 = performance.now();
+        const step = () => {
+          if (atRest) return;
+          const k = Math.max(0, 1 - (performance.now() - t0) / slowdown);
+          moving().forEach((a) => { a.playbackRate = k * k; });
+          if (k > 0) later(step, 150);
+        };
+        step();
+      }
+      later(() => {
+        atRest = true;
+        moving().forEach((a) => a.pause()); // at rest
+        fight.classList.add('leaving');
+        for (const el of [q('.stuff'), q('.tape.t1'), q('.tape.t2')]) go(el, [{ opacity: 1 }, { opacity: 0 }], fade, 0, 'ease-in-out');
+        fight.style.background = 'transparent'; // the halves still cover it; once they part, the board shows
+        const ease = slow ? 'cubic-bezier(.6,0,.4,1)' : 'cubic-bezier(.5,0,.8,.5)';
+        go(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], part, fade + (slow ? 0 : 50), ease);
+        go(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], part, fade + (slow ? 0 : 50), ease);
+        go(q('.bar'), [{ opacity: 1 }, { opacity: 0 }], slow ? 400 : 150, slow ? fade + part - 400 : 0, 'ease-out');
+        later(() => {
+          running.forEach((a) => a.cancel());
+          running = [];
+          fight.classList.remove('leaving');
+          fight.style.background = '';
+          done();
+        }, fade + part + 70);
+      }, slowdown);
     },
   };
 }

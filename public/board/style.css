@@ -198,5 +198,5 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
   filter: drop-shadow(24px 32px 14px rgba(10,18,36,.3)); transition: opacity .6s ease-in-out; }
 .ball { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); will-change: transform; } /* a canvas shaded by splash.js */
 /* ball shadow, placed by splash.js just off the ball away from the lamp: one blurred disc */
-.ball-shadow { position: absolute; left: 0; top: 0; width: var(--ball, 118px); height: var(--ball, 118px); border-radius: 50%;
-  background: rgba(10,18,36,.5); filter: blur(7px); will-change: transform; pointer-events: none; }
+.ball-shadow { position: absolute; left: 0; top: 0; width: calc(var(--ball, 118px) + 44px); height: calc(var(--ball, 118px) + 44px);
+  background: var(--ball-shadow) center / 100% 100% no-repeat; will-change: transform; pointer-events: none; } /* a picture drawn once, no filter */

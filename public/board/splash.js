@@ -161,9 +161,31 @@ const DIAG = new URLSearchParams(location.search);
 const FLAT_LIGHT = DIAG.get('light') === 'flat';
 const FLAT_SHADOW = DIAG.get('shadow') === 'flat';
 
+// A ball's shadow as a picture drawn once: a disc of radius R blurred (the Gaussian edge, ~7 px), so the TV only moves
+// a ready image. A CSS blur filter on moving shadows flickered on TV graphics chips.
+const SHADOW_PAD = 22; // px around the disc for the soft edge
+function shadowPicture() {
+  const size = 2 * (R + SHADOW_PAD);
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  const sigma = 7;
+  const erf = (x) => { const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x < 0 ? -y : y; };
+  for (let k = 0; k <= 32; k++) {
+    const r = (k / 32) * (size / 2);
+    const a = 0.5 * 0.5 * (1 - erf((r - R) / (sigma * Math.SQRT2))); // density 0.5 inside, the blurred edge at R
+    grad.addColorStop(k / 32, `rgba(10,18,36,${a.toFixed(4)})`);
+  }
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return c.toDataURL();
+}
+
 export function startSplash(root) {
   root.innerHTML = '';
   root.style.setProperty('--ball', `${2 * R}px`); // ball size for style.css
+  root.style.setProperty('--ball-shadow', `url(${shadowPicture()})`);
   // Performance on a TV: nothing big is ever repainted while the splash runs.
   // - Background: two full-screen colour layers; a new colour fades in by opacity (the compositor's work) instead of
   //   a background-color transition that repaints 1920×1080 every frame.
@@ -507,12 +529,13 @@ export function startSplash(root) {
     const t = far / LAMP[2]; // tan of the light's angle from the vertical
     const [ux, uy] = far ? [dx / far, dy / far] : [0, 0];
     if (FLAT_SHADOW) {
-      b.shadow.style.transform = `translate(${b.x - R + 24}px, ${b.y - R + 32}px)`;
+      b.shadow.style.transform = `translate(${b.x - R - SHADOW_PAD + 24}px, ${b.y - R - SHADOW_PAD + 32}px)`;
     } else {
       // One shadow, as in real light: a blurred disc just off the ball away from the lamp. Darkest at the ball's edge,
       // only lighter further out; two separate spots read as «shadow, light band, shadow».
       const off = R * (0.08 + 0.35 * t);
-      b.shadow.style.transform = `translate(${b.x - R + ux * off}px, ${b.y - R + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.4 * t})`;
+      const P = R + SHADOW_PAD;
+      b.shadow.style.transform = `translate(${b.x - P + ux * off}px, ${b.y - P + uy * off}px) rotate(${ang}rad) scaleX(${1 + 0.4 * t})`;
     }
     // the light moves over the ball as it travels, even when it slides without turning
     if (!FLAT_LIGHT && !b.dirty && b.light && Math.hypot(b.x - b.light.x, b.y - b.light.y) > LIGHT_STEP) b.dirty = true;

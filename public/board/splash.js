@@ -437,7 +437,7 @@ export function startSplash(root) {
       const ndl = p.x * L[0] + p.y * L[1] + p.z * L[2];
       const ndh = Math.max(0, p.x * H[0] + p.y * H[1] + p.z * H[2]);
       const lit = (0.58 + 0.45 * Math.max(0, ndl)) * bright; // soft: the dark side stays fairly light
-      const sp = (Math.pow(ndh, 140) * 0.95 + Math.pow(ndh, 16) * 0.07) * bright * 255;
+      const sp = (Math.pow(ndh, 140) * 0.55 + Math.pow(ndh, 16) * 0.07) * bright * 255;
       const o = p.i;
       out[o] = r * lit + sp;
       out[o + 1] = g * lit + sp;

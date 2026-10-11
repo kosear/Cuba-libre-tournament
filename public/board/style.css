@@ -222,6 +222,6 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .bm.big .t .live-tag { font-size: 62px; right: 28px; }
 .bm.big .p { flex: 1; font-size: 120px; padding: 0 40px; gap: 28px; justify-content: center; } /* names in the middle */
 .bm.big .vs { height: 0; position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-start; }
-.bm.big .vs span { transform: translateY(-50%); background: var(--card); color: #a8b2c4; border: 2px solid var(--line); border-radius: 999px;
-  padding: 6px 18px 5px; font: 800 24px/1 Inter, system-ui, sans-serif; letter-spacing: 3px; }
+.bm.big .vs span { transform: translateY(-50%); background: var(--card); color: #a8b2c4; border: 3px solid var(--line); border-radius: 999px;
+  padding: 9px 27px 8px; font: 800 36px/1 Inter, system-ui, sans-serif; letter-spacing: 4px; }
 .bm.big .p .win-tag { font-size: 30px; padding: 7px 14px 5px; border-radius: 6px; }

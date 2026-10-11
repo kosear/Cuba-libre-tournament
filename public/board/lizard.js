@@ -1027,11 +1027,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
         } else if (sc.step === 'stare') {
           // a look at each other, then each its own way
           const u = sc.t - sc.t0;
-          for (const [g, o] of [[a, b], [b, a]]) {
-            g.yawTo = clampYaw(aim(g, headW(o).map((c) => c / g.k)));
-            if (!winner) g.reach = u > 0.6 && u < 1.6 ? 0.12 * Math.max(0, Math.sin(u * 14)) : 0; // a nod or two
-          }
-          if (u > (winner ? 1.2 : 2.2)) {
+          for (const [g, o] of [[a, b], [b, a]]) g.yawTo = clampYaw(aim(g, headW(o).map((c) => c / g.k)));
+          if (u > (winner ? 1.2 : 1.8)) {
             sc.step = 'gone';
             const [sa, sb] = apart(a, b);
             a.reach = b.reach = 0;

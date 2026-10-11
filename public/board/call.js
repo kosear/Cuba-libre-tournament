@@ -11,22 +11,24 @@ const IDLES = ['drift', 'sway', 'heartbeat', 'stare-down', 'adrenaline'];
 
 // [body, hat, prop, name]
 const MASCOTS = [
-  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐱', '👑', '🥊', 'King Cat'], ['🐸', '🕶️', '', 'Cool Frog'],
-  ['🐷', '🎓', '📚', 'Professor Pig'], ['🐔', '🪖', '🥊', 'Army Chicken'], ['🦆', '🧢', '', 'Duck in a Cap'],
-  ['🐻', '🤠', '🌵', 'Cowboy Bear'], ['🦜', '🏴‍☠️', '⚔️', 'Pirate Parrot'], ['🐵', '', '🍌', 'Banana Monkey'],
-  ['🐼', '🎀', '🎋', 'Panda with a Bow'], ['🦖', '', '🥊', 'Tiny-arms T-Rex'], ['🐙', '🎩', '🎱', 'Octopus Hustler'],
-  ['🦈', '🕶️', '🎱', 'Pool Shark'], ['🐢', '⛑️', '', 'Safety Turtle'], ['🦄', '', '🎸', 'Rock Unicorn'],
-  ['🐧', '🎩', '🌹', 'Penguin in a Tux'], ['🐮', '🤠', '🥛', 'Cowboy Cow'], ['🦊', '🕶️', '💰', 'Sly Fox'],
-  ['🐭', '', '🧀', 'Mouse with Cheese'], ['🐉', '', '🔥', 'Dragon'], ['🥔', '🕶️', '🍟', 'Cool Potato'],
-  ['🦘', '', '🥊', 'Boxing Kangaroo'], ['🦁', '👑', '', 'Lion King'], ['🐯', '🧢', '🥊', 'Tiger in a Cap'],
-  ['🐺', '🕶️', '🌙', 'Night Wolf'], ['🦝', '🎩', '💰', 'Bandit Raccoon'], ['🦙', '🎩', '☕', 'Fancy Llama'],
+  // nicknames with a joke, like a boxer's
+  ['🦈', '🕶️', '🎱', 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
+  ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', '🕶️', '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
+  ['🦁', '👑', '', 'The Mane Event'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
+  ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', '💸', 'Piggy Bank'],
+  ['🦍', '👑', '', 'Kong of the Table'], ['🦉', '', '🌙', 'Last Call Owl'], ['🐉', '', '🔥', 'Dragon Breath'],
+  ['🐧', '🎩', '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
+  // a little flirty
+  ['🦊', '', '💋', 'Foxy Lady'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
+  // the old ones that still make you smile
+  ['🐶', '🎩', '🥊', 'Gentleman Pug'], ['🐻', '🤠', '🌵', 'Cowboy Bear'], ['🦜', '🏴‍☠️', '⚔️', 'Pirate Parrot'],
+  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Octopus Hustler'], ['🐢', '⛑️', '', 'Safety Turtle'],
+  ['🦄', '', '🎸', 'Rock Unicorn'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🥊', 'Boxing Kangaroo'],
   ['🐐', '🎓', '🎺', 'Jazz Goat'], ['🦩', '🕶️', '🍹', 'Party Flamingo'], ['🐊', '🧢', '🦷', 'Smiley Croc'],
-  ['🦦', '', '🐟', 'Hungry Otter'], ['🐿️', '🪖', '🌰', 'Squirrel Soldier'], ['🦔', '🎉', '🎈', 'Birthday Hedgehog'],
-  ['🦀', '', '🥊', 'Crab Boxer'], ['🐳', '🎩', '🎻', 'Whale Maestro'], ['🐌', '⛑️', '🏎️', 'Racing Snail'],
-  ['🦥', '', '☕', 'Sleepy Sloth'], ['🦉', '🎓', '📜', 'Wise Owl'], ['🐝', '', '🍯', 'Busy Bee'],
+  ['🦔', '🎉', '🎈', 'Birthday Hedgehog'], ['🐳', '🎩', '🎻', 'Whale Maestro'], ['🐌', '⛑️', '🏎️', 'Racing Snail'],
   ['🐰', '🎩', '🥕', 'Magic Bunny'], ['🐗', '🪖', '🍺', 'Beer Boar'], ['🤖', '', '🔧', 'Robo Champ'],
-  ['👽', '', '🛸', 'Alien Visitor'], ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🌵', '🤠', '', 'Cactus Cowboy'],
-  ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'], ['🥑', '🧢', '', 'Avocado Bro'],
+  ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '🕶️', '', 'Pizza Boss'], ['🍔', '👑', '🍟', 'Burger King'],
+  ['🥑', '🧢', '', 'Avocado Bro'],
 ];
 // pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [

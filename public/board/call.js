@@ -135,7 +135,7 @@ const CSS = `
 /* important matches: the title says why, in gold. The element itself draws a dark brown outline and shadow,
    its ::after copy on top fills the letters (the outline stays outside the letters, as with VS) */
 .fight.important .sub { top: 112px; font-size: 132px; font-style: italic; letter-spacing: 4px; color: #4a2a00; -webkit-text-stroke: 16px #4a2a00;
-  text-shadow: 0 10px 0 rgba(0,0,0,.45), 0 0 40px rgba(255,190,0,.55); }
+  text-shadow: 0 10px 0 rgba(0,0,0,.45); } /* no yellow glow: on the TV it lit up the whole box, not the letters */
 .fight.important .sub::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; color: #ffd23f; -webkit-text-stroke: 0;
   text-shadow: none; } /* plain gold: a gradient clipped to the letters (background-clip: text) came out broken on the TV */
 .fight.important .label { top: 272px; }
@@ -302,6 +302,18 @@ export function createCall(root) {
     const s2 = q('.n2 span');
     const vs = q('.vs');
     const sub = q('.sub');
+    // a big match's gold title moves with the same random idle as the rest: pulses, sways, beats, swells or shakes
+    const gold = fight.classList.contains('important');
+    if (gold) {
+      const pulse = (k) => [{ transform: 'scale(1)' }, { transform: `scale(${k})` }, { transform: 'scale(1)' }];
+      if (kind === 'drift') loop(sub, pulse(1.06), 1600, at);
+      else if (kind === 'sway') loop(sub, [{ transform: 'rotate(0)' }, { transform: 'rotate(-2.5deg)' }, { transform: 'rotate(0)' }, { transform: 'rotate(2.5deg)' }, { transform: 'rotate(0)' }], 2200, at);
+      else if (kind === 'heartbeat') {
+        loop(sub, [{ transform: 'scale(1)' }, { transform: 'scale(1.1)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.22 },
+          { transform: 'scale(1.06)', offset: 0.32 }, { transform: 'scale(1)', offset: 0.46 }, { transform: 'scale(1)' }], 1000, at, { easing: 'ease-out' });
+      } else if (kind === 'stare-down') anim(sub, [{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }], { duration: hold, delay: at, easing: 'ease-in', fill: 'forwards' });
+      else loop(sub, jitter(3), 140, at, { easing: 'linear' });
+    }
     if (kind === 'drift') {
       loop(s1, [{ transform: 'translateX(0)' }, { transform: 'translateX(28px)' }, { transform: 'translateX(0)' }], 2400, at);
       loop(s2, [{ transform: 'translateX(0)' }, { transform: 'translateX(-28px)' }, { transform: 'translateX(0)' }], 2400, at);
@@ -313,7 +325,7 @@ export function createCall(root) {
     } else if (kind === 'heartbeat') {
       loop(vs, [{ transform: 'scale(1)' }, { transform: 'scale(1.16)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.22 },
         { transform: 'scale(1.1)', offset: 0.32 }, { transform: 'scale(1)', offset: 0.46 }, { transform: 'scale(1)' }], 1000, at, { easing: 'ease-out' });
-      loop(sub, jitter(1.5), 160, at, { easing: 'linear' });
+      if (!gold) loop(sub, jitter(1.5), 160, at, { easing: 'linear' });
     } else if (kind === 'stare-down') {
       anim(s1, [{ transform: 'translateX(0)' }, { transform: 'translateX(70px)' }], { duration: hold, delay: at, easing: 'ease-in', fill: 'forwards' });
       anim(s2, [{ transform: 'translateX(0)' }, { transform: 'translateX(-70px)' }], { duration: hold, delay: at, easing: 'ease-in', fill: 'forwards' });
@@ -322,7 +334,7 @@ export function createCall(root) {
       loop(s1, jitter(3), 120, at, { easing: 'linear' });
       loop(s2, jitter(3), 130, at, { easing: 'linear' });
       loop(vs, jitter(4), 110, at, { easing: 'linear' });
-      loop(sub, jitter(2), 150, at, { easing: 'linear' });
+      if (!gold) loop(sub, jitter(2), 150, at, { easing: 'linear' });
     }
   }
 

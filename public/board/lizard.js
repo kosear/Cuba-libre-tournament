@@ -542,6 +542,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
       }
     } else if (h.phase === 'lunge') {
       g.reach = t < 0.08 ? smooth(t / 0.08) : t < 0.16 ? 1 : t < 0.5 ? 1 - smooth((t - 0.16) / 0.34) : 0;
+      if (h.near) upTo(g, h.near); // two snapping at one butterfly: the snouts meet, never one over the other
       if (h.caught && !h.prey && t >= 0.08) {
         h.prey = bf.grab();
         if (!h.prey) h.caught = false;
@@ -949,21 +950,23 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
     g.lick = t > 1.1 && t < 1.7 ? Math.sin(((t - 1.1) / 0.6) * Math.PI) : 0;
     if (t >= 1.9) g.hunt = null;
   }
+  /** The neck stretched only so far that the snout stops where it meets the other's head, outlines just touching. */
+  function upTo(g, o) {
+    const room = 1.25 * (g.k + o.k) + 1;
+    if (polyGap(snoutW(g), snoutW(o)) >= room) return;
+    let lo = 0;
+    let hi = g.reach;
+    for (let i = 0; i < 8; i++) {
+      g.reach = (lo + hi) / 2;
+      if (polyGap(snoutW(g), snoutW(o)) < room) hi = g.reach; else lo = g.reach;
+    }
+    g.reach = lo;
+  }
   /** Family: the baby grabs a wing of its mother's catch, tears it off and eats it. */
   function tug(g, h, t) {
     const m = h.tug;
     g.reach = h.k * (t < 0.08 ? smooth(t / 0.08) : t < 0.5 ? 1 : t < 0.8 ? 1 - smooth((t - 0.5) / 0.3) : 0);
-    // its snout goes up to her head, never over it: the neck stops where the two outlines meet
-    const room = 1.25 * (g.k + m.k) + 1;
-    if (polyGap(snoutW(g), snoutW(m)) < room) {
-      let lo = 0;
-      let hi = g.reach;
-      for (let i = 0; i < 8; i++) {
-        g.reach = (lo + hi) / 2;
-        if (polyGap(snoutW(g), snoutW(m)) < room) hi = g.reach; else lo = g.reach;
-      }
-      g.reach = lo;
-    }
+    upTo(g, m); // its snout goes up to her head, never over it
     const prey = m.hunt?.prey;
     if (t > 0.1 && t < 0.5) {
       g.yaw = g.yawTo = h.base + 0.3 * Math.sin(t * 30); // tugging
@@ -1006,6 +1009,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           a.hunt = { ...common, caught: winner === a, style: style(), target: [m[0] / a.k, m[1] / a.k], phase: 'wait', start: rand(0.4, 1) };
           b.hunt = { ...common, caught: winner === b, style: style(), target: [m[0] / b.k, m[1] / b.k], phase: 'shadow' };
           if (loser) loser.hunt.rival = winner;
+          a.hunt.near = b;
+          b.hunt.near = a;
         } else if (sc.step === 'hunt') {
           if (a.hunt?.phase === 'watch' && b.hunt?.phase === 'shadow') Object.assign(b.hunt, { phase: 'watch', t: 0, watch: rand(0.6, 1.4) });
           // both crept up: the snap, the winner a split second first

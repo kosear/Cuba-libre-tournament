@@ -46,7 +46,7 @@ const STRIDE = 100; // px travelled per full gait cycle
 const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
 // size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
 const SLOT_MS = 2 * 60 * 60 * 1000; // one gecko hour in every slot
-const RUSH_MS = 3 * 60 * 1000;
+const RUSH_MS = 5 * 60 * 1000;
 const RUSH = 40; // how many times more often during it
 /** Is a gecko hour on now? Its start in each slot is a hash of the slot number: random, but the same on every screen. */
 function rushOn(now = Date.now()) {

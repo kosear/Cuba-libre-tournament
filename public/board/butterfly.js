@@ -214,7 +214,7 @@ export function createButterfly(root) {
       x, y, vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED, h: 1, heading: a, t: rand(0, 10), flap: 0, beat: rand(8, 11),
       kind: KINDS[lastKind = (lastKind + 1 + Math.floor(Math.random() * (KINDS.length - 1))) % KINDS.length], // never twice in a row
       mode: 'fly', goal: null, land: false, sitFor: 0, speed: SPEED,
-      onLand: null, after: null,
+      onLand: null, after: null, hops: 0,
     };
     el.hidden = false;
   }
@@ -227,6 +227,25 @@ export function createButterfly(root) {
     b.speed = fast ? SPEED * 2.2 : SPEED;
     b.after = null;
     if (fast) { b.vx = Math.cos(a) * b.speed; b.vy = Math.sin(a) * b.speed; b.beat = 14; }
+  }
+
+  /** Up again and over to another spot nearby, to land there for a while. */
+  function hop() {
+    b.hops--;
+    for (let k = 0; k < 20; k++) {
+      const a = rand(0, 2 * Math.PI);
+      const d = rand(250, 600);
+      const x = b.x + Math.cos(a) * d;
+      const y = b.y + Math.sin(a) * d;
+      if (x < 150 || x > W - 150 || y < 120 || y > H - 120) continue;
+      b.mode = 'fly';
+      b.goal = [x, y];
+      b.land = true;
+      b.sitFor = rand(2, 6);
+      b.speed = SPEED;
+      return;
+    }
+    leave();
   }
 
   function remove() { b = null; el.hidden = true; }
@@ -245,12 +264,14 @@ export function createButterfly(root) {
       wel.hidden = true;
       return piece;
     },
-    /** Just flying by: across the middle, sometimes landing there for a while. */
+    /** Just flying by: across the middle, sometimes landing there for a while, now and then two or three times. */
     wander() {
       if (b) return;
       spawn();
       b.goal = [rand(400, W - 400), rand(250, H - 250)];
       b.land = Math.random() < 0.5;
+      const r = Math.random();
+      b.hops = !b.land ? 0 : r < 0.5 ? 0 : r < 0.85 ? 1 : 2; // landings after the first: of those that land, 50% once, 35% twice, 15% three times
       b.sitFor = rand(2, 6);
       b.after = () => leave();
     },
@@ -319,7 +340,7 @@ export function createButterfly(root) {
       } else {
         b.sitT += dt;
         b.h = 0;
-        if (b.sitT > b.sitFor) leave();
+        if (b.sitT > b.sitFor) { if (b.hops > 0) hop(); else leave(); }
       }
       return true;
     },

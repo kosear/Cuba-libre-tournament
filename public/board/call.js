@@ -198,16 +198,44 @@ const LUCKY = {
   david: { set: PRIDE, chance: 0.5 },
 };
 
-/** The player's mascot: a hash of the player id (FNV-1a) into their set (LUCKY or the common pool). */
-function mascotFor(p) {
+/** The player's set (LUCKY or the common pool) and their place in it: a hash of the player id (FNV-1a). */
+function mascotPick(p) {
   const lucky = LUCKY[(p?.name || '').toLowerCase().replace(/[\s.]/g, '')];
-  if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : MASCOTS; return set[Math.floor(Math.random() * set.length)]; }
+  if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : MASCOTS; return [set, Math.floor(Math.random() * set.length)]; }
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; // mix the bits: similar ids land far apart
   h = (h ^ (h >>> 16)) >>> 0;
   const set = lucky && ((h >>> 20) % 1000) / 1000 < lucky.chance ? lucky.set : MASCOTS; // high bits: independent of the pick
-  return set[h % set.length];
+  return [set, h % set.length];
+}
+
+/**
+ * Mascots of all the tournament's players, none twice: in the order they joined, each takes the one its id points to,
+ * or the next free one in its set. A late player never changes the mascots of those before them.
+ */
+function mascotsFor(players) {
+  const used = new Set();
+  const out = new Map();
+  for (const p of players) {
+    const [set, start] = mascotPick(p);
+    let m = set[start];
+    for (let k = 0; k < set.length; k++) {
+      const c = set[(start + k) % set.length];
+      if (!used.has(c)) { m = c; break; }
+    }
+    used.add(m);
+    out.set(p.id, m);
+  }
+  return out;
+}
+
+/** The player's mascot, among all the tournament's players (`players` in join order). */
+function mascotFor(p, players = []) {
+  const own = mascotsFor(players).get(p?.id);
+  if (own) return own;
+  const [set, k] = mascotPick(p);
+  return set[k];
 }
 
 export function createCall(root) {
@@ -307,8 +335,8 @@ export function createCall(root) {
   }
 
   return {
-    /** m: match view (p1, p2, label); important: fire along the bottom; ms: how long the screen stays. */
-    show(m, important, ms) {
+    /** m: match view (p1, p2, label); important: fire along the bottom; ms: how long the screen stays; players: all, in join order. */
+    show(m, important, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
       q('.label').textContent = m.label || '';
@@ -318,9 +346,10 @@ export function createCall(root) {
       if (important) fire.start(); else fire.stop();
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
       // tournament, so next time the same name most likely gets another one
-      const m1 = mascotFor(m.p1);
-      let m2 = mascotFor(m.p2);
-      if (m2 === m1) m2 = MASCOTS[(MASCOTS.indexOf(m1) + 1) % MASCOTS.length]; // two players with the same mascot: the next one
+      // no two players of the tournament share a mascot; each keeps theirs for the whole tournament
+      const m1 = mascotFor(m.p1, players);
+      let m2 = mascotFor(m.p2, players);
+      if (m2 === m1) m2 = MASCOTS[(MASCOTS.indexOf(m1) + 1) % MASCOTS.length]; // only if a player is missing from the list
       setMascot(1, m1);
       setMascot(2, m2);
       setName(q('.n1'), m.p1?.name ?? '', m1[3]);

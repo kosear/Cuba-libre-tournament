@@ -382,7 +382,7 @@ function showCall(m) {
   const box = el('call');
   box.hidden = false; // visible before show(): it measures the names
   callScreen ??= createCall(box);
-  callScreen.show(m, isImportant(m), CALL_MS);
+  callScreen.show(m, isImportant(m), CALL_MS, T.players);
   call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
 }
 

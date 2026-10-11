@@ -85,11 +85,12 @@ table.cross td.loss { color: #111; font-weight: 600; }
 .bm .p.win { color: var(--ink); } /* the winner stays black, only the loser turns grey */
 .bm .p.lose { color: #a8b2c4; }
 .bm .p .s { font-style: normal; font-size: 18px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 10px; flex: none; }
-.bm.final { border-color: var(--blue); border-width: 3px; box-shadow: 0 6px 20px rgba(47,111,207,.15); }
-.bm.final .t { color: #fff; background: var(--blue); padding-bottom: 12px; }
+/* the final looks like the semi-finals (customer's decision 2026-10-11) */
 .bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
 .bm.live { box-shadow: 0 0 0 4px rgba(47,111,207,.35); }
+.bm .t { position: relative; }
+.bm .t .live-tag { position: absolute; right: 18px; top: 50%; transform: translateY(-46%); margin: 0; font-size: 46px; letter-spacing: 0; } /* no taller header */
 /* projected semi-finals before the groups are over */
 .bm.cand { border-style: dashed; border-color: #b9c3d4; }
 .bm .p.cand { color: #8a94a8; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 22px 8px; }

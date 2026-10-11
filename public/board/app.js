@@ -116,8 +116,8 @@ function buildSlides(t) {
   return out;
 }
 
-// LIVE before the names of the two players at the table right now, in the group tables (not in the bracket):
-// a blinking red «recording» dot and a red label.
+// LIVE: a blinking red «recording» dot and a red label. In the group tables before the names of the two players
+// at the table right now; in the bracket in the header of the match being played.
 const LIVE = '<i class="live-tag"><b></b><span>Live</span></i>';
 const isLive = (id) => !!id && (T.current?.p1?.id === id || T.current?.p2?.id === id);
 const liveName = (name) => `${LIVE}<span class="ln">${esc(name)}</span>`;
@@ -189,7 +189,8 @@ function slidePlayoff() {
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
       return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '✓' : ''}</div>`;
     };
-    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span></div>${side(1)}${side(2)}</div>`;
+    // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
+    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${side(2)}</div>`;
   };
   return {
     title: 'Play-off',

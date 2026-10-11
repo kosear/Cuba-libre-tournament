@@ -446,11 +446,12 @@ function showCall(m) {
   call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
 }
 
+/** The call screen goes away with its way out (call.js leave()): it parts and shows the board underneath. */
 function hideCall() {
   clearTimeout(call?.timer);
   call = null;
-  callScreen?.hide();
-  el('call').hidden = true;
+  if (!callScreen || el('call').hidden) return;
+  callScreen.leave(() => { el('call').hidden = true; });
 }
 
 function updateCall() {

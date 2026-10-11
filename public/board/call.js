@@ -220,6 +220,7 @@ export function createCall(root) {
   const fight = q('.fight');
   const ring = q('.ring');
   let running = []; // animations of the current show, cancelled by the next one
+  let shown = 0; // counts show() calls
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -319,6 +320,8 @@ export function createCall(root) {
     show(m, hype, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
+      shown++; // a leave() still running for the previous match must not hide this one
+      fight.style.background = '';
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
@@ -371,6 +374,38 @@ export function createCall(root) {
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
+    },
+    /**
+     * The way out (~0.8 s), then done(): the names and mascots fly off sideways, VS shrinks away, the title goes up,
+     * the tapes up and down; the background pattern and rays fade out first, only then the red and blue halves part
+     * like doors and show the board underneath. Transforms and opacity only.
+     */
+    leave(done) {
+      const my = shown;
+      // stop the idle loops on what flies off (title jitter, VS pulse, mascots bobbing): a running loop on the same
+      // property can keep the GPU drawing the old motion instead of the way out
+      const leaving = new Set(['.sub', '.label', '.vs', '.mascot.m1', '.mascot.m2'].map(q));
+      running = running.filter((a) => (leaving.has(a.effect?.target) ? (a.cancel(), false) : true));
+      const out = (el, frames, ms, delay = 0) => el && anim(el, frames, { duration: ms, delay, easing: 'cubic-bezier(.5,0,.9,.4)', fill: 'forwards' });
+      const fade = (el, ms, delay = 0) => out(el, [{ opacity: 1 }, { opacity: 0 }], ms, delay);
+      out(q('.n1'), [{ transform: 'none' }, { transform: 'translateX(-1500px) skewX(18deg)' }], 380);
+      out(q('.n2'), [{ transform: 'none' }, { transform: 'translateX(1500px) skewX(-18deg)' }], 380);
+      out(q('.mascot.m1'), [{ transform: 'none' }, { transform: 'translateX(-1300px) rotate(-20deg)' }], 420, 40);
+      out(q('.mascot.m2'), [{ transform: 'none' }, { transform: 'translateX(1300px) rotate(20deg)' }], 420, 40);
+      out(q('.vs'), [{ transform: 'none', opacity: 1 }, { transform: 'scale(0) rotate(-20deg)', opacity: 0 }], 280);
+      out(q('.sub'), [{ transform: 'none' }, { transform: 'translateY(-420px)' }], 320);
+      out(q('.label'), [{ transform: 'none' }, { transform: 'translateY(-420px)' }], 320);
+      out(q('.tape.t1'), [{ transform: 'rotate(-1deg)' }, { transform: 'rotate(-1deg) translateY(-260px)' }], 340);
+      out(q('.tape.t2'), [{ transform: 'rotate(2deg)' }, { transform: 'rotate(2deg) translateY(260px)' }], 340);
+      fade(q('.bar'), 150);
+      // the pattern and the rays are gone (250 ms) before the halves start to part (300 ms)
+      fade(q('.pattern'), 250);
+      fade(q('.rays'), 250);
+      fight.style.background = 'transparent'; // the halves still cover it all; once they part, the board shows
+      fade(q('.gap'), 150, 300);
+      out(q('.red'), [{ transform: 'none' }, { transform: 'translateX(-1400px)' }], 500, 300);
+      out(q('.blue'), [{ transform: 'none' }, { transform: 'translateX(1400px)' }], 500, 300);
+      setTimeout(() => { if (my === shown) { running.forEach((a) => a.cancel()); running = []; fight.style.background = ''; done(); } }, 820);
     },
   };
 }

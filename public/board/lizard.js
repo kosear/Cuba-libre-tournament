@@ -1153,11 +1153,9 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const o = other(f);
           // the necks stretch out slowly, one a little before the other, until the nose tips meet; worked out every
           // frame, so the snouts stay together while the heads sway
-          // a kiss: the noses meet and stay; the heads only drift, barely, a little to one side and a little to the other,
-          // in one slow movement over the whole kiss
-          const tw = 0.05 * Math.sin(2 * Math.PI * Math.min(1, Math.max(0, u - 0.5) / (sc.len - 0.3)));
-          a.yaw = a.yawTo = sc.base[0] + tw;
-          b.yaw = b.yawTo = sc.base[1] - tw; // facing each other: both heads swing to the same side
+          // a kiss: the noses meet and stay, the heads perfectly still (reptiles don't sway)
+          a.yaw = a.yawTo = sc.base[0];
+          b.yaw = b.yawTo = sc.base[1];
           const ra = a.reach;
           const rb = b.reach;
           a.reach = b.reach = 0;
@@ -1165,10 +1163,10 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
           const pb = headW(b);
           a.reach = ra;
           b.reach = rb;
-          const half = Math.max(0, Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) - 6 * (ka + kb)) / 2; // the nose tips just meet
-          const press = 3 * smooth(Math.min(1, Math.max(0, u - 0.6) / 0.4)); // a light press once the noses touch (px)
-          f.reach = ((half + press) / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
-          o.reach = ((half + press) / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
+          // the nose tips touch (each sticks out 7 units past its head point), with a hair of room: touching, not pressing
+          const half = Math.max(0, Math.hypot(pa[0] - pb[0], pa[1] - pb[1]) - 7.5 * (ka + kb) - 2) / 2;
+          f.reach = (half / (REACH * f.k)) * smooth(Math.min(1, u / 0.5));
+          o.reach = (half / (REACH * o.k)) * smooth(Math.min(1, Math.max(0, u - 0.15) / 0.5));
           for (const g of both) g.curl = 1;
           if (u > sc.len + 0.3) next('part');
         } else if (sc.step === 'part') {

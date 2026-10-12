@@ -488,29 +488,32 @@ export function createCall(root) {
       const [tx, ty] = [ox - cx, oy - cy];
       const spin = deg + f.dir * rand(540, 720);
       const lie = spin + f.dir * rand(60, 120);
-      const fx = tx - f.dir * rand(60, 110); // bounced back off it
-      const fy = Math.max(ty, (O.bottom - R.top) / k - h * 0.45 - cy); // down to the floor at its feet
+      // bounced back off it, well away, down on the floor a little below its feet (kept on the screen)
+      const fx = Math.max(80, Math.min(ring.offsetWidth - 80, cx + tx - f.dir * rand(200, 320))) - cx;
+      const fy = Math.min(ring.offsetHeight - 120, (O.bottom - R.top) / k + rand(40, 110)) - h * 0.45 - cy;
       const d = document.createElement('div');
       d.className = 'dropped';
       d.innerHTML = it.innerHTML;
       Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
       ring.append(d);
       it.style.visibility = 'hidden';
-      const FLY = 760;
-      const HIT = 0.5;
+      const FLY = 1250;
+      const HIT = 0.3;
+      const bx = fx + 0.12 * (fx - tx); // the little second hop, on the same way
       anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
         { transform: `translate(${tx / 2}px, ${Math.min(0, ty) / 2 - 120}px) rotate(${(deg + spin) / 2}deg)`, offset: HIT / 2, easing: 'ease-in' },
-        { transform: `translate(${tx}px, ${ty}px) rotate(${spin}deg)`, offset: HIT, easing: 'ease-out' },
-        { transform: `translate(${(tx + fx) / 2}px, ${ty - 70}px) rotate(${(spin + lie) / 2}deg)`, offset: 0.7, easing: 'ease-in' },
-        { transform: `translate(${fx}px, ${fy}px) rotate(${lie}deg)`, offset: 0.9, easing: 'ease-out' },
-        { transform: `translate(${fx - f.dir * 8}px, ${fy}px) rotate(${lie}deg)` }],
+        { transform: `translate(${tx}px, ${ty}px) rotate(${spin}deg)`, offset: HIT, easing: 'ease-out' }, // the hit
+        { transform: `translate(${tx + (fx - tx) * 0.45}px, ${ty - 150}px) rotate(${(spin + lie) / 2}deg)`, offset: 0.52, easing: 'ease-in' }, // up off it
+        { transform: `translate(${fx}px, ${fy}px) rotate(${lie}deg)`, offset: 0.75, easing: 'ease-out' }, // the floor
+        { transform: `translate(${(fx + bx) / 2}px, ${fy - 35}px) rotate(${lie + f.dir * -25}deg)`, offset: 0.86, easing: 'ease-in' },
+        { transform: `translate(${bx}px, ${fy}px) rotate(${lie + f.dir * -40}deg)` }],
       { duration: FLY, fill: 'forwards' });
       after(FLY * HIT, () => {
         pow(ox + rand(-30, 30), oy + rand(-30, 20));
         anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + f.dir * 40}px, ${o.y - 12}px) rotate(${f.dir * 10}deg)`, offset: 0.3 },
           { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: 380, easing: 'ease-out', fill: 'forwards' });
       });
-      f.drop = { d, it, deg, lie, dx: fx - f.dir * 8, dy: fy, cx, cy };
+      f.drop = { d, it, deg, lie: lie + f.dir * -40, dx: bx, dy: fy, cx, cy };
     });
   }
   /** Back home: it picks its prop up again, the prop flies back into its hands. */
@@ -615,7 +618,7 @@ export function createCall(root) {
     throwAt(second, first, T2);
     let [px, py] = [-9999, -9999];
     // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
-    const plan = (left, t0 = T2 + 1200) => { // when the second prop has landed
+    const plan = (left, t0 = T2 + 1400) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
         let mx;

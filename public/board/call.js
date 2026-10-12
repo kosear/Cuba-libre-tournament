@@ -150,6 +150,9 @@ const CSS = `
 .fight .puff i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px rgba(74,42,0,.35); }
 @keyframes puff { 0%, 71% { transform: scale(1, .2); opacity: 0; } 74% { transform: scale(1); opacity: .95; } 84% { transform: scale(1.05, 1.2); opacity: .9; } 90%, 100% { transform: scale(1.1, 1.4); opacity: 0; } }
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
+.fight .pow { position: absolute; z-index: 5; font: italic 900 96px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
+  -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl */
+.fight .daze { position: absolute; left: 50%; top: -.3em; font-size: .35em; transform-origin: 50% 60%; } /* dazed after a beating */
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
@@ -291,6 +294,7 @@ export function createCall(root) {
   const fight = q('.fight');
   const ring = q('.ring');
   let running = []; // animations of the current show, cancelled by the next one
+  let timers = []; // timeouts of the current show (the mascots' fight), cleared by the next one
 
   const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -395,11 +399,92 @@ export function createCall(root) {
     }
   }
 
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const after = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+  /** A comic hit burst (POW!, BAM!…) at (x, y) of the ring. */
+  function pow(x, y) {
+    const b = document.createElement('div');
+    b.className = 'pow';
+    b.textContent = ['POW!', 'BAM!', 'WHAM!', 'BOOM!', '💥'][Math.floor(Math.random() * 5)];
+    b.style.left = `${x}px`;
+    b.style.top = `${y}px`;
+    ring.append(b);
+    b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.15) rotate(8deg)', opacity: 1, offset: 0.4 },
+      { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 650, easing: 'ease-out' });
+    after(700, () => b.remove());
+  }
+
+  /**
+   * One mascot hops over to the other and beats it up: punches with comic bursts, the other spins off and sits dazed
+   * under circling stars, the bully hops back. Their bobbing stops for it and starts again after. Transforms only.
+   */
+  function brawl(bobs, bob) {
+    const [an, vn] = Math.random() < 0.5 ? [1, 2] : [2, 1];
+    const a = q(`.mascot.m${an}`);
+    const v = q(`.mascot.m${vn}`);
+    bobs[an]?.cancel();
+    bobs[vn]?.cancel();
+    const size = 300;
+    // the victim's place in the bully's own coordinates; stop a body short of it, on the bully's side
+    const dx = v.offsetLeft - a.offsetLeft;
+    const dy = v.offsetTop - a.offsetTop;
+    const dist = Math.hypot(dx, dy);
+    const [ux, uy] = [dx / dist, dy / dist];
+    const tx = dx - ux * size * 0.85;
+    const ty = dy - uy * size * 0.85;
+    let x = 0;
+    let y = 0;
+    const hops = 4;
+    const hopMs = 380;
+    const hop = (fx, fy, to, ty2, ms) => anim(a, [
+      { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + to) / 2}px, ${(fy + ty2) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
+      { transform: `translate(${to}px, ${ty2}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${to}px, ${ty2}px)` }], { duration: ms, easing: 'linear', fill: 'forwards' });
+    for (let i = 1; i <= hops; i++) {
+      after((i - 1) * hopMs, () => { const [fx, fy] = [x, y]; x = tx * i / hops; y = ty * i / hops; hop(fx, fy, x, y, hopMs); });
+    }
+    const t0 = hops * hopMs;
+    const punches = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < punches; i++) {
+      after(t0 + i * 330, () => {
+        anim(a, [{ transform: `translate(${x}px, ${y}px)` }, { transform: `translate(${x + ux * 70}px, ${y + uy * 70}px) rotate(${ux > 0 ? 10 : -10}deg)`, offset: 0.4 },
+          { transform: `translate(${x}px, ${y}px)` }], { duration: 260, easing: 'ease-out', fill: 'forwards' });
+        anim(v, [{ transform: 'none' }, { transform: `translate(${ux * 24}px, ${uy * 24}px) rotate(${ux > 0 ? 8 : -8}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
+        pow(v.offsetLeft + 150 + rand(-60, 60), v.offsetTop + 90 + rand(-40, 40));
+      });
+    }
+    const t1 = t0 + punches * 330 + 150;
+    after(t1, () => {
+      // knocked away: a spin and a slide, then dazed under circling stars
+      anim(v, [{ transform: 'none' }, { transform: `translate(${ux * 70}px, ${uy * 70 - 80}px) rotate(${ux > 0 ? 360 : -360}deg)`, offset: 0.6 },
+        { transform: `translate(${ux * 110}px, ${uy * 110}px) rotate(${ux > 0 ? 720 : -720}deg)` }], { duration: 700, easing: 'ease-out', fill: 'forwards' });
+      const stars = document.createElement('span');
+      stars.className = 'daze';
+      stars.textContent = '💫';
+      v.append(stars);
+      anim(stars, [{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
+      // the bully hops back home
+      for (let i = 1; i <= hops; i++) {
+        after(500 + (i - 1) * hopMs, () => { const [fx, fy] = [x, y]; x = tx * (1 - i / hops); y = ty * (1 - i / hops); hop(fx, fy, x, y, hopMs); });
+      }
+      after(500 + hops * hopMs + 100, () => bob(an, 0));
+      // the victim gets up and slides back
+      after(3000, () => {
+        stars.remove();
+        anim(v, [{ transform: `translate(${ux * 110}px, ${uy * 110}px)` }, { transform: 'none' }], { duration: 500, easing: 'ease-in-out', fill: 'forwards' });
+        after(520, () => bob(vn, 0));
+      });
+    });
+  }
+
   return {
     /** m: match view (p1, p2, label); hype: why it is a big match ('' if not), shown as the title; ms: how long the screen stays; players: all, in join order. */
     show(m, hype, ms, players = []) {
       running.forEach((a) => a.cancel());
       running = [];
+      timers.forEach(clearTimeout);
+      timers = [];
+      ring.querySelectorAll('.pow, .daze').forEach((x) => x.remove());
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
@@ -454,19 +539,27 @@ export function createCall(root) {
       impact(TV + 240, 36);
       anim(q('.label'), [{ opacity: 0, transform: 'translateY(-30px)' }, { opacity: 1, transform: 'none' }], { duration: 250, fill: 'backwards' });
       // Mascots swoop in right behind the names, then bob.
+      const bobs = {};
+      const bob = (n, delay) => {
+        bobs[n] = loop(q(`.mascot.m${n}`), [{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(-16px) rotate(${n === 1 ? 4 : -4}deg)` }, { transform: 'translateY(0) rotate(0)' }],
+          900 + n * 120, delay);
+      };
       for (const [n, from, delay] of [[1, -700, 60], [2, 700, 360]]) {
         const box = q(`.mascot.m${n}`);
         anim(box, [{ transform: `translateX(${from}px) rotate(${from > 0 ? 14 : -14}deg)` }, { transform: 'translateX(0) rotate(0)' }],
           { duration: 500, delay, easing: 'cubic-bezier(.2,.8,.3,1.4)', fill: 'backwards' });
-        loop(box, [{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(-16px) rotate(${n === 1 ? 4 : -4}deg)` }, { transform: 'translateY(0) rotate(0)' }],
-          900 + n * 120, delay + 500);
+        bob(n, delay + 500);
       }
+      // once a show, somewhere in its middle, one mascot hops over to the other and beats it up
+      if (ms > 9000) after(rand(5500, Math.min(10000, ms - 7000)), () => brawl(bobs, bob));
       idle(pick(IDLES), TV + 600, ms - TV - 600);
       anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },
     hide() {
       running.forEach((a) => a.cancel());
       running = [];
+      timers.forEach(clearTimeout);
+      timers = [];
     },
   };
 }

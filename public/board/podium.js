@@ -291,7 +291,7 @@ export function createPoster(root) {
     /** The prop out of the mascot's hands as a copy on the stage, where it was: { el, x, y } (its middle). */
     function detach(m) {
       const it = m.item;
-      if (!it || m.prop || it.style.visibility === 'hidden') return null;
+      if (!it || m.prop || !it.firstElementChild) return null;
       const R = root.getBoundingClientRect();
       const r = it.getBoundingClientRect();
       const s = k();
@@ -302,13 +302,21 @@ export function createPoster(root) {
       const deg = (Math.atan2(mat.b, mat.a) * 180) / Math.PI; // its own tilt; the copy is mirrored like the mascot
       const el = document.createElement('div');
       el.className = 'pz-prop';
-      el.innerHTML = it.innerHTML;
       Object.assign(el.style, { left: `${x - w / 2}px`, top: `${y - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
+      Object.assign(it.style, { width: `${w}px`, height: `${h}px` }); // the empty hand keeps its place
+      el.append(it.firstElementChild); // the picture itself goes along
       root.append(el);
-      it.style.visibility = 'hidden';
       report('detach', { m: m.el.className, x: Math.round(x), y: Math.round(y), w, h, s: +s.toFixed(3), R: [Math.round(R.left), Math.round(R.top), Math.round(R.width)], ow: root.offsetWidth, deg: Math.round(deg), flip, tf: getComputedStyle(it).transform });
       const flipS = flip ? ' scaleX(-1)' : '';
       return { el, x0: x, y0: y, x, y, h, deg, flipS, tf: (dx, dy, a) => `translate(${dx}px, ${dy}px)${flipS} rotate(${a}deg)` };
+    }
+    /** The picture back in the hand, as a fresh node (the TV's WebView would not draw it again otherwise), the copy gone. */
+    function restore(m, p) {
+      const pic = p.el.firstElementChild;
+      p.el.remove();
+      if (pic) m.item.append(pic.cloneNode(true));
+      Object.assign(m.item.style, { width: '', height: '' });
+      if (m.prop === p) m.prop = null;
     }
     /** Put down at its feet, on its side, and left there. */
     function putDown(m, toss = 0) {
@@ -380,7 +388,7 @@ export function createPoster(root) {
           const [hx, hy] = [(r.left + r.width / 2 - R.left) / s - p.x0, (r.top + r.height / 2 - R.top) / s - p.y0];
           p.el.animate([{ transform: p.tf(p.x - p.x0, p.y - p.y0, p.lie) }, { transform: p.tf((p.x - p.x0 + hx) / 2, Math.min(p.y - p.y0, hy) - 50, p.deg), offset: 0.5 },
             { transform: p.tf(hx, hy, p.deg) }], { duration: 360, easing: 'ease-out', fill: 'forwards' });
-          later(() => { report('pickup', { m: m.el.className, rect: (() => { const r = p.el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; })() }); p.el.remove(); m.item.style.visibility = ''; m.prop = null; done(); }, 370);
+          later(() => { report('pickup', { m: m.el.className, rect: (() => { const r = p.el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; })() }); restore(m, p); done(); }, 370);
         }, 200);
       });
     }
@@ -408,24 +416,24 @@ export function createPoster(root) {
         const n = 2 + Math.floor(Math.random() * 3);
         const h = rand(100, 160) * (m.size / 104);
         const ms = 760;
-        const pic = m.item.firstElementChild || m.item; // the picture itself: the prop's own tilt stays on .item
-        for (let i = 0; i < n; i++) {
-          later(() => {
-            if (m.busy || m.prop) return;
-            // a real throw: up slowing down, down speeding up (a parabola, sampled), turning over once at a steady rate
-            const turn = Math.random() < 0.5 ? -360 : 360;
-            report('toss', { m: m.el.className, h: Math.round(h) });
-            const frames = [];
-            for (let k = 0; k <= 12; k++) {
-              const t = k / 12;
-              frames.push({ transform: `translateY(${(-h * (1 - (2 * t - 1) ** 2)).toFixed(1)}px) rotate(${(turn * t).toFixed(1)}deg)`, easing: 'linear' });
-            }
-            pic.animate(frames, { duration: ms });
-            m.hop.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04, .95)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.3 },
-              { transform: 'scale(1)', offset: 0.9 }, { transform: 'scale(1.04, .95)', offset: 0.97 }, { transform: 'scale(1)' }], { duration: ms }); // the throw, the catch
-          }, i * (ms + 60));
-        }
-        later(() => next(m), n * (ms + 60) + rand(300, 900));
+        const one = (i) => {
+          if (m.busy || m.prop || i === n) { later(() => next(m), rand(300, 900)); return; }
+          const p = detach(m); // the picture leaves the hand as a copy on the stage (never animated in the hand: the TV)
+          if (!p) { later(() => next(m), rand(300, 900)); return; }
+          report('toss', { m: m.el.className, h: Math.round(h) });
+          // a real throw: up slowing down, down speeding up (a parabola, sampled), turning over once at a steady rate
+          const turn = Math.random() < 0.5 ? -360 : 360;
+          const frames = [];
+          for (let k = 0; k <= 12; k++) {
+            const t = k / 12;
+            frames.push({ transform: p.tf(0, -h * (1 - (2 * t - 1) ** 2), p.deg + turn * t), easing: 'linear' });
+          }
+          p.el.animate(frames, { duration: ms, fill: 'forwards' });
+          m.hop.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04, .95)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.3 },
+            { transform: 'scale(1)', offset: 0.9 }, { transform: 'scale(1.04, .95)', offset: 0.97 }, { transform: 'scale(1)' }], { duration: ms }); // the throw, the catch
+          later(() => { restore(m, p); later(() => one(i + 1), 60); }, ms);
+        };
+        one(0);
         return;
       }
       if (r < 0.55) { // a couple of bounces on the spot
@@ -529,7 +537,7 @@ export function createPoster(root) {
       if (!alive()) return;
       report('pulse', { ms: list.map((m) => {
         if (!m.item) return '-';
-        const hidden = m.item.style.visibility === 'hidden';
+        const hidden = !m.item.firstElementChild;
         const p = m.prop;
         const r = p && p.el.isConnected ? p.el.getBoundingClientRect() : null;
         return `${m.busy ? 'B' : ''}${m.watch ? 'W' : ''}${hidden ? 'H' : 'h'}${p ? `@${Math.round(p.x)},${Math.round(p.y)}` : ''}${r ? `[${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)}x${Math.round(r.height)}]` : ''}:${Math.round(m.x)},${Math.round(m.y)}`;

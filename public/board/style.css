@@ -183,7 +183,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* podium after the final: the «poster» (podium.js) */
 .poster { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; overflow: hidden; color: #fff; }
 .poster[hidden] { display: none; }
-.pz-bg { position: absolute; inset: -20px;
+.pz-bg { position: absolute; inset: 0;
   /* neon: electric blue → violet → hot pink → neon orange, cyan and magenta glows in the corners, gold glow behind the cup */
   background: radial-gradient(ellipse 55% 50% at 50% 28%, rgba(255,230,120,.55), rgba(255,230,120,0) 70%),
     radial-gradient(circle at 8% 95%, rgba(0,229,255,.55), rgba(0,229,255,0) 45%),

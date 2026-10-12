@@ -343,12 +343,6 @@ export function createPoster(root) {
         { transform: p.tf(hx, hy, p.deg) }], { duration: 380, easing: 'ease-out', fill: 'forwards' });
       later(() => restore(m, p, m.hat), 390);
     }
-    /** The whole stage jolts, `power` px: a camera shake on a hit. */
-    function shake(power) {
-      root.animate([{ transform: 'none' }, { transform: `translate(${-power}px, ${power * 0.6}px) rotate(-.3deg)`, offset: 0.15 },
-        { transform: `translate(${power * 0.7}px, ${-power * 0.5}px) rotate(.25deg)`, offset: 0.35 }, { transform: `translate(${-power * 0.35}px, ${power * 0.25}px)`, offset: 0.6 },
-        { transform: 'none' }], { duration: 320, easing: 'ease-out' });
-    }
     /** A cartoon dust cloud of a few puffs at (x, y) of the stage that swells, drifts up and fades; k: its size. */
     function dustAt(x, y, kk = 1) {
       const d = document.createElement('div');
@@ -411,7 +405,6 @@ export function createPoster(root) {
           { transform: p.tf(fx + (fx - tx) * 0.12, fy, lie - dir * 35) }], { duration: FLY, fill: 'forwards' });
         later(() => { // the burst a touch before the prop's middle gets there: it has to grow, and the edge hits first
           burst(b.mid, b.top + v.size * 0.4, 1, v.size);
-          shake(6);
           turn(v, -dir); // turns round at once to who threw it
           v.hop.animate([{ transform: 'none' }, { transform: `translateX(${dir * 22}px) rotate(${dir * 12}deg)`, offset: 0.3 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
         }, FLY * HIT - 110);
@@ -572,7 +565,6 @@ export function createPoster(root) {
             } else a.hop.animate([{ transform: 'none' }, { transform: `translateX(${px}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 240, easing: 'ease-out' });
             later(() => { // the hit lands
               burst((box(a).mid + box(v).mid) / 2, Math.min(box(a).top, box(v).top) + 10, heavy ? 1.3 : 0.8, sz);
-              shake(heavy ? 11 : 4);
               for (const w of list) if (w.watch) cheer(w, heavy ? 1 : 0);
               if (heavy) {
                 const [fx, fy] = [v.x, v.y];
@@ -594,7 +586,6 @@ export function createPoster(root) {
           later(() => {
             // the final blow: knocked away with a spin and a slide, the hat and the prop flying, then dazed under circling stars
             burst(box(v).mid, box(v).top - 10, 1.6, sz);
-            shake(15);
             for (const w of list) if (w.watch) cheer(w, 1.5);
             hatOff(v, side);
             putDown(v, -side * (v.size * 0.9 + rand(40, 100))); // knocked out of its hands

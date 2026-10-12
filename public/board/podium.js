@@ -159,52 +159,187 @@ export function createPoster(root) {
   /** One burst of sparks from (x, y): out, then they droop and fade. */
   /**
    * The mascots wander about their cups at random: each stands a while (sometimes bounces on the spot or looks round), or
-   * hops a few times to a random place within --d px, crossing the cup or not. A couple of times a minute one of them
-   * hops over to another and gives it a beating: punches with comic «POW» bursts, the other spins off and sits dazed
-   * under circling stars, the bully hops back home. Only transforms (cheap for the TV).
+   * hops to a random place within --d px, crossing the cup or not. Their props live a life of their own: now and then one
+   * puts its prop down and wanders off without it, or hurls it at another (a hit, the other reels, the prop bounces off
+   * and lies there); later it goes and picks it up. A couple of times a minute one hops over to another and gives it a
+   * beating (its prop tossed aside first): punches with comic «POW» bursts, the other's prop flies out of its hands, it
+   * spins off and sits dazed under circling stars, the bully hops back home. A hop that would pass through another
+   * mascot leaps right over its head. Only transforms (cheap for the TV).
    */
   function mascots(key) {
     const alive = () => shown === key;
     const later = (fn, ms) => setTimeout(() => alive() && fn(), ms);
     const list = [...root.querySelectorAll('.pz-m')].map((el) => ({
-      el, mv: el.querySelector('.mv'), face: el.querySelector('.face'), hop: el.querySelector('.hop'),
-      d: parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300, x: 0, y: 0, busy: false,
+      el, mv: el.querySelector('.mv'), face: el.querySelector('.face'), hop: el.querySelector('.hop'), item: el.querySelector('.item'),
+      d: parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300, x: 0, y: 0, busy: false, prop: null,
       dir: +el.dataset.facing || 1, // as drawn: an animal side-on looks left, the rest count as looking right
       size: parseFloat(getComputedStyle(el).fontSize) || 110,
     }));
     const place = (m) => { m.mv.style.transform = `translate(${m.x}px, ${m.y}px)`; };
     // look the `to` way (1 right, -1 left): turned round when the picture looks the other way
     const turn = (m, to) => { m.dir = to; m.face.style.transform = to * (+m.el.dataset.facing || 1) < 0 ? 'scaleX(-1)' : ''; };
+    /** Where a mascot stands on the stage: its box (left, top, right) and the floor under its feet. */
+    const box = (m) => {
+      const left = m.el.offsetLeft + m.x;
+      const top = m.el.offsetTop + m.y;
+      return { left, top, right: left + m.size * 1.25, mid: left + m.size * 0.62, floor: top + m.size * 1.02 };
+    };
+    /** A bounce on the spot: a crouch, up, a squash on landing. */
     const jump = (m, h, ms) => m.hop.animate([
-      { transform: 'scale(1.08, .9)' }, { transform: 'translateY(0) scale(1)', offset: 0.15 },
-      { transform: `translateY(${-h}px) scale(.95, 1.06)`, offset: 0.55 }, { transform: 'translateY(0) scale(1.1, .88)', offset: 0.92 },
-      { transform: 'scale(1)' }], { duration: ms, easing: 'linear' });
-    /** Hop from where it is to (tx, ty) in its own coordinates, then done(). */
-    function hopTo(m, tx, ty, done, stepPx = 80) {
+      { transform: 'scale(1)', easing: 'ease-out' }, { transform: 'scale(1.12, .86)', offset: 0.14, easing: 'ease-out' },
+      { transform: `translateY(${-h}px) scale(.94, 1.08)`, offset: 0.5, easing: 'ease-in' },
+      { transform: 'translateY(0) scale(1.14, .84)', offset: 0.84, easing: 'ease-out' }, { transform: 'scale(1)' }], { duration: ms });
+    /**
+     * Hop from where it is to (tx, ty) in its own coordinates, then done(): a few long hops, each a proper arc (a crouch,
+     * up slowing, down speeding, a squash on landing). A hop over another mascot goes high enough to clear its head.
+     */
+    function hopTo(m, tx, ty, done, stepPx = 150) {
       if (Math.abs(tx - m.x) > 1) turn(m, tx > m.x ? 1 : -1);
       const n = Math.max(1, Math.round(Math.hypot(tx - m.x, ty - m.y) / stepPx));
       const [sx, sy] = [(tx - m.x) / n, (ty - m.y) / n];
-      const ms = rand(400, 500);
+      let t = 0;
       for (let i = 0; i < n; i++) {
+        const [fx, fy] = [m.x + sx * i, m.y + sy * i];
+        const [nx, ny] = [fx + sx, fy + sy];
+        // the others under this hop: clear the highest head with some room to spare
+        const ox = m.el.offsetLeft;
+        const oy = m.el.offsetTop;
+        const [l, r] = [Math.min(fx, nx) + ox, Math.max(fx, nx) + ox + m.size * 1.25];
+        let h = rand(45, 65);
+        for (const o of list) {
+          if (o === m) continue;
+          const b = box(o);
+          if (b.right < l || b.left > r) continue;
+          const feet = Math.min(fy, ny) + oy + m.size; // its feet at the lowest point of the hop's ends
+          h = Math.max(h, feet - b.top + 30);
+        }
+        const ms = 520 + h * 1.1;
+        const high = h > 90;
         later(() => {
-          const [fx, fy] = [m.x, m.y];
-          m.x += sx; m.y += sy;
-          m.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${m.x}px, ${m.y}px)` }], { duration: ms, easing: 'ease-in-out' });
+          if (high) m.el.style.zIndex = 5; // over the one it leaps
+          m.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${fx}px, ${fy}px)`, offset: 0.14 },
+            { transform: `translate(${nx}px, ${ny}px)`, offset: 0.84 }, { transform: `translate(${nx}px, ${ny}px)` }], { duration: ms });
+          [m.x, m.y] = [nx, ny];
           place(m);
-          jump(m, rand(50, 75), ms);
-        }, i * (ms + 30));
+          jump(m, h, ms);
+          if (high) later(() => { m.el.style.zIndex = ''; }, ms);
+        }, t);
+        t += ms + 40;
       }
-      later(done, n * (ms + 30));
+      later(done, t);
     }
+
+    // ---------- the props ----------
+    const k = () => root.getBoundingClientRect().width / root.offsetWidth; // the stage is scaled to the screen
+    /** The prop out of the mascot's hands as a copy on the stage, where it was: { el, x, y } (its middle). */
+    function detach(m) {
+      const it = m.item;
+      if (!it || m.prop || it.style.visibility === 'hidden') return null;
+      const R = root.getBoundingClientRect();
+      const r = it.getBoundingClientRect();
+      const s = k();
+      const [w, h] = [it.offsetWidth, it.offsetHeight];
+      const [x, y] = [(r.left + r.width / 2 - R.left) / s, (r.top + r.height / 2 - R.top) / s];
+      const mat = new DOMMatrix(getComputedStyle(it).transform);
+      const flip = m.face.style.transform.includes('scaleX(-1)');
+      const deg = (Math.atan2(mat.b, mat.a) * 180) / Math.PI; // its own tilt; the copy is mirrored like the mascot
+      const el = document.createElement('div');
+      el.className = 'pz-prop';
+      el.innerHTML = it.innerHTML;
+      Object.assign(el.style, { left: `${x - w / 2}px`, top: `${y - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
+      root.append(el);
+      it.style.visibility = 'hidden';
+      const flipS = flip ? ' scaleX(-1)' : '';
+      return { el, x0: x, y0: y, x, y, h, deg, flipS, tf: (dx, dy, a) => `translate(${dx}px, ${dy}px)${flipS} rotate(${a}deg)` };
+    }
+    /** Put down at its feet, on its side, and left there. */
+    function putDown(m, toss = 0) {
+      const p = detach(m);
+      if (!p) return;
+      const floor = box(m).floor - p.h * 0.4;
+      const dx = toss;
+      const lie = p.deg + (toss ? Math.sign(toss) * rand(70, 120) : (Math.random() < 0.5 ? -1 : 1) * rand(60, 90));
+      p.el.animate(toss
+        ? [{ transform: p.tf(0, 0, p.deg), easing: 'ease-out' }, { transform: p.tf(dx * 0.45, -90, (p.deg + lie) / 2), offset: 0.4, easing: 'ease-in' },
+          { transform: p.tf(dx, floor - p.y0, lie), offset: 0.8, easing: 'ease-out' }, { transform: p.tf(dx * 1.08, floor - p.y0 - 10, lie), offset: 0.9 },
+          { transform: p.tf(dx * 1.1, floor - p.y0, lie) }]
+        : [{ transform: p.tf(0, 0, p.deg), easing: 'ease-in' }, { transform: p.tf(0, floor - p.y0, lie), offset: 0.75, easing: 'ease-out' },
+          { transform: p.tf(0, floor - p.y0 - 10, lie), offset: 0.88 }, { transform: p.tf(0, floor - p.y0, lie) }],
+      { duration: toss ? 620 : 420, fill: 'forwards' });
+      Object.assign(p, { x: p.x0 + (toss ? dx * 1.1 : 0), y: floor, lie });
+      m.prop = p;
+    }
+    /** Hurled at v: flies spinning, hits it (a burst, it reels), bounces off away from it and lies on the floor there. */
+    function throwAt(m, v, done) {
+      turn(m, box(v).mid > box(m).mid ? 1 : -1);
+      later(() => {
+        const p = detach(m);
+        if (!p) { done(); return; }
+        const b = box(v);
+        const dir = Math.sign(b.mid - p.x0) || 1;
+        const [tx, ty] = [b.mid - p.x0, b.top + v.size * 0.45 - p.y0];
+        const spin = p.deg + dir * rand(540, 720);
+        const lie = spin + dir * rand(60, 120);
+        const fx = Math.max(60, Math.min(root.offsetWidth - 60, b.mid + dir * rand(120, 220))) - p.x0; // on past it, off its side
+        const fy = Math.min(root.offsetHeight - 140, b.floor + rand(10, 50)) - p.h * 0.4 - p.y0;
+        const FLY = 1150;
+        const HIT = 0.32;
+        p.el.animate([{ transform: p.tf(0, 0, p.deg), easing: 'ease-out' },
+          { transform: p.tf(tx / 2, Math.min(0, ty) / 2 - 110, (p.deg + spin) / 2), offset: HIT / 2, easing: 'ease-in' },
+          { transform: p.tf(tx, ty, spin), offset: HIT, easing: 'ease-out' },
+          { transform: p.tf(tx + (fx - tx) * 0.45, ty - 120, (spin + lie) / 2), offset: 0.55, easing: 'ease-in' },
+          { transform: p.tf(fx, fy, lie), offset: 0.78, easing: 'ease-out' },
+          { transform: p.tf(fx + (fx - tx) * 0.06, fy - 28, lie - dir * 20), offset: 0.88, easing: 'ease-in' },
+          { transform: p.tf(fx + (fx - tx) * 0.12, fy, lie - dir * 35) }], { duration: FLY, fill: 'forwards' });
+        later(() => {
+          burst(b.mid, b.top + v.size * 0.4);
+          if (!v.busy) turn(v, -dir); // looks at who threw it
+          v.hop.animate([{ transform: 'none' }, { transform: `translateX(${dir * 22}px) rotate(${dir * 12}deg)`, offset: 0.3 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+        }, FLY * HIT);
+        Object.assign(p, { x: p.x0 + fx + (fx - tx) * 0.12, y: p.y0 + fy, lie: lie - dir * 35 });
+        m.prop = p;
+        later(done, FLY);
+      }, 250);
+    }
+    /** Goes over to its prop, picks it up, then done(). */
+    function fetch(m, done) {
+      const p = m.prop;
+      const side = p.x > box(m).mid ? -1 : 1; // stops on the side it comes from
+      const tx = p.x - m.el.offsetLeft - m.size * 0.62 + side * m.size * 0.45;
+      const ty = Math.max(-80, Math.min(140, p.y + p.h * 0.4 - m.el.offsetTop - m.size * 1.02));
+      hopTo(m, tx, ty, () => {
+        turn(m, -side);
+        later(() => {
+          const R = root.getBoundingClientRect();
+          const r = m.item.getBoundingClientRect();
+          const s = k();
+          const [hx, hy] = [(r.left + r.width / 2 - R.left) / s - p.x0, (r.top + r.height / 2 - R.top) / s - p.y0];
+          p.el.animate([{ transform: p.tf(p.x - p.x0, p.y - p.y0, p.lie) }, { transform: p.tf((p.x - p.x0 + hx) / 2, Math.min(p.y - p.y0, hy) - 50, p.deg), offset: 0.5 },
+            { transform: p.tf(hx, hy, p.deg) }], { duration: 360, easing: 'ease-out', fill: 'forwards' });
+          later(() => { p.el.remove(); m.item.style.visibility = ''; m.prop = null; done(); }, 370);
+        }, 200);
+      });
+    }
+
     function next(m) {
       if (m.busy) return; // in a fight: the fight goes on with it
+      const home = () => later(() => hopTo(m, Math.max(0, Math.min(m.d, m.x)), 0, () => later(() => next(m), rand(300, 1200))), rand(300, 800));
+      if (m.y !== 0 || m.x < -1 || m.x > m.d + 1) { home(); return; } // off its patch (after a fetch): back first
       const r = Math.random();
+      if (m.prop && r < 0.3) { m.busy = true; fetch(m, () => { m.busy = false; home(); }); return; } // goes for its prop
+      if (!m.prop && m.item && r > 0.94) { putDown(m); later(() => next(m), rand(600, 1400)); return; } // puts it down, wanders off without it
+      const targets = list.filter((o) => o !== m && !o.busy);
+      if (!m.prop && m.item && r > 0.89 && targets.length) { // hurls it at another
+        m.busy = true;
+        throwAt(m, targets[Math.floor(Math.random() * targets.length)], () => { m.busy = false; later(() => next(m), rand(600, 1500)); });
+        return;
+      }
       if (r < 0.3) { later(() => next(m), rand(900, 2600)); return; } // just stand there
       if (r < 0.42) { turn(m, -m.dir); later(() => next(m), rand(600, 1400)); return; } // look the other way
       if (r < 0.55) { // a couple of bounces on the spot
         const n = 1 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < n; i++) later(() => jump(m, 35, 420), i * 440);
-        later(() => next(m), n * 440 + rand(200, 900));
+        for (let i = 0; i < n; i++) later(() => jump(m, 35, 460), i * 480);
+        later(() => next(m), n * 480 + rand(200, 900));
         return;
       }
       let to = rand(0, m.d); // hop to a new place, at least a quarter of the way off
@@ -230,43 +365,49 @@ export function createPoster(root) {
       const others = free.filter((m) => m !== a);
       const v = others[Math.floor(Math.random() * others.length)];
       a.busy = v.busy = true;
-      // where the victim stands, in the bully's own coordinates (both boxes are placed on the stage)
-      const vx = v.el.offsetLeft + v.x - a.el.offsetLeft;
-      const vy = v.el.offsetTop + v.y - a.el.offsetTop + (v.size - a.size);
-      const side = vx > a.x ? -1 : 1; // stop on the side it comes from
       const [hx, hy] = [a.x, a.y];
-      hopTo(a, vx + side * v.size * 0.9, vy, () => {
-        turn(a, -side);
-        turn(v, side); // the victim looks at the bully
-        const punches = 3 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < punches; i++) {
+      const side0 = box(v).mid > box(a).mid ? -1 : 1;
+      putDown(a, side0 * rand(90, 150)); // its prop tossed aside, behind it, before it goes
+      later(() => {
+        // where the victim stands, in the bully's own coordinates (both boxes are placed on the stage)
+        const vx = v.el.offsetLeft + v.x - a.el.offsetLeft;
+        const vy = v.el.offsetTop + v.y - a.el.offsetTop + (v.size - a.size);
+        const side = vx > a.x ? -1 : 1; // stop on the side it comes from
+        hopTo(a, vx + side * v.size * 0.9, vy, () => {
+          turn(a, -side);
+          turn(v, side); // the victim looks at the bully
+          const punches = 3 + Math.floor(Math.random() * 3);
+          for (let i = 0; i < punches; i++) {
+            later(() => {
+              a.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * a.size * 0.25}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
+              v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 14}px) rotate(${-side * 6}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
+              burst(v.el.offsetLeft + v.x + v.size * 0.5, v.el.offsetTop + v.y + v.size * 0.3);
+            }, i * 330);
+          }
           later(() => {
-            a.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * a.size * 0.25}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
-            v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 14}px) rotate(${-side * 6}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
-            burst(v.el.offsetLeft + v.x + v.size * 0.5, v.el.offsetTop + v.y + v.size * 0.3);
-          }, i * 330);
-        }
-        later(() => {
-          // knocked away: a spin and a slide, then dazed under circling stars
-          const [fx, fy] = [v.x, v.y];
-          v.x = Math.max(-60, Math.min(v.d + 60, v.x - side * 90));
-          v.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${v.x}px, ${v.y}px)` }], { duration: 500, easing: 'ease-out' });
-          place(v);
-          v.hop.animate([{ transform: 'rotate(0)' }, { transform: `translateY(-50px) rotate(${-side * 360}deg)` }, { transform: `rotate(${-side * 720}deg)` }], { duration: 600, easing: 'ease-out' });
-          const stars = document.createElement('span');
-          stars.className = 'pz-daze';
-          stars.innerHTML = emojify('💫');
-          v.face.append(stars);
-          stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
-          later(() => stars.remove(), 2800);
-          // the bully hops back home, the victim gets up a bit later
-          later(() => hopTo(a, hx, hy, () => { a.busy = false; later(() => next(a), rand(400, 1200)); }), 500);
-          later(() => {
-            hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => { v.busy = false; later(() => next(v), rand(400, 1200)); });
-          }, 3000);
-          later(fight, rand(22000, 38000)); // the next beating: a couple a minute
-        }, punches * 330 + 150);
-      });
+            putDown(v, -side * rand(120, 200)); // knocked out of its hands
+            // knocked away: a spin and a slide, then dazed under circling stars
+            const [fx, fy] = [v.x, v.y];
+            v.x = Math.max(-60, Math.min(v.d + 60, v.x - side * 90));
+            v.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${v.x}px, ${v.y}px)` }], { duration: 500, easing: 'ease-out' });
+            place(v);
+            v.hop.animate([{ transform: 'rotate(0)' }, { transform: `translateY(-50px) rotate(${-side * 360}deg)` }, { transform: `rotate(${-side * 720}deg)` }], { duration: 600, easing: 'ease-out' });
+            const stars = document.createElement('span');
+            stars.className = 'pz-daze';
+            stars.innerHTML = emojify('💫');
+            v.face.append(stars);
+            stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
+            later(() => stars.remove(), 2800);
+            // the bully hops back home (picking its prop up on the way), the victim gets up a bit later
+            const back = () => hopTo(a, hx, hy, () => { a.busy = false; later(() => next(a), rand(400, 1200)); });
+            later(() => (a.prop ? fetch(a, back) : back()), 500);
+            later(() => {
+              hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => { v.busy = false; later(() => next(v), rand(400, 1200)); });
+            }, 3000);
+            later(fight, rand(22000, 38000)); // the next beating: a couple a minute
+          }, punches * 330 + 150);
+        });
+      }, a.prop ? 700 : 0);
     }
     for (const m of list) {
       m.x = rand(0, m.d);

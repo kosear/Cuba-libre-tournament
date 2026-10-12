@@ -5,7 +5,7 @@
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
-import { mascotHTML, emojify } from '/board/call.js';
+import { mascotHTML, emojify, burstHTML } from '/board/call.js';
 
 const W = 1920;
 const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, mascot: 1600, second: 1750, third: 1950, caption: 2200 };
@@ -451,11 +451,11 @@ export function createPoster(root) {
       if (to === null) { later(() => next(m), rand(600, 1500)); return; } // nowhere free: stays
       hopTo(m, to, 0, () => { later(() => dance(m), rand(200, 600)); later(() => next(m), rand(400, 1400)); });
     }
-    /** A comic burst at (x, y) on the stage: POW!, BAM! or 💥. */
+    /** A comic burst at (x, y) on the stage: POW!, BAM!… on a white spiky cloud. */
     function burst(x, y) {
       const b = document.createElement('div');
       b.className = 'pz-pow';
-      b.innerHTML = emojify(['POW!', 'BAM!', 'WHAM!', '💥'][Math.floor(Math.random() * 4)]);
+      b.innerHTML = burstHTML(['POW!', 'BAM!', 'WHAM!', 'BOOM!'][Math.floor(Math.random() * 4)]);
       b.style.left = `${Math.max(150, Math.min(root.offsetWidth - 150, x))}px`; // whole on the stage
       b.style.top = `${Math.max(60, y)}px`;
       root.append(b);

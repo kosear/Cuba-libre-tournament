@@ -26,6 +26,12 @@ const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.32, -8], [MARACAS, 0.75, -0.1, 16],
 // SVG there too (file name: its code points in hex, joined by _, without FE0F).
 // an emoji: a pictograph, joined by ZWJ to more (🐻‍❄️, 🏳️‍🌈); no /v flag (\p{RGI_Emoji}): too new for the TV's browser
 const EMOJI = /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+// a comic hit burst: a white spiky cloud with a dark outline, the word on it
+const BURST = `<svg class="cloud" viewBox="-116 -76 232 152" aria-hidden="true"><path d="M102 0 L73 9 L99 25 L61 25 L75 46 L42 39 L38 56 L15 47 L0 60 L-15 46 L-38 56 L-41 38 L-73 45 L-68 28 L-92 23 L-73 9 L-107 0 L-81 -10 L-98 -25 L-64 -26 L-79 -49 L-40 -37 L-42 -63 L-15 -46 L-0 -61 L14 -44 L39 -58 L45 -42 L71 -44 L65 -27 L99 -25 L75 -9Z" fill="#fff" stroke="#15110e" stroke-width="5" stroke-linejoin="miter"/></svg>`;
+/** The HTML of a comic hit burst with `word` on it (the cloud fits round the word, .pow / .pz-pow size it). */
+export function burstHTML(word) {
+  return `${BURST}<span class="w">${word}</span>`;
+}
 /** The emoji in `s` turned into pictures (.emo in style.css sizes them like the font did). */
 export function emojify(s) {
   return s.replace(EMOJI, (e) => `<img class="emo" src="/assets/emoji/${[...e].map((c) => c.codePointAt(0)).filter((c) => c !== 0xfe0f).map((c) => c.toString(16)).join('_')}.svg" alt="">`);
@@ -143,8 +149,10 @@ const CSS = `
 .fight .vs::before { content: 'VS'; position: absolute; left: 0; right: 0; top: 0; z-index: -1; color: #fff; -webkit-text-stroke: 22px #fff;
   text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
-.fight .pow { position: absolute; z-index: 5; font: italic 900 96px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
-  -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl */
+.fight .pow { position: absolute; z-index: 5; width: 400px; height: 262px; display: flex; align-items: center; justify-content: center;
+  font: italic 900 92px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px; -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl: the word on a white spiky cloud */
+.fight .pow .cloud { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fight .pow .w { position: relative; transform: rotate(-6deg); }
 .fight .dropped { position: absolute; z-index: 1; line-height: 1; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); } /* a prop put down for a fight */
 .fight .dust { position: absolute; z-index: 1; width: 0; height: 0; pointer-events: none; } /* a cartoon dust cloud; (left, top) is its middle */
 .fight .dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 5px rgba(74,42,0,.3); }
@@ -415,11 +423,11 @@ export function createCall(root) {
     after(ms + 50, () => d.remove());
   }
 
-  /** A comic hit burst (POW!, BAM!…) at (x, y) of the ring. */
+  /** A comic hit burst (POW!, BAM!… in a white spiky cloud) at (x, y) of the ring. */
   function pow(x, y) {
     const b = document.createElement('div');
     b.className = 'pow';
-    b.innerHTML = emojify(['POW!', 'BAM!', 'WHAM!', 'BOOM!', '💥'][Math.floor(Math.random() * 5)]);
+    b.innerHTML = burstHTML(['POW!', 'BAM!', 'WHAM!', 'BOOM!'][Math.floor(Math.random() * 4)]);
     b.style.left = `${x}px`;
     b.style.top = `${y}px`;
     ring.append(b);

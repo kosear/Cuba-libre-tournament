@@ -85,7 +85,7 @@ export function createPoster(root) {
     const masc = (p, cls) => {
       if (!p) return '';
       const m = mascotHTML(p, players);
-      return `<div class="pz-m ${cls}" style="--k:${m.scale}">${m.html}</div>`; // --k: a mascot drawn a little bigger or smaller
+      return `<div class="pz-m ${cls}" style="--k:${m.scale}"><span class="hop">${m.html}</span></div>`; // --k: a mascot drawn a little bigger or smaller
     };
     const side = (p, n, kind, label) => (p ? `<div class="pz-side pz-p${n} ${kind}">${smallCup(kind, n)}<div class="pz-slabel">${label}</div>
       <div class="pz-sname"><span>${esc(p.name)}</span></div></div>` : '');

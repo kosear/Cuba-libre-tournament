@@ -215,11 +215,21 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* the players' mascots of the tournament by their cups: the champion's leans on the big trophy, 2nd outside its cup on
    the left, 3rd on the right (like on the call screen: emoji body, hat and prop) */
 .pz-m { position: absolute; line-height: 1; font-style: normal; filter: drop-shadow(0 10px 0 rgba(0,0,0,.3)); }
+/* hopping about by its cup: two hops one way, turn round, two hops back; squashed on landing. Transforms only. */
+.pz-m .hop { display: block; position: relative; animation: pz-hop 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.pz-m.m2 .hop { animation-delay: -1.1s; } .pz-m.m3 .hop { animation-delay: -2.2s; }
+@keyframes pz-hop {
+  0% { transform: translate(0, 0) scale(1.08, .9); } 6% { transform: translate(0, 0) scale(1); }
+  12.5% { transform: translate(28px, -70px) scale(.95, 1.06); } 22% { transform: translate(55px, 0) scale(1.1, .88); } 28% { transform: translate(55px, 0) scale(1); }
+  34.5% { transform: translate(83px, -70px) scale(.95, 1.06); } 44% { transform: translate(110px, 0) scale(1.1, .88); }
+  50% { transform: translate(110px, 0) scale(-1, 1); } 56% { transform: translate(110px, 0) scale(-1, 1); }
+  62.5% { transform: translate(83px, -70px) scale(-.95, 1.06); } 72% { transform: translate(55px, 0) scale(-1.1, .88); } 78% { transform: translate(55px, 0) scale(-1, 1); }
+  84.5% { transform: translate(28px, -70px) scale(-.95, 1.06); } 94% { transform: translate(0, 0) scale(-1.1, .88); } 100% { transform: translate(0, 0) scale(1.08, .9); } }
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
-.pz-m.m1 { left: 555px; top: 295px; font-size: calc(190px * var(--k, 1)); } /* by the big trophy, its left side; clear of the 2nd place name */
-.pz-m.m2 { left: 70px; top: 265px; font-size: calc(160px * var(--k, 1)); }
-.pz-m.m3 { left: 1700px; top: 265px; font-size: calc(160px * var(--k, 1)); }
+.pz-m.m1 { left: 560px; top: 380px; font-size: calc(124px * var(--k, 1)); } /* by the big trophy, its left side; clear of the 2nd place name */
+.pz-m.m2 { left: 60px; top: 330px; font-size: calc(104px * var(--k, 1)); }
+.pz-m.m3 { left: 1665px; top: 330px; font-size: calc(104px * var(--k, 1)); }
 .pz-caption { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 8px;
   text-transform: uppercase; color: rgba(255,255,255,.92); }
 .pz-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }

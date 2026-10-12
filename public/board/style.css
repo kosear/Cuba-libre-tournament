@@ -218,6 +218,9 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
    that flashed), .hop jumps and squashes. No filter on anything that moves: a drop-shadow made the TV redraw and flicker. */
 .pz-m { position: absolute; z-index: 3; line-height: 1; font-style: normal; }
 .pz-m .mv, .pz-m .face, .pz-m .hop { display: block; position: relative; transform-origin: 50% 100%; will-change: transform; }
+.pz-daze { position: absolute; left: 50%; top: -.45em; font-size: .45em; transform-origin: 50% 60%; } /* dazed after a beating */
+.pz-pow { position: absolute; z-index: 4; font: italic 900 84px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
+  -webkit-text-stroke: 5px #4a1a00; pointer-events: none; } /* comic hit burst */
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .pz-m.m1 { left: 590px; top: 405px; font-size: calc(150px * var(--k, 1)); --d: 590px; } /* across the big trophy's foot, clear of the names */

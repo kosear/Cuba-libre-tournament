@@ -221,7 +221,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .emo { display: inline-block; width: 1.174em; height: 1.174em; margin: -.085em .037em -.089em; vertical-align: -.158em; }
 .pz-m { position: absolute; z-index: 3; line-height: 1; font-style: normal; }
 .pz-m .mv, .pz-m .face, .pz-m .dn, .pz-m .hop { display: block; position: relative; transform-origin: 50% 100%; will-change: transform; }
-.pz-prop { position: absolute; z-index: 2; line-height: 1; } /* a mascot's prop put down or thrown (podium.js) */
+.pz-prop { position: absolute; z-index: 3; line-height: 1; } /* a mascot's prop put down or thrown (podium.js); level with the mascots, drawn later: never hidden behind one */
 .pz-daze { position: absolute; left: 50%; top: -.45em; font-size: .45em; transform-origin: 50% 60%; } /* dazed after a beating */
 .pz-pow { position: absolute; z-index: 4; font: italic 900 84px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
   -webkit-text-stroke: 5px #4a1a00; pointer-events: none; } /* comic hit burst */

@@ -159,12 +159,13 @@ export function createPoster(root) {
   /** One burst of sparks from (x, y): out, then they droop and fade. */
   /**
    * The mascots wander about their cups at random: each stands a while (sometimes bounces on the spot or looks round), or
-   * hops to a random place within --d px, crossing the cup or not. Their props live a life of their own: now and then one
-   * puts its prop down and wanders off without it, or hurls it at another (a hit, the other reels, the prop bounces off
-   * and lies there); later it goes and picks it up. A couple of times a minute one hops over to another and gives it a
-   * beating (its prop tossed aside first): punches with comic «POW» bursts, the other's prop flies out of its hands, it
-   * spins off and sits dazed under circling stars, the bully hops back home. A hop that would pass through another
-   * mascot leaps right over its head. Only transforms (cheap for the TV).
+   * hops to a random place within --d px, crossing the cup or not; standing about it dances on the spot, now and then
+   * tosses its prop up and catches it. A couple of times a minute one hops over to another and gives it a beating:
+   * first its prop goes, tossed aside behind it or hurled at the other (a hit, the other reels, the prop bounces off
+   * and lies by it); punches with comic «POW» bursts, the other's prop flies out of its hands, it spins off and sits
+   * dazed under circling stars; the bully hops back home picking its prop up on the way, the victim gets up and goes
+   * for its own. Meanwhile the third one stands and watches them. A hop that would pass through another mascot leaps
+   * right over its head. Only transforms (cheap for the TV).
    */
   function mascots(key) {
     const alive = () => shown === key;
@@ -303,7 +304,7 @@ export function createPoster(root) {
       const p = detach(m);
       if (!p) return;
       const floor = box(m).floor - p.h * 0.4;
-      const dx = toss;
+      const dx = toss ? (Math.max(60, Math.min(root.offsetWidth - 60, p.x0 + toss * 1.1)) - p.x0) / 1.1 : 0; // never off the stage
       const lie = p.deg + (toss ? Math.sign(toss) * rand(70, 120) : (Math.random() < 0.5 ? -1 : 1) * rand(60, 90));
       p.el.animate(toss
         ? [{ transform: p.tf(0, 0, p.deg), easing: 'ease-out' }, { transform: p.tf(dx * 0.45, -90, (p.deg + lie) / 2), offset: 0.4, easing: 'ease-in' },
@@ -337,11 +338,11 @@ export function createPoster(root) {
           { transform: p.tf(fx, fy, lie), offset: 0.78, easing: 'ease-out' },
           { transform: p.tf(fx + (fx - tx) * 0.06, fy - 28, lie - dir * 20), offset: 0.88, easing: 'ease-in' },
           { transform: p.tf(fx + (fx - tx) * 0.12, fy, lie - dir * 35) }], { duration: FLY, fill: 'forwards' });
-        later(() => {
+        later(() => { // the burst a touch before the prop's middle gets there: it has to grow, and the edge hits first
           burst(b.mid, b.top + v.size * 0.4);
           if (!v.busy) turn(v, -dir); // looks at who threw it
           v.hop.animate([{ transform: 'none' }, { transform: `translateX(${dir * 22}px) rotate(${dir * 12}deg)`, offset: 0.3 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
-        }, FLY * HIT);
+        }, FLY * HIT - 110);
         Object.assign(p, { x: p.x0 + fx + (fx - tx) * 0.12, y: p.y0 + fy, lie: lie - dir * 35 });
         m.prop = p;
         later(done, FLY);
@@ -375,15 +376,14 @@ export function createPoster(root) {
       if (m.busy) return; // in a fight: the fight goes on with it
       const home = () => later(() => { if (!m.busy) hopTo(m, Math.max(0, Math.min(m.d, m.x)), 0, () => { later(() => dance(m), rand(200, 600)); later(() => next(m), rand(400, 1400)); }); }, rand(300, 800));
       if (Math.abs(m.y) > 0.5 || m.x < -1 || m.x > m.d + 1) { home(); return; } // off its patch (after a fetch): back first
-      const r = Math.random();
-      if (m.prop && r < 0.3) { m.busy = true; fetch(m, () => { m.busy = false; home(); }); return; } // goes for its prop
-      if (!m.prop && m.item && r > 0.94) { putDown(m); later(() => next(m), rand(600, 1400)); return; } // puts it down, wanders off without it
-      const targets = list.filter((o) => o !== m && !o.busy);
-      if (!m.prop && m.item && r > 0.89 && targets.length) { // hurls it at another
-        m.busy = true;
-        throwAt(m, targets[Math.floor(Math.random() * targets.length)], () => { m.busy = false; later(() => next(m), rand(600, 1500)); });
+      if (m.watch) { // a fight is on: it stands and watches, turning after them, now and then a bounce of excitement
+        turn(m, box(m.watch).mid > box(m).mid ? 1 : -1);
+        if (Math.random() < 0.25) jump(m, 30, 420);
+        later(() => next(m), rand(500, 900));
         return;
       }
+      const r = Math.random();
+      if (m.prop && r < 0.5) { m.busy = true; fetch(m, () => { m.busy = false; home(); }); return; } // goes for its prop
       if (r < 0.3) { // stands there dancing; now and then another dance, or one at all
         if (!m.dance) dance(m);
         else if (Math.random() < 0.3) settle(m, () => dance(m));
@@ -434,11 +434,11 @@ export function createPoster(root) {
       const b = document.createElement('div');
       b.className = 'pz-pow';
       b.innerHTML = emojify(['POW!', 'BAM!', 'WHAM!', '💥'][Math.floor(Math.random() * 4)]);
-      b.style.left = `${x}px`;
-      b.style.top = `${y}px`;
+      b.style.left = `${Math.max(150, Math.min(root.offsetWidth - 150, x))}px`; // whole on the stage
+      b.style.top = `${Math.max(60, y)}px`;
       root.append(b);
-      b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.2) rotate(8deg)', opacity: 1, offset: 0.25 },
-        { transform: 'translate(-50%, -50%) scale(1.05) rotate(2deg)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 950, easing: 'ease-out' });
+      b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.2) rotate(8deg)', opacity: 1, offset: 0.12 },
+        { transform: 'translate(-50%, -50%) scale(1.05) rotate(2deg)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
       setTimeout(() => b.remove(), 1000);
     }
     function fight() {
@@ -450,11 +450,14 @@ export function createPoster(root) {
       a.busy = v.busy = true;
       halt(a); // whatever they were up to
       halt(v);
+      for (const w of list) if (w !== a && w !== v) w.watch = v; // the others watch
       const [hx, hy] = [a.x, a.y];
       const side0 = box(v).mid > box(a).mid ? -1 : 1;
       settle(a, () => {
-        putDown(a, side0 * rand(90, 150)); // its prop tossed aside, behind it, before it goes
-        later(go, a.prop ? 700 : 0);
+        // its prop first: half the time hurled at the other (it lies by the victim, picked up on the way back),
+        // otherwise tossed aside behind it (picked up when back home)
+        if (a.item && !a.prop && Math.random() < 0.5) throwAt(a, v, () => later(go, 300));
+        else { putDown(a, side0 * (a.size * 0.9 + rand(20, 80))); later(go, a.prop ? 700 : 0); }
       });
       function go() {
         // where the victim stands, in the bully's own coordinates (both boxes are placed on the stage)
@@ -474,7 +477,7 @@ export function createPoster(root) {
             }, i * 330);
           }
           later(() => {
-            putDown(v, -side * rand(120, 200)); // knocked out of its hands
+            putDown(v, -side * (v.size * 0.9 + rand(40, 100))); // knocked out of its hands
             // knocked away: a spin and a slide, then dazed under circling stars
             const [fx, fy] = [v.x, v.y];
             v.x = Math.max(-60, Math.min(v.d + 60, v.x - side * 90));
@@ -487,11 +490,19 @@ export function createPoster(root) {
             v.face.append(stars);
             stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
             later(() => stars.remove(), 2800);
-            // the bully hops back home (picking its prop up on the way), the victim gets up a bit later
-            const back = () => hopTo(a, hx, hy, () => { a.busy = false; dance(a); later(() => next(a), rand(400, 1200)); });
+            // the bully hops back home (picking its prop up on the way), the victim gets up a bit later and goes for its own
+            const back = () => hopTo(a, hx, hy, () => {
+              a.busy = false;
+              for (const w of list) w.watch = null; // the show is over
+              dance(a);
+              later(() => next(a), rand(400, 1200));
+            });
             later(() => (a.prop ? fetch(a, back) : back()), 500);
             later(() => {
-              hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => { v.busy = false; dance(v); later(() => next(v), rand(400, 1200)); });
+              hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => {
+                const up = () => { v.busy = false; dance(v); later(() => next(v), rand(400, 1200)); };
+                if (v.prop) later(() => fetch(v, up), rand(300, 900)); else up();
+              });
             }, 3000);
             later(fight, rand(22000, 38000)); // the next beating: a couple a minute
           }, punches * 330 + 150);

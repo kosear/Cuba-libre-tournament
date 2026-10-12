@@ -59,7 +59,7 @@ const MASCOTS = [
   // the old ones that still make you smile
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.6, 0.4, 14], 'Pelan Pelan'],
-  ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
+  ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', ['🏄', 0.25, -0.3, 14], 'Canggu Bro'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', -1.6, 0.15, 14], 'Crikey!'],
   ['🦔', '', ['👟', 0, 0.3, 14], 'Gotta Go Fast'], ['🐋', '', ['🎱', 0, 0.5, 14], 'Killer Whale'], ['🐌', '', ['✉️', 0, 0.15, 14], 'Snail Mail'],
   ['🐰', '', ['🎱', 0, 0.15, 14], 'Bunny Hop'], ['🐗', '', ['🃏', -1.8, 0.25, -12], 'Wild Card'], ['🤖', '', ['🍺', 0, 0.2, 14], 'Bender'],
@@ -410,7 +410,7 @@ export function createCall(root) {
     ring.append(d);
     const ms = rand(800, 1100);
     d.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'translateY(-20px) scale(1)', opacity: 1, offset: 0.4 },
-      { transform: `translate(${rand(-20, 20)}px, -60px) scale(1.35)`, opacity: 0 }], { duration: ms, easing: 'ease-out' });
+      { transform: `translate(${rand(-20, 20)}px, -60px) scale(1.35)`, opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' });
     after(ms + 50, () => d.remove());
   }
 
@@ -422,8 +422,8 @@ export function createCall(root) {
     b.style.left = `${x}px`;
     b.style.top = `${y}px`;
     ring.append(b);
-    b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.15) rotate(8deg)', opacity: 1, offset: 0.4 },
-      { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 650, easing: 'ease-out' });
+    b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.15) rotate(8deg)', opacity: 1, offset: 0.2 },
+      { transform: 'translate(-50%, -50%) scale(1.05) rotate(2deg)', opacity: 1, offset: 0.6 }, { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' });
     after(700, () => b.remove());
   }
 
@@ -508,7 +508,7 @@ export function createCall(root) {
         { transform: `translate(${(fx + bx) / 2}px, ${fy - 35}px) rotate(${lie + f.dir * -25}deg)`, offset: 0.86, easing: 'ease-in' },
         { transform: `translate(${bx}px, ${fy}px) rotate(${lie + f.dir * -40}deg)` }],
       { duration: FLY, fill: 'forwards' });
-      after(FLY * HIT, () => {
+      after(FLY * HIT - 110, () => { // a touch before the prop's middle gets there: the burst has to grow, and the edge hits first
         pow(ox + rand(-30, 30), oy + rand(-30, 20));
         anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + f.dir * 40}px, ${o.y - 12}px) rotate(${f.dir * 10}deg)`, offset: 0.3 },
           { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: 380, easing: 'ease-out', fill: 'forwards' });

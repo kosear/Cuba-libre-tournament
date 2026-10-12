@@ -183,7 +183,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 /* podium after the final: the «poster» (podium.js) */
 .poster { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; overflow: hidden; color: #fff; }
 .poster[hidden] { display: none; }
-.pz-bg { position: absolute; inset: 0;
+.pz-bg { position: absolute; inset: -20px;
   /* neon: electric blue → violet → hot pink → neon orange, cyan and magenta glows in the corners, gold glow behind the cup */
   background: radial-gradient(ellipse 55% 50% at 50% 28%, rgba(255,230,120,.55), rgba(255,230,120,0) 70%),
     radial-gradient(circle at 8% 95%, rgba(0,229,255,.55), rgba(0,229,255,0) 45%),
@@ -225,16 +225,19 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .pz-daze { position: absolute; left: 50%; top: -.45em; font-size: .45em; transform-origin: 50% 60%; } /* dazed after a beating */
 /* Bangers (Vernon Adams, SIL OFL), the comic sound-effect face: the POW! and BAM! of the mascots' fights */
 @font-face { font-family: Bangers; src: url(/assets/fonts/bangers.woff2) format('woff2'); font-display: swap; }
-.pz-pow { position: absolute; z-index: 4; width: 250px; height: 162px; display: flex; align-items: center; justify-content: center;
-  font: 400 50px/1 Bangers, Impact, 'Arial Black', sans-serif; color: #ffd400; letter-spacing: 2px; -webkit-text-stroke: 2.5px #4a1a00; pointer-events: none; } /* comic hit burst: the word on a white spiky cloud */
+.pz-pow { position: absolute; z-index: 4; width: 200px; height: 130px; display: flex; align-items: center; justify-content: center;
+  font: 400 40px/1 Bangers, Impact, 'Arial Black', sans-serif; color: #ffd400; letter-spacing: 2px; -webkit-text-stroke: 2px #4a1a00; pointer-events: none; } /* comic hit burst: the word on a white spiky cloud; sized to the mascots by podium.js */
 .pz-pow .cloud { position: absolute; inset: 0; width: 100%; height: 100%; }
 .pz-pow .w { position: relative; transform: rotate(var(--tilt, -6deg)); }
+.pz-pow .lines { position: absolute; left: -55%; top: -55%; width: 210%; height: 210%; pointer-events: none; }
+.pz-dust { position: absolute; z-index: 3; width: 0; height: 0; pointer-events: none; } /* a cartoon dust cloud; (left, top) is its middle */
+.pz-dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 4px rgba(74,42,0,.3); }
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .pz-m .item.l { right: auto; left: -.18em; transform: rotate(-14deg); } /* a body drawn looking left: its prop in front of it */
-.pz-m.m1 { left: 590px; top: 405px; font-size: calc(150px * var(--k, 1)); --d: 590px; } /* across the big trophy's foot, clear of the names */
-.pz-m.m2 { left: 90px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }
-.pz-m.m3 { left: 1270px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }
+.pz-m.m1 { left: 580px; top: 367px; font-size: calc(188px * var(--k, 1)); --d: 600px; } /* across the big trophy's foot, clear of the names */
+.pz-m.m2 { left: 80px; top: 314px; font-size: calc(130px * var(--k, 1)); --d: 460px; }
+.pz-m.m3 { left: 1250px; top: 314px; font-size: calc(130px * var(--k, 1)); --d: 460px; }
 .pz-caption { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 8px;
   text-transform: uppercase; color: rgba(255,255,255,.92); }
 .pz-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }

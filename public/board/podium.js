@@ -5,7 +5,7 @@
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
-import { mascotHTML, emojify, burstHTML } from '/board/call.js';
+import { mascotHTML, emojify, burstHTML, burstLines } from '/board/call.js';
 
 const W = 1920;
 const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, mascot: 1600, second: 1750, third: 1950, caption: 2200 };
@@ -180,7 +180,7 @@ export function createPoster(root) {
     const alive = () => shown === key;
     const later = (fn, ms) => setTimeout(() => alive() && fn(), ms);
     const list = [...root.querySelectorAll('.pz-m')].map((el) => ({
-      el, mv: el.querySelector('.mv'), face: el.querySelector('.face'), dn: el.querySelector('.dn'), hop: el.querySelector('.hop'), item: el.querySelector('.item'),
+      el, mv: el.querySelector('.mv'), face: el.querySelector('.face'), dn: el.querySelector('.dn'), hop: el.querySelector('.hop'), item: el.querySelector('.item'), hat: el.querySelector('.hat'),
       d: parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300, x: 0, y: 0, busy: false, prop: null, trip: null,
       dir: +el.dataset.facing || 1, // as drawn: an animal side-on looks left, the rest count as looking right
       size: parseFloat(getComputedStyle(el).fontSize) || 110,
@@ -289,9 +289,8 @@ export function createPoster(root) {
     const SAFE = 150; // px from the stage's edge a prop never lies closer than: TVs crop the edges of the picture (overscan)
     const k = () => root.getBoundingClientRect().width / root.offsetWidth; // the stage is scaled to the screen
     /** The prop out of the mascot's hands as a copy on the stage, where it was: { el, x, y } (its middle). */
-    function detach(m) {
-      const it = m.item;
-      if (!it || m.prop || !it.firstElementChild) return null;
+    function detach(m, it = m.item) {
+      if (!it || (it === m.item && m.prop) || !it.firstElementChild) return null;
       const R = root.getBoundingClientRect();
       const r = it.getBoundingClientRect();
       const s = k();
@@ -311,13 +310,65 @@ export function createPoster(root) {
       return { el, x0: x, y0: y, x, y, h, deg, flipS, tf: (dx, dy, a) => `translate(${dx}px, ${dy}px)${flipS} rotate(${a}deg)` };
     }
     /** The picture back in the hand, as a fresh node (the TV's WebView would not draw it again otherwise), the copy gone. */
-    function restore(m, p) {
+    function restore(m, p, into = m.item) {
       const pic = p.el.firstElementChild;
       p.el.remove();
-      if (pic) m.item.append(pic.cloneNode(true));
-      Object.assign(m.item.style, { width: '', height: '' });
+      if (pic) into.append(pic.cloneNode(true));
+      Object.assign(into.style, { width: '', height: '' });
       if (m.prop === p) m.prop = null;
     }
+    /** The hat knocked off: flies up and behind, lies there. */
+    function hatOff(m, side) {
+      if (!m.hat || m.hatP) return;
+      const p = detach(m, m.hat);
+      if (!p) return;
+      const dx = -side * rand(60, 110);
+      const floor = box(m).floor - p.h * 0.3;
+      const lie = p.deg - side * rand(100, 160);
+      p.el.animate([{ transform: p.tf(0, 0, p.deg), easing: 'ease-out' }, { transform: p.tf(dx * 0.5, -90, (p.deg + lie) / 2), offset: 0.4, easing: 'ease-in' },
+        { transform: p.tf(dx, floor - p.y0, lie), offset: 0.85, easing: 'ease-out' }, { transform: p.tf(dx * 1.05, floor - p.y0, lie) }], { duration: 700, fill: 'forwards' });
+      Object.assign(p, { x: p.x0 + dx * 1.05, y: floor, lie });
+      m.hatP = p;
+    }
+    /** Up again: the hat flies back onto its head. */
+    function hatOn(m) {
+      const p = m.hatP;
+      if (!p) return;
+      m.hatP = null;
+      const R = root.getBoundingClientRect();
+      const r = m.hat.getBoundingClientRect();
+      const s = k();
+      const [hx, hy] = [(r.left + r.width / 2 - R.left) / s - p.x0, (r.top + r.height / 2 - R.top) / s - p.y0];
+      p.el.animate([{ transform: p.tf(p.x - p.x0, p.y - p.y0, p.lie) }, { transform: p.tf((p.x - p.x0 + hx) / 2, Math.min(p.y - p.y0, hy) - 60, p.deg), offset: 0.5 },
+        { transform: p.tf(hx, hy, p.deg) }], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+      later(() => restore(m, p, m.hat), 390);
+    }
+    /** The whole stage jolts, `power` px: a camera shake on a hit. */
+    function shake(power) {
+      root.animate([{ transform: 'none' }, { transform: `translate(${-power}px, ${power * 0.6}px) rotate(-.3deg)`, offset: 0.15 },
+        { transform: `translate(${power * 0.7}px, ${-power * 0.5}px) rotate(.25deg)`, offset: 0.35 }, { transform: `translate(${-power * 0.35}px, ${power * 0.25}px)`, offset: 0.6 },
+        { transform: 'none' }], { duration: 320, easing: 'ease-out' });
+    }
+    /** A cartoon dust cloud of a few puffs at (x, y) of the stage that swells, drifts up and fades; k: its size. */
+    function dustAt(x, y, kk = 1) {
+      const d = document.createElement('div');
+      d.className = 'pz-dust';
+      d.style.left = `${x}px`;
+      d.style.top = `${y}px`;
+      const n = 5 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) {
+        const r = rand(40, 70) * kk;
+        const a = (i / n) * Math.PI + rand(-0.3, 0.3); // a half-ring lying on the floor
+        d.insertAdjacentHTML('beforeend', `<i style="width:${r}px;height:${r}px;left:${Math.cos(a) * 70 * kk - r / 2}px;top:${-Math.sin(a) * 28 * kk - r / 2}px"></i>`);
+      }
+      root.append(d);
+      const ms = rand(700, 950);
+      d.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'translateY(-14px) scale(1)', opacity: 1, offset: 0.4 },
+        { transform: `translate(${rand(-15, 15)}px, -45px) scale(1.3)`, opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(() => d.remove(), ms + 50);
+    }
+    /** A bystander cheers a hit: a jump, higher for a heavy one. */
+    const cheer = (w, power) => { if (!w.busy) jump(w, 22 + 18 * power, 380); };
     /** Put down at its feet, on its side, and left there. */
     function putDown(m, toss = 0) {
       const p = detach(m);
@@ -359,7 +410,8 @@ export function createPoster(root) {
           { transform: p.tf(fx + (fx - tx) * 0.06, fy - 28, lie - dir * 20), offset: 0.88, easing: 'ease-in' },
           { transform: p.tf(fx + (fx - tx) * 0.12, fy, lie - dir * 35) }], { duration: FLY, fill: 'forwards' });
         later(() => { // the burst a touch before the prop's middle gets there: it has to grow, and the edge hits first
-          burst(b.mid, b.top + v.size * 0.4);
+          burst(b.mid, b.top + v.size * 0.4, 1, v.size);
+          shake(6);
           turn(v, -dir); // turns round at once to who threw it
           v.hop.animate([{ transform: 'none' }, { transform: `translateX(${dir * 22}px) rotate(${dir * 12}deg)`, offset: 0.3 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
         }, FLY * HIT - 110);
@@ -452,16 +504,20 @@ export function createPoster(root) {
       hopTo(m, to, 0, () => { later(() => dance(m), rand(200, 600)); later(() => next(m), rand(400, 1400)); });
     }
     /** A comic burst at (x, y) on the stage: POW!, BAM!… on a white spiky cloud. */
-    function burst(x, y) {
+    function burst(x, y, power = 1, size = 130) {
       const b = document.createElement('div');
       b.className = 'pz-pow';
       b.innerHTML = burstHTML(['POW!', 'BAM!', 'WHAM!', 'BOOM!'][Math.floor(Math.random() * 4)]);
+      // the cloud a little bigger than the mascots it is between (like on the call screen), a heavy hit's bigger still
+      const w = size * 1.3;
+      Object.assign(b.style, { width: `${w}px`, height: `${w * 0.65}px`, fontSize: `${size * 0.31}px` });
       b.style.left = `${Math.max(150, Math.min(root.offsetWidth - 150, x + rand(-40, 40)))}px`; // whole on the stage, somewhere else each time
       b.style.top = `${Math.max(60, y + rand(-30, 30))}px`;
       b.style.setProperty('--tilt', `${rand(-14, 8).toFixed(0)}deg`);
-      const k = rand(0.85, 1.1);
+      const k = rand(0.85, 1.1) * power;
       const tilt = rand(-10, 10);
       root.append(b);
+      burstLines(b);
       b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: `translate(-50%, -50%) scale(${k * 1.2}) rotate(${tilt + 8}deg)`, opacity: 1, offset: 0.12 },
         { transform: `translate(-50%, -50%) scale(${k * 1.05}) rotate(${tilt + 2}deg)`, opacity: 1, offset: 0.7 }, { transform: `translate(-50%, -50%) scale(${k}) rotate(${tilt}deg)`, opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
       setTimeout(() => b.remove(), 1000);
@@ -492,30 +548,69 @@ export function createPoster(root) {
         hopTo(a, vx + side * v.size * 0.9, vy, () => {
           turn(a, -side);
           turn(v, side); // the victim looks at the bully
-          const punches = 3 + Math.floor(Math.random() * 3);
-          for (let i = 0; i < punches; i++) {
-            later(() => {
-              if (i === 0) { v.dance?.cancel(); v.dance = null; }
-              a.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * a.size * 0.25}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
-              v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 14}px) rotate(${-side * 6}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
-              burst((box(a).mid + box(v).mid) / 2, Math.min(box(a).top, box(v).top) + 10); // between the two, above their heads
-            }, i * 330);
+          v.dance?.cancel();
+          v.dance = null;
+          const sz = (a.size + v.size) / 2;
+          // the beating has a rhythm: quick one-twos and, after a wind-up, a heavy one that sends the victim sliding back
+          // a step, the bully following up; then the final blow
+          const plan = []; // [ms from now, heavy]
+          let t = 150;
+          const groups = 1 + Math.floor(Math.random() * 2);
+          for (let g = 0; g < groups; g++) {
+            plan.push([t, false]);
+            t += 220;
+            if (Math.random() < 0.6) { plan.push([t, false]); t += 220; }
+            t += 180;
+            plan.push([t, true]);
+            t += 650;
           }
+          const hit = (heavy) => {
+            const px = -side * a.size * (heavy ? 0.36 : 0.22);
+            if (heavy) { // the wind-up: leans back, then the lunge
+              a.hop.animate([{ transform: 'none' }, { transform: `translateX(${side * a.size * 0.12}px) rotate(${side * 10}deg)`, offset: 0.5, easing: 'ease-out' },
+                { transform: `translateX(${px}px) rotate(${-side * 14}deg)`, offset: 0.78, easing: 'ease-in' }, { transform: 'none' }], { duration: 520, easing: 'ease-out' });
+            } else a.hop.animate([{ transform: 'none' }, { transform: `translateX(${px}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 240, easing: 'ease-out' });
+            later(() => { // the hit lands
+              burst((box(a).mid + box(v).mid) / 2, Math.min(box(a).top, box(v).top) + 10, heavy ? 1.3 : 0.8, sz);
+              shake(heavy ? 11 : 4);
+              for (const w of list) if (w.watch) cheer(w, heavy ? 1 : 0);
+              if (heavy) {
+                const [fx, fy] = [v.x, v.y];
+                v.x = Math.max(-80, Math.min(v.d + 80, v.x - side * 45));
+                v.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${v.x}px, ${v.y}px)` }], { duration: 260, easing: 'ease-out' });
+                place(v);
+                v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 30}px) rotate(${-side * 18}deg) scale(1.05, .95)`, offset: 0.35 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+                dustAt(box(v).mid, box(v).floor, 0.9);
+                later(() => { // the bully follows up
+                  const [ax, ay] = [a.x, a.y];
+                  a.x -= side * 45;
+                  a.mv.animate([{ transform: `translate(${ax}px, ${ay}px)` }, { transform: `translate(${a.x}px, ${a.y}px)` }], { duration: 220, easing: 'ease-out' });
+                  place(a);
+                }, 140);
+              } else v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 18}px) rotate(${-side * 9}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260 });
+            }, heavy ? 400 : 95);
+          };
+          for (const [at, heavy] of plan) later(() => hit(heavy), at);
           later(() => {
+            // the final blow: knocked away with a spin and a slide, the hat and the prop flying, then dazed under circling stars
+            burst(box(v).mid, box(v).top - 10, 1.6, sz);
+            shake(15);
+            for (const w of list) if (w.watch) cheer(w, 1.5);
+            hatOff(v, side);
             putDown(v, -side * (v.size * 0.9 + rand(40, 100))); // knocked out of its hands
-            // knocked away: a spin and a slide, then dazed under circling stars
             const [fx, fy] = [v.x, v.y];
-            v.x = Math.max(-60, Math.min(v.d + 60, v.x - side * 90));
-            v.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${v.x}px, ${v.y}px)` }], { duration: 500, easing: 'ease-out' });
+            v.x = Math.max(-60, Math.min(v.d + 60, v.x - side * 110));
+            v.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${v.x}px, ${v.y}px)` }], { duration: 520, easing: 'ease-out' });
             place(v);
-            v.hop.animate([{ transform: 'rotate(0)' }, { transform: `translateY(-50px) rotate(${-side * 360}deg)` }, { transform: `rotate(${-side * 720}deg)` }], { duration: 600, easing: 'ease-out' });
+            v.hop.animate([{ transform: 'rotate(0)' }, { transform: `translateY(-60px) rotate(${-side * 360}deg)` }, { transform: `rotate(${-side * 720}deg)` }], { duration: 620, easing: 'ease-out' });
+            later(() => dustAt(box(v).mid, box(v).floor, 1.3), 480);
             const stars = document.createElement('span');
             stars.className = 'pz-daze';
             stars.innerHTML = emojify('💫');
             v.face.append(stars);
             stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
             later(() => stars.remove(), 2800);
-            // the bully hops back home (picking its prop up on the way), the victim gets up a bit later and goes for its own
+            // the bully hops back home (picking its prop up on the way), the victim gets up a bit later, hat back on, and goes for its prop
             const back = () => hopTo(a, hx, hy, () => {
               a.busy = false;
               for (const w of list) w.watch = null; // the show is over
@@ -524,13 +619,14 @@ export function createPoster(root) {
             });
             later(() => (a.prop ? fetch(a, back) : back()), 500);
             later(() => {
+              hatOn(v);
               hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => {
                 const up = () => { v.busy = false; dance(v); later(() => next(v), rand(400, 1200)); };
                 if (v.prop) later(() => fetch(v, up), rand(300, 900)); else up();
               });
             }, 3000);
             later(fight, rand(22000, 38000)); // the next beating: a couple a minute
-          }, punches * 330 + 150);
+          }, t + 100);
         });
       }
     }

@@ -26,11 +26,17 @@ const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.32, -8], [MARACAS, 0.75, -0.1, 16],
 // SVG there too (file name: its code points in hex, joined by _, without FE0F).
 // an emoji: a pictograph, joined by ZWJ to more (🐻‍❄️, 🏳️‍🌈); no /v flag (\p{RGI_Emoji}): too new for the TV's browser
 const EMOJI = /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
-// a comic hit burst: a white cloud with 11 big uneven spikes, a dark outline and an offset dark shadow, the word on it
+// a comic hit burst: a white cloud with 11 big uneven spikes, a dark outline and an offset dark shadow, the word on it,
+// speed lines flashing out round it
+const LINES = `<svg class="lines" viewBox="-1 -1 2 2" aria-hidden="true"><g stroke="#fff" stroke-width=".05" stroke-linecap="round"><line x1="0.574" y1="0.011" x2="0.963" y2="0.019"/><line x1="0.498" y1="0.285" x2="0.856" y2="0.490"/><line x1="0.372" y1="0.400" x2="0.674" y2="0.725"/><line x1="0.118" y1="0.578" x2="0.167" y2="0.824"/><line x1="-0.114" y1="0.512" x2="-0.200" y2="0.896"/><line x1="-0.317" y1="0.388" x2="-0.543" y2="0.665"/><line x1="-0.524" y1="0.275" x2="-0.848" y2="0.446"/><line x1="-0.579" y1="0.032" x2="-0.844" y2="0.046"/><line x1="-0.458" y1="-0.231" x2="-0.732" y2="-0.370"/><line x1="-0.300" y1="-0.426" x2="-0.495" y2="-0.702"/><line x1="-0.086" y1="-0.581" x2="-0.128" y2="-0.863"/><line x1="0.163" y1="-0.529" x2="0.277" y2="-0.900"/><line x1="0.348" y1="-0.481" x2="0.553" y2="-0.765"/><line x1="0.549" y1="-0.215" x2="0.813" y2="-0.319"/></g></svg>`;
 const BURST = `<svg class="cloud" viewBox="-270 -175 540 350" aria-hidden="true"><path d="M243 -1 L158 34 L205 83 L114 77 L103 145 L30 101 L-26 158 L-69 90 L-181 119 L-144 56 L-206 43 L-161 -0 L-220 -36 L-145 -52 L-169 -120 L-70 -97 L-35 -153 L23 -102 L121 -146 L117 -79 L189 -79 L153 -30Z" transform="translate(7 8)" fill="#15110e"/><path d="M243 -1 L158 34 L205 83 L114 77 L103 145 L30 101 L-26 158 L-69 90 L-181 119 L-144 56 L-206 43 L-161 -0 L-220 -36 L-145 -52 L-169 -120 L-70 -97 L-35 -153 L23 -102 L121 -146 L117 -79 L189 -79 L153 -30Z" fill="#fff" stroke="#15110e" stroke-width="7" stroke-linejoin="miter"/></svg>`;
 /** The HTML of a comic hit burst with `word` on it (the cloud fits round the word, .pow / .pz-pow size it). */
 export function burstHTML(word) {
-  return `${BURST}<span class="w">${word}</span>`;
+  return `${LINES}${BURST}<span class="w">${word}</span>`;
+}
+/** The burst's speed lines flash out: scaled up and gone in a blink. */
+export function burstLines(el) {
+  el.querySelector('.lines')?.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 280, easing: 'ease-out', fill: 'forwards' });
 }
 /** The emoji in `s` turned into pictures (.emo in style.css sizes them like the font did). */
 export function emojify(s) {
@@ -153,6 +159,7 @@ const CSS = `
   font: 400 66px/1 Bangers, Impact, 'Arial Black', sans-serif; color: #ffd400; letter-spacing: 2px; -webkit-text-stroke: 3.5px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl: the word on a white spiky cloud (Bangers: style.css) */
 .fight .pow .cloud { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fight .pow .w { position: relative; transform: rotate(var(--tilt, -6deg)); }
+.fight .pow .lines { position: absolute; left: -55%; top: -55%; width: 210%; height: 210%; pointer-events: none; }
 .fight .dropped { position: absolute; z-index: 1; line-height: 1; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); } /* a prop put down for a fight */
 .fight .dust { position: absolute; z-index: 1; width: 0; height: 0; pointer-events: none; } /* a cartoon dust cloud; (left, top) is its middle */
 .fight .dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 5px rgba(74,42,0,.3); }
@@ -434,6 +441,7 @@ export function createCall(root) {
     const k = rand(0.85, 1.1);
     const tilt = rand(-10, 10);
     ring.append(b);
+    burstLines(b);
     b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: `translate(-50%, -50%) scale(${k * 1.15}) rotate(${tilt + 8}deg)`, opacity: 1, offset: 0.2 },
       { transform: `translate(-50%, -50%) scale(${k * 1.05}) rotate(${tilt + 2}deg)`, opacity: 1, offset: 0.6 }, { transform: `translate(-50%, -50%) scale(${k}) rotate(${tilt}deg)`, opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' });
     after(700, () => b.remove());
@@ -591,7 +599,7 @@ export function createCall(root) {
         // the scuffle raises dust around their feet
         if (i % 2 === 0) dust(mx + 150 + rand(-140, 140), my + 280 + rand(-20, 20), wild ? 1.3 : 1);
       });
-      if (wild && i % 3 === 2) impact(t0 + i * step + 60, 9);
+      impact(t0 + i * step + 60, wild && i % 3 === 2 ? 9 : 4); // every hit jolts the screen a little, a big match's third one more
     }
     return t0 + hits * step + 150;
   }

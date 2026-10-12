@@ -414,6 +414,7 @@ export function createPoster(root) {
             if (m.busy || m.prop) return;
             // a real throw: up slowing down, down speeding up (a parabola, sampled), turning over once at a steady rate
             const turn = Math.random() < 0.5 ? -360 : 360;
+            report('toss', { m: m.el.className, h: Math.round(h) });
             const frames = [];
             for (let k = 0; k <= 12; k++) {
               const t = k / 12;
@@ -523,6 +524,19 @@ export function createPoster(root) {
       }
     }
     report('mascots', { n: list.length, items: list.map((m) => !!m.item), sizes: list.map((m) => m.size) });
+    // TEMPORARY: every 10 s, where everyone's prop is (in hand, lying at x,y and how big it shows, or hidden with no copy)
+    const pulse = () => {
+      if (!alive()) return;
+      report('pulse', { ms: list.map((m) => {
+        if (!m.item) return '-';
+        const hidden = m.item.style.visibility === 'hidden';
+        const p = m.prop;
+        const r = p && p.el.isConnected ? p.el.getBoundingClientRect() : null;
+        return `${m.busy ? 'B' : ''}${m.watch ? 'W' : ''}${hidden ? 'H' : 'h'}${p ? `@${Math.round(p.x)},${Math.round(p.y)}` : ''}${r ? `[${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)}x${Math.round(r.height)}]` : ''}:${Math.round(m.x)},${Math.round(m.y)}`;
+      }), props: root.querySelectorAll('.pz-prop').length });
+      later(pulse, 10000);
+    };
+    later(pulse, 5000);
     for (const m of list) {
       m.x = rand(0, m.d);
       for (let i = 0; i < 12 && crowded(m, m.x); i++) m.x = rand(0, m.d); // not on top of another one

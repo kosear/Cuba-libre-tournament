@@ -227,6 +227,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
   -webkit-text-stroke: 5px #4a1a00; pointer-events: none; } /* comic hit burst */
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
+.pz-m .item.l { right: auto; left: -.18em; transform: rotate(-14deg); } /* a body drawn looking left: its prop in front of it */
 .pz-m.m1 { left: 590px; top: 405px; font-size: calc(150px * var(--k, 1)); --d: 590px; } /* across the big trophy's foot, clear of the names */
 .pz-m.m2 { left: 90px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }
 .pz-m.m3 { left: 1270px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }

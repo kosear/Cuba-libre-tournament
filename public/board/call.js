@@ -150,7 +150,7 @@ const CSS = `
 .fight .dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 5px rgba(74,42,0,.3); }
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
-.fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
+.fight .mascot .item.l { right: auto; left: -.18em; transform: rotate(-14deg); } /* the prop on the left (mascotInner mirrored) */
 .fight .mascot .who { display: inline-block; position: relative; transform: scaleX(-1); } /* body and hat turned round */
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
@@ -235,7 +235,7 @@ function mascotFor(p, players = []) {
 }
 
 /**
- * A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left; look: the way it
+ * A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left (class l); look: the way it
  * should look (1 right, -1 left, 0 as drawn): a side-on body looking the other way is turned round, its hat with it.
  */
 function mascotInner(m, mirrored = false, look = 0) {
@@ -250,8 +250,8 @@ function mascotInner(m, mirrored = false, look = 0) {
     // [prop, dx, dy, deg] (em of the prop): moved off the body; mirrored for a mascot whose prop is on its left
     const [it, dx, dy, deg] = item;
     const k = mirrored ? -1 : 1;
-    html += `<span class="item" style="transform: translate(${k * dx}em, ${dy}em) rotate(${k * deg}deg)">${emojify(it)}</span>`;
-  } else if (item) html += `<span class="item">${emojify(item)}</span>`;
+    html += `<span class="item${mirrored ? ' l' : ''}" style="transform: translate(${k * dx}em, ${dy}em) rotate(${k * deg}deg)">${emojify(it)}</span>`;
+  } else if (item) html += `<span class="item${mirrored ? ' l' : ''}">${emojify(item)}</span>`;
   return html;
 }
 
@@ -261,7 +261,8 @@ function mascotInner(m, mirrored = false, look = 0) {
  */
 export function mascotHTML(p, players = []) {
   const m = mascotFor(p, players);
-  return { html: mascotInner(m), scale: m[4] ?? 1, facing: facing(m) };
+  // drawn as it is (the podium turns it round as a whole): a body looking left gets its prop on the left, in front of it
+  return { html: mascotInner(m, facing(m) === -1), scale: m[4] ?? 1, facing: facing(m) };
 }
 
 export function createCall(root) {

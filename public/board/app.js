@@ -137,7 +137,7 @@ const liveName = (name) => `${LIVE}<span class="ln">${esc(name)}</span>`;
 
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
-    <td class="name">${isLive(r.id) ? liveName(r.name) : esc(r.name)}${r.leader ? ' 🏆' : ''}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
+    <td class="name">${r.leader ? '🏆 ' : ''}${isLive(r.id) ? liveName(r.name) : esc(r.name)}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
   return `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
@@ -286,6 +286,7 @@ function renderQueue() {
     inner.innerHTML = rows + rows; // seamless loop
   }
   el('qrest').querySelector('.qfade').hidden = !rows;
+  el('qrest').classList.toggle('still', !qloop); // everything fits, nothing scrolls: no fade at the edges
   qpos = qloop ? qpos % qloop : 0; // keep the place in the list after an update
   inner.style.transform = `translateY(${-qpos}px)`;
 }

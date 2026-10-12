@@ -145,6 +145,7 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
   /* the list itself fades out at both edges (a mask, not white overlays: rows can never show above the fade) */
   -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);
   mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent); }
+.qrest.still { -webkit-mask-image: none; mask-image: none; } /* the whole queue fits and stands still: no fade */
 .qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
 .qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 30px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }

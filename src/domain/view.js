@@ -1,6 +1,6 @@
 // Snapshot of the tournament for screens: everything already computed, no rules on the client.
 import { PLAYOFF_SLOTS } from './engine.js';
-import { groupStats, groupTable, groupMatches, isGroupDone, matchBalls, qualification, rank, winnerOf, loserOf } from './standings.js';
+import { groupStats, groupTable, groupMatches, isClosed, isGroupDone, matchBalls, qualification, rank, winnerOf, loserOf } from './standings.js';
 
 const MAX_TIED_NAMES = 2; // a contender slot shows at most this many tied names, more -> the placeholder
 
@@ -27,6 +27,7 @@ export function matchView(s, m) {
     balls: b.balls,
     approx: b.approx,
     forfeit: m.forfeit,
+    skipped: !!m.skipped,
     finishedSeq: m.finishedSeq,
   };
 }
@@ -49,6 +50,7 @@ function groupView(s, g) {
     for (const c of table) {
       if (r.id === c.id) continue;
       const m = matches.find((x) => (x.p1 === r.id && x.p2 === c.id) || (x.p1 === c.id && x.p2 === r.id));
+      if (m?.skipped) { cross[r.id][c.id] = { skipped: true }; continue; }
       if (!m?.winner) { cross[r.id][c.id] = null; continue; }
       const won = winnerOf(m) === r.id;
       const b = matchBalls(s, m);
@@ -59,7 +61,7 @@ function groupView(s, g) {
     id: g.id,
     name: g.name,
     done: isGroupDone(s, g.id),
-    played: matches.filter((m) => m.winner).length,
+    played: matches.filter(isClosed).length, // skipped ones count as done
     total: matches.length,
     rows: table.map((r) => ({ ...r, leader: lead.has(r.id) })),
     cross,
@@ -136,6 +138,7 @@ function statsFor(s, pid) {
 export function snapshot(s) {
   const queue = s.queue.map((id) => matchView(s, s.matches[id]));
   const withStats = (mv) => mv && { ...mv, p1Stats: statsFor(s, mv.p1?.id), p2Stats: statsFor(s, mv.p2?.id) };
+  const skipped = Object.values(s.matches).filter((m) => m.skipped).map((m) => matchView(s, m)); // for the admin: to bring back
   const results = Object.values(s.matches)
     .filter((m) => m.winner)
     .sort((a, b) => b.finishedSeq - a.finishedSeq)
@@ -176,6 +179,7 @@ export function snapshot(s) {
     current: withStats(queue[0] ?? null),
     next: queue[1] ?? null,
     results,
+    skipped,
     playoff,
     contenders: projected,
     podium,

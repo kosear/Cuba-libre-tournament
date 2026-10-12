@@ -33,8 +33,11 @@ export function groupPlayers(state, groupId) {
   return state.playerOrder.map((id) => state.players[id]).filter((p) => p.groupId === groupId);
 }
 
+/** A group match that needs nothing more: played, a walkover, or skipped by the admin. */
+export const isClosed = (m) => !!(m.winner || m.skipped);
+
 export function isGroupDone(state, groupId) {
-  return groupMatches(state, groupId).every((m) => m.winner);
+  return groupMatches(state, groupId).every(isClosed);
 }
 
 /** Raw stats of every player of a group: frames, wins, balls. */

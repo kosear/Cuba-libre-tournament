@@ -60,6 +60,7 @@ table.cross td.none { color: #c3cbd8; font-weight: 400; } /* not played yet */
 .hg { width: .7em; height: .7em; vertical-align: -.08em; color: #8a94a8; opacity: .45; }
 table.cross td.win { color: var(--green); font-weight: 800; }
 table.cross td.loss { color: var(--red); font-weight: 800; } /* L */
+table.cross td.skip { color: #a8b2c4; font-size: .5em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; } /* small grey, the row height stays */
 .legend { margin-top: 16px; font-size: 19px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 28px; }
 .legend span { white-space: nowrap; }
 /* LIVE: the players at the table right now (group tables only); the dot blinks like a camera recording */
@@ -72,6 +73,7 @@ table.cross td.loss { color: var(--red); font-weight: 800; } /* L */
 @keyframes rec { 50% { opacity: 0; } }
 .legend b.g { color: var(--green); }
 .legend b.k { color: var(--red); }
+.legend b.s { color: #a8b2c4; font-size: .8em; letter-spacing: 1px; }
 
 
 /* play-off bracket */

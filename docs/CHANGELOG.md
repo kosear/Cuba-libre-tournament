@@ -2,6 +2,17 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-12 — Skip: a group match can be cancelled
+
+- New actions `match.skip` { id } and `match.unskip` { id }. Only group matches. A skipped match leaves the queue
+  and counts as nothing for both players: no win, no balls, no frame; it is left out of the average balls for withdrawn
+  players. The group is over without it (`isGroupDone` now treats skipped matches as done). Unskip puts it at the end of the queue.
+- A match has a new field `skipped` (false by default). A result entered for a skipped match clears it; a withdrawal
+  turns it into a walkover as before, and a restore puts it back to skipped.
+- State to the TV/admin: `matchView` has `skipped`; group `cross` cells may be `{ skipped: true }`; group `played`
+  counts skipped matches; the snapshot has a new list `skipped` (for the admin to bring them back).
+- Old tournaments replay exactly as before: they have no skip actions.
+
 ## 2026-10-11
 
 - New table `settings` (migration `004_settings.sql`, additive) for screen settings switched from the admin page.

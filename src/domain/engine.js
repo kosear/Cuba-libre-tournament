@@ -126,7 +126,7 @@ function newMatch(s, fields) {
   const id = `m${++s.seq.match}`;
   s.matches[id] = {
     id, stage: 'group', groupId: null, round: null, tbKey: null, tbRound: null,
-    p1: null, p2: null, winner: null, balls: 0, forfeit: false, avgFrozen: null, orig: null, finishedSeq: null,
+    p1: null, p2: null, winner: null, balls: 0, forfeit: false, skipped: false, avgFrozen: null, orig: null, finishedSeq: null,
     ...fields,
   };
   return s.matches[id];
@@ -135,6 +135,7 @@ function newMatch(s, fields) {
 const removeFromQueue = (s, id) => { s.queue = s.queue.filter((x) => x !== id); };
 
 function finish(s, m, winner, balls, forfeit = false) {
+  m.skipped = false;
   m.winner = winner;
   m.balls = balls;
   m.forfeit = forfeit;
@@ -261,7 +262,7 @@ const handlers = {
     if (s.phase === 'groups') {
       for (const m of groupMatches(s, pl.groupId)) {
         if (!involves(m, pl.id) || m.forfeit) continue;
-        m.orig = { winner: m.winner, balls: m.balls, finishedSeq: m.finishedSeq };
+        m.orig = { winner: m.winner, balls: m.balls, finishedSeq: m.finishedSeq, skipped: !!m.skipped };
         finish(s, m, m.p1 === pl.id ? 2 : 1, 0, true);
       }
     }
@@ -281,6 +282,8 @@ const handlers = {
       m.avgFrozen = null;
       if (m.orig.winner) {
         Object.assign(m, { winner: m.orig.winner, balls: m.orig.balls, finishedSeq: m.orig.finishedSeq });
+      } else if (m.orig.skipped) {
+        Object.assign(m, { winner: null, balls: 0, finishedSeq: null, skipped: true }); // skipped before: stays skipped
       } else {
         Object.assign(m, { winner: null, balls: 0, finishedSeq: null });
         s.queue.push(m.id);
@@ -325,6 +328,24 @@ const handlers = {
     } else {
       finish(s, m, winner, balls);
     }
+  },
+
+  // Skip: a group match that no longer matters is not played. It counts as nothing for both (no win, no balls,
+  // no frame) and the group can be over without it. The admin decides; the engine checks nothing more.
+  'match.skip'(s, p) {
+    const m = getMatch(s, p.id);
+    if (m.stage !== 'group') throw new DomainError('skip_group_only');
+    if (m.winner || m.skipped) throw new DomainError('already_finished');
+    m.skipped = true;
+    removeFromQueue(s, m.id);
+  },
+
+  // A skipped match back to the end of the queue, to be played after all.
+  'match.unskip'(s, p) {
+    const m = getMatch(s, p.id);
+    if (!m.skipped) throw new DomainError('not_skipped');
+    m.skipped = false;
+    s.queue.push(m.id);
   },
 
   'match.reopen'(s, p) {
@@ -466,7 +487,7 @@ function progress(s) {
       if (!s.matches[slot]) {
         s.matches[slot] = {
           id: slot, stage: 'playoff', groupId: null, round: slot, tbKey: null, tbRound: null,
-          p1: null, p2: null, winner: null, balls: 0, forfeit: false, avgFrozen: null, orig: null, finishedSeq: null,
+          p1: null, p2: null, winner: null, balls: 0, forfeit: false, skipped: false, avgFrozen: null, orig: null, finishedSeq: null,
         };
       }
     }

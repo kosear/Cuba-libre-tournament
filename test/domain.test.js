@@ -501,3 +501,45 @@ test('groups.setup: the whole quick setup in one action, all or nothing', () => 
   t.fails('bad_setup', 'groups.setup', { groups: [] });
   one.start().fails('wrong_phase', 'groups.setup', { groups });
 });
+
+test('skip: a group match counts as nothing for both, the group is over without it', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob', 'Cat', 'Dan'] }).start();
+  t.win('Ann', 'Bob', 3).win('Ann', 'Cat', 2).win('Ann', 'Dan', 1).win('Bob', 'Cat', 4).win('Cat', 'Dan', 5);
+  const m = t.match('Bob', 'Dan');
+  t.do('match.skip', { id: m.id });
+  assert.ok(!t.s.queue.includes(m.id));
+  const rows = Object.fromEntries(groupTable(t.s, 'A').map((r) => [r.id, r]));
+  assert.deepEqual([rows.Bob.frames, rows.Bob.wins, rows.Bob.balls], [2, 1, 4]); // the skipped match is not a frame
+  assert.deepEqual([rows.Dan.frames, rows.Dan.wins, rows.Dan.balls], [2, 0, 0]);
+  assert.equal(t.s.phase, 'playoff'); // the group is over: the bracket is there
+  const snap = snapshot(t.s);
+  assert.deepEqual(snap.groups[0].cross.Bob.Dan, { skipped: true });
+  assert.equal(snap.skipped.length, 1);
+  assert.equal(snap.groups[0].played, snap.groups[0].total);
+});
+
+test('skip: only group matches, not twice; unskip puts it back at the end of the queue', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan'] }).start();
+  const m = t.match('Ann', 'Bob');
+  t.do('match.skip', { id: m.id }).fails('already_finished', 'match.skip', { id: m.id });
+  t.do('match.unskip', { id: m.id });
+  assert.equal(t.s.queue.at(-1), m.id);
+  t.fails('not_skipped', 'match.unskip', { id: m.id });
+  t.rank(['Ann', 'Bob']).rank(['Cat', 'Dan']);
+  t.fails('skip_group_only', 'match.skip', { id: 'sf1' });
+  assert.deepEqual(buildState(t.log), t.s);
+});
+
+test('skip: a result entered later replaces the skip; a withdrawal and restore keep it skipped', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob', 'Cat', 'Dan'] }).start();
+  const m = t.match('Ann', 'Bob');
+  t.do('match.skip', { id: m.id }).do('match.result', { id: m.id, winner: 1, balls: 2 });
+  assert.equal(t.s.matches[m.id].skipped, false);
+  assert.equal(t.s.matches[m.id].winner, 1);
+  const m2 = t.match('Cat', 'Dan');
+  t.do('match.skip', { id: m2.id }).do('player.withdraw', { id: 'Dan' });
+  assert.equal(t.s.matches[m2.id].forfeit, true); // the withdrawal wins over the skip
+  t.do('player.restore', { id: 'Dan' });
+  assert.equal(t.s.matches[m2.id].skipped, true);
+  assert.ok(!t.s.queue.includes(m2.id));
+});

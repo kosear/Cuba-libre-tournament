@@ -156,6 +156,7 @@ function crossTable(g) {
   const body = g.rows.map((r) => `<tr>${g.rows.map((c) => {
     if (c.id === r.id) return '<td class="diag"></td>';
     const x = g.cross[r.id]?.[c.id];
+    if (x?.skipped) return '<td class="skip">skip</td>'; // the admin skipped it: no result for either
     if (!x) return r.out || c.out ? '<td class="none">—</td>' : `<td class="none">${HOURGLASS}</td>`; // dash: will not be played
     return x.win ? `<td class="win">${x.approx ? '≈' : ''}+${x.balls}</td>` : '<td class="loss">L</td>'; // green +balls, red L
   }).join('')}</tr>`).join('');
@@ -174,12 +175,13 @@ function slideGroup(s) {
   const g = T.groups.find((x) => x.id === s.id);
   if (!g) return null;
   const approx = g.rows.some((r) => r.approx);
+  const skipped = Object.values(g.cross).some((row) => Object.values(row).some((x) => x?.skipped));
   return {
     title: g.name,
     html: `<div class="group-one">
       <div class="card"><h3>Standings</h3><div class="fit">${groupTable(g)}</div></div>
       <div class="card"><h3>Results</h3><div class="fit" style="font-size:48px">${crossTable(g)}</div>
-        <div class="legend"><span><b class="g">+3</b> win, balls</span><span><b class="k">L</b> loss</span><span>${HOURGLASS} to be played</span>${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
+        <div class="legend"><span><b class="g">+3</b> win, balls</span><span><b class="k">L</b> loss</span><span>${HOURGLASS} to be played</span>${skipped ? '<span><b class="s">SKIP</b> not played</span>' : ''}${approx ? '<span>≈ average (withdrawn player)</span>' : ''}</div></div>
     </div>`,
   };
 }

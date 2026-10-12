@@ -177,7 +177,7 @@ const playerName = (id) => T().players.find((p) => p.id === id)?.name ?? S.journ
 const groupName = (id) => T().groups.find((g) => g.id === id)?.name ?? S.journal.names[id] ?? '?';
 function allMatches() {
   const map = new Map();
-  for (const m of [...T().results, ...T().queue]) map.set(m.id, m);
+  for (const m of [...T().results, ...T().queue, ...(T().skipped || [])]) map.set(m.id, m);
   if (T().playoff) for (const s of SLOTS) map.set(s, T().playoff[s]);
   return map;
 }
@@ -274,13 +274,23 @@ function qualText(status) {
 
 function viewQueue() {
   const q = T().queue;
-  if (!q.length) return `<div class="card note">${esc(t('queue.empty'))}</div>`;
+  if (!q.length) return `<div class="card note">${esc(t('queue.empty'))}</div>${skippedList()}`;
   return `<div class="muted">${esc(t('queue.hint'))}</div><div class="list" id="qlist">${q.map((m, i) => {
     const sub = [matchLabel(m), i === 0 ? t('queue.playing') : i === 1 ? t('queue.next') : ''].filter(Boolean).join(' · ');
-    const postpone = i < q.length - 1 ? `<button class="act" data-postpone="${m.id}">${esc(t('queue.postpone'))}</button>` : '';
+    // Skip a group match that no longer matters (the admin's call); Postpone stays in the match sheet
+    const skip = m.stage === 'group' ? `<button class="act" data-skip="${m.id}">${esc(t('queue.skip'))}</button>` : '';
     return `<div class="item${i === 0 ? ' now' : ''}" data-qid="${m.id}"><span class="grip">⠿</span>
-      <div class="m vsline" data-open="match" data-id="${m.id}">${vs(m)}<small>${esc(sub)}</small></div>${postpone}</div>`;
-  }).join('')}</div>`;
+      <div class="m vsline" data-open="match" data-id="${m.id}">${vs(m)}<small>${esc(sub)}</small></div>${skip}</div>`;
+  }).join('')}</div>${skippedList()}`;
+}
+
+/** Skipped matches under the queue: tap one to bring it back. */
+function skippedList() {
+  const list = T().skipped || [];
+  if (!list.length) return '';
+  return `<div class="h2">${esc(t('queue.skipped'))}</div><div class="list">${list.map((m) => `<div class="item skipped">
+    <div class="m vsline" data-open="match" data-id="${m.id}">${vs(m)}<small>${esc(matchLabel(m))}</small></div>
+    <button class="act" data-unskip="${m.id}">${esc(t('match.unskip'))}</button></div>`).join('')}</div>`;
 }
 
 /** Drag a queue item by its handle (works with touch and mouse). */
@@ -502,7 +512,7 @@ function describe(e) {
       const balls = m.stage === 'group' ? t('log.balls', { balls: p.balls }) : '';
       return t('log.match.result', { winner: w?.name ?? '?', loser: l?.name ?? '?', balls });
     }
-    case 'match.reopen': case 'queue.postpone': return t(`log.${e.type}`, { match: matchText });
+    case 'match.reopen': case 'queue.postpone': case 'match.skip': case 'match.unskip': return t(`log.${e.type}`, { match: matchText });
     case 'queue.move': return t('log.queue.move', { match: matchText, to: Number(p.to) + 1 });
     case 'playoff.set': return t('log.playoff.set', { slot: t(`slot.${p.slot}`), p1: p.p1 ? playerName(p.p1) : t('playoff.tbd'), p2: p.p2 ? playerName(p.p2) : t('playoff.tbd') });
     case 'playoff.auto': return t('log.playoff.auto', { slot: t(`slot.${p.slot}`) });
@@ -549,6 +559,10 @@ function sheetMatch(id) {
   let html = `<h3>${esc(t('sheet.match'))} · ${esc(matchLabel(m))}</h3><div class="vsline">${vs(m)}</div>`;
   if (m.forfeit) return `${html}<div class="card note">${esc(t('match.walkover'))}</div><button class="btn" data-close>${esc(t('close'))}</button>`;
   if (!m.p1 || !m.p2) return `${html}<button class="btn" data-close>${esc(t('close'))}</button>`;
+  if (m.skipped) {
+    return `${html}<div class="card note">${esc(t('match.skippedNote'))}</div>
+      <button class="btn primary" data-unskip="${id}">${esc(t('match.unskip'))}</button><button class="btn" data-close>${esc(t('cancel'))}</button>`;
+  }
   html += `<div class="field"><label>${esc(t('match.winner'))}</label><div class="seg" id="sh-winner">
     <button data-sh-winner="1" class="${m.winner === 1 ? 'on' : ''}">${esc(m.p1.name)}</button><button data-sh-winner="2" class="${m.winner === 2 ? 'on' : ''}">${esc(m.p2.name)}</button></div></div>`;
   if (group) {
@@ -558,6 +572,7 @@ function sheetMatch(id) {
   html += `<button class="btn primary" data-sh-save="${id}">${esc(t('match.record'))}</button>`;
   if (m.winner) html += `<button class="btn danger" data-sh-reopen="${id}">${esc(t('match.reopen'))}</button>`;
   if (inQueue) html += `<div class="two"><button class="btn" data-sh-now="${id}">${esc(t('match.playNow'))}</button><button class="btn" data-postpone="${id}">${esc(t('match.postpone'))}</button></div>`;
+  if (inQueue && group) html += `<button class="btn danger" data-skip="${id}">${esc(t('match.skip'))}</button>`;
   return `${html}<button class="btn" data-close>${esc(t('cancel'))}</button>`;
 }
 
@@ -680,6 +695,12 @@ document.addEventListener('click', async (e) => {
     else el.disabled = false;
     return;
   }
+  if (d.skip) {
+    const m = allMatches().get(d.skip);
+    if (m && confirm(t('match.skipConfirm', { p1: m.p1?.name ?? '?', p2: m.p2?.name ?? '?' })) && await act('match.skip', { id: d.skip }) && sheet) closeSheet();
+    return;
+  }
+  if (d.unskip) { if (await act('match.unskip', { id: d.unskip }) && sheet) closeSheet(); return; }
   if (d.postpone) { await act('queue.postpone', { id: d.postpone }); if (sheet) closeSheet(); return; }
 
   // setup

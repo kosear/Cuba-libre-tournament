@@ -5,8 +5,10 @@
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
+import { mascotHTML } from '/board/call.js';
+
 const W = 1920;
-const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, second: 1750, third: 1950, caption: 2200 };
+const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, mascot: 1600, second: 1750, third: 1950, caption: 2200 };
 const FIREWORK_EVERY = [18000, 32000]; // ms between idle fireworks
 const COLORS = ['#ffd84a', '#ff9500', '#ffffff', '#8fc1ff', '#ff6b4a'];
 
@@ -78,14 +80,20 @@ export function createPoster(root) {
   let fireTimer = null;
   let anims = [];
 
-  function build([p1, p2, p3]) {
+  function build([p1, p2, p3], players = []) {
+    // each player's mascot of the tournament (the same as on the call screen) by their cup
+    const masc = (p, cls) => {
+      if (!p) return '';
+      const m = mascotHTML(p, players);
+      return `<div class="pz-m ${cls}" style="--k:${m.scale}">${m.html}</div>`; // --k: a mascot drawn a little bigger or smaller
+    };
     const side = (p, n, kind, label) => (p ? `<div class="pz-side pz-p${n} ${kind}">${smallCup(kind, n)}<div class="pz-slabel">${label}</div>
       <div class="pz-sname"><span>${esc(p.name)}</span></div></div>` : '');
     root.innerHTML = `<div class="pz-bg"></div>
       <div class="pz-rays">${raysSvg()}</div>
       <div class="pz-glow"></div>
       <div class="pz-sparks"></div>
-      <div class="pz-trophy">${TROPHY}</div>
+      <div class="pz-trophy">${TROPHY}</div>${masc(p1, 'm1')}${masc(p2, 'm2')}${masc(p3, 'm3')}
       <div class="pz-label">Champion</div>
       <div class="pz-name"><span>${esc(p1?.name ?? '')}</span></div>
       ${side(p2, 2, 'silver', '2nd place')}${side(p3, 3, 'bronze', '3rd place')}
@@ -132,6 +140,9 @@ export function createPoster(root) {
       { transform: 'translate(-6px, 4px)' }, { transform: 'none' },
     ], { duration: 360, delay: ENTRANCE.champion + 330, easing: 'linear', fill: 'none' });
     run('.pz-label', [{ transform: 'translateY(20px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: ENTRANCE.label });
+    for (const [sel, at] of [['.pz-m.m1', ENTRANCE.mascot], ['.pz-m.m2', ENTRANCE.second + 150], ['.pz-m.m3', ENTRANCE.third + 150]]) {
+      run(sel, [{ transform: 'scale(0) rotate(-30deg)', opacity: 0 }, { transform: 'scale(1.15) rotate(6deg)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: at });
+    }
     for (const [sel, at] of [['.pz-p2', ENTRANCE.second], ['.pz-p3', ENTRANCE.third]]) {
       run(sel, [{ transform: 'translateY(60px) scale(.9)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, delay: at });
     }
@@ -188,14 +199,14 @@ export function createPoster(root) {
   }
 
   return {
-    /** podium = [1st, 2nd, 3rd] from the snapshot. The entrance plays only when the poster appears. */
-    show(podium) {
+    /** podium = [1st, 2nd, 3rd] from the snapshot; players: all, in join order (for the mascots). The entrance plays only when the poster appears. */
+    show(podium, players = []) {
       const [p1] = podium || [];
       const key = (podium || []).map((p) => p?.id ?? '').join('|');
       if (key === shown) return;
       const first = shown === null;
       root.hidden = false; // visible before building: the names are measured to fit
-      build(podium || []);
+      build(podium || [], players);
       shown = key;
       if (first) entrance(); // a corrected final only redraws the name
       idleFireworks();

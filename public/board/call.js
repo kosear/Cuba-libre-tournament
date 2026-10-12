@@ -253,6 +253,28 @@ function fire() {
   return `<span class="grow"><span class="burn">${flames}${embers}</span></span><span class="puff">${puff}</span><span class="ext">🧯</span>`;
 }
 
+/** A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left. */
+function mascotInner([body, hat, item], mirrored = false) {
+  let html = body;
+  if (Array.isArray(hat)) {
+    const [h, dx, dy, deg] = hat;
+    html += `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`;
+  } else if (hat) html += `<span class="hat">${hat}</span>`;
+  if (Array.isArray(item)) {
+    // [prop, dx, dy, deg] (em of the prop): moved off the body; mirrored for a mascot whose prop is on its left
+    const [it, dx, dy, deg] = item;
+    const m = mirrored ? -1 : 1;
+    html += `<span class="item" style="transform: translate(${m * dx}em, ${dy}em) rotate(${m * deg}deg)">${it}</span>`;
+  } else if (item) html += `<span class="item">${item}</span>`;
+  return html;
+}
+
+/** The player's mascot of this tournament (players: all, in join order) as HTML, for the podium; and its size factor. */
+export function mascotHTML(p, players = []) {
+  const m = mascotFor(p, players);
+  return { html: mascotInner(m), scale: m[4] ?? 1 };
+}
+
 export function createCall(root) {
   const style = document.createElement('style');
   style.textContent = CSS;
@@ -296,17 +318,7 @@ export function createCall(root) {
     // a mascot a little smaller or bigger than the rest: the font size (hat and prop follow), kept centred
     box.style.fontSize = scale === 1 ? '' : `${300 * scale}px`;
     box.style.marginLeft = scale === 1 ? '' : `${-150 * scale}px`;
-    if (body.startsWith('<')) box.innerHTML = body; else box.textContent = body;
-    if (Array.isArray(hat)) {
-      const [h, dx, dy, deg] = hat;
-      box.insertAdjacentHTML('beforeend', `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`);
-    } else if (hat) box.insertAdjacentHTML('beforeend', `<span class="hat">${hat}</span>`);
-    if (Array.isArray(item)) {
-      // [prop, dx, dy, deg] (em of the prop): moved off the body; mirrored for the right mascot, whose prop is on its left
-      const [it, dx, dy, deg] = item;
-      const m = n === 2 ? -1 : 1;
-      box.insertAdjacentHTML('beforeend', `<span class="item" style="transform: translate(${m * dx}em, ${dy}em) rotate(${m * deg}deg)">${it}</span>`);
-    } else if (item) box.insertAdjacentHTML('beforeend', `<span class="item">${item}</span>`);
+    box.innerHTML = mascotInner([body, hat, item], n === 2); // the right mascot is mirrored: its prop on the left
   }
 
   // The whole ring jolts, a white flash.

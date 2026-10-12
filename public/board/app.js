@@ -331,7 +331,7 @@ function renderSlide() {
     el('splash').hidden = true;
   }
   if (s.kind === 'podium') {
-    poster.show(T.podium); // the entrance plays once; a later update only redraws the names
+    poster.show(T.podium, T.players); // the entrance plays once; a later update only redraws the names
     shownKey = s.key;
     shownKind = s.kind;
     return;

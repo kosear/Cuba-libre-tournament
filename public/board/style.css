@@ -212,6 +212,14 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .pz-sname span { display: inline-block; white-space: nowrap; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 1px; }
 .pz-side.silver .pz-sname span { color: #f4f7fb; text-shadow: 0 2px 0 #c9d1dc, 0 4px 0 #aab4c2, 0 6px 0 #8e99a8, 0 8px 0 #707b8a, 0 16px 24px rgba(0,0,0,.4); }
 .pz-side.bronze .pz-sname span { color: #ffd2a8; text-shadow: 0 2px 0 #e09a5e, 0 4px 0 #c47a3e, 0 6px 0 #a35f2a, 0 8px 0 #7d461c, 0 16px 24px rgba(0,0,0,.4); }
+/* the players' mascots of the tournament by their cups: the champion's leans on the big trophy, 2nd outside its cup on
+   the left, 3rd on the right (like on the call screen: emoji body, hat and prop) */
+.pz-m { position: absolute; line-height: 1; font-style: normal; filter: drop-shadow(0 10px 0 rgba(0,0,0,.3)); }
+.pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
+.pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
+.pz-m.m1 { left: 555px; top: 295px; font-size: calc(190px * var(--k, 1)); } /* by the big trophy, its left side; clear of the 2nd place name */
+.pz-m.m2 { left: 70px; top: 265px; font-size: calc(160px * var(--k, 1)); }
+.pz-m.m3 { left: 1700px; top: 265px; font-size: calc(160px * var(--k, 1)); }
 .pz-caption { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 8px;
   text-transform: uppercase; color: rgba(255,255,255,.92); }
 .pz-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }

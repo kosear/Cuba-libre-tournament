@@ -392,21 +392,26 @@ export function createPoster(root) {
       }
       if (r < 0.42) { turn(m, -m.dir); later(() => next(m), rand(600, 1400)); return; } // look the other way
       if (r >= 0.55 && r < 0.68 && m.item && !m.prop) { // tosses its prop up and catches it, like a snowball, a few times
-        const base = getComputedStyle(m.item).transform.replace('none', '');
         const n = 2 + Math.floor(Math.random() * 3);
-        const h = rand(90, 150) * (m.size / 104);
-        const ms = 620;
+        const h = rand(100, 160) * (m.size / 104);
+        const ms = 760;
+        const pic = m.item.firstElementChild || m.item; // the picture itself: the prop's own tilt stays on .item
         for (let i = 0; i < n; i++) {
           later(() => {
             if (m.busy || m.prop) return;
-            m.item.animate([{ transform: `translateY(0) ${base}`, easing: 'ease-out' },
-              { transform: `translateY(${-h}px) ${base} rotate(${Math.random() < 0.5 ? -180 : 180}deg)`, offset: 0.5, easing: 'ease-in' },
-              { transform: `translateY(0) ${base} rotate(0deg)` }], { duration: ms });
-            m.hop.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04, .95)', offset: 0.12 }, { transform: 'scale(1)', offset: 0.3 },
-              { transform: 'scale(1)', offset: 0.9 }, { transform: 'scale(1.04, .95)', offset: 0.96 }, { transform: 'scale(1)' }], { duration: ms }); // the throw, the catch
-          }, i * (ms + 30));
+            // a real throw: up slowing down, down speeding up (a parabola, sampled), turning over once at a steady rate
+            const turn = Math.random() < 0.5 ? -360 : 360;
+            const frames = [];
+            for (let k = 0; k <= 12; k++) {
+              const t = k / 12;
+              frames.push({ transform: `translateY(${(-h * (1 - (2 * t - 1) ** 2)).toFixed(1)}px) rotate(${(turn * t).toFixed(1)}deg)`, easing: 'linear' });
+            }
+            pic.animate(frames, { duration: ms });
+            m.hop.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04, .95)', offset: 0.1 }, { transform: 'scale(1)', offset: 0.3 },
+              { transform: 'scale(1)', offset: 0.9 }, { transform: 'scale(1.04, .95)', offset: 0.97 }, { transform: 'scale(1)' }], { duration: ms }); // the throw, the catch
+          }, i * (ms + 60));
         }
-        later(() => next(m), n * (ms + 30) + rand(300, 900));
+        later(() => next(m), n * (ms + 60) + rand(300, 900));
         return;
       }
       if (r < 0.55) { // a couple of bounces on the spot

@@ -44,14 +44,14 @@ const MASCOTS = [
   // nicknames with a joke, like a boxer's
   ['🦈', ['🕶️', -0.33, 0.28, -18], ['🎱', -0.25, 0, 14], 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
   ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
-  ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', ['🥊', -0.25, 0, 14], 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
+  ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', ['🥊', -0.25, 0, 14], 'Tiny Arms, Big Breaks'], ['🦆', '', ['🎯', 0.15, 0.35, 14], 'Sitting Duck'],
   ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', ['💸', 0, 0.25, 14], 'Piggy Bank'],
   ['🦍', ['👑', -0.35, -0.15, 8], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.45, -8], '🪄', 'Hairy Potter'],
   // Bali and around
   ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', ['🍔', 0, 0.3, 14], 'Bald Eagle'],
   // more puns
   ['🐆', '', ['🤞', 0, 0.15, 14], 'Cheetah'], ['🦓', '', ['🎱', 0.5, 0.2, 14], 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
-  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', ['🚫', 0, 0.15, 14], 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
+  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', ['🚫', 0.1, 0.4, 14], 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
   ['🐘', '', ['🛋️', 0, 0.3, 14], 'Elephant in the Room'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Hot Shot'],
   ['🐧', ['🎩', -0.1, -0.35, 10], '🍸', 'The Tuxedo'], ['🐨', '', ['🎱', 0, 0.2, 14], 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty

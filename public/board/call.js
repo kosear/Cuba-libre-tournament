@@ -606,12 +606,16 @@ export function createCall(root) {
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
-    // first they hurl their props at each other, then go at it; the props stay on the floor (no coming back home)
-    throwAt(fs[0], fs[1], 0);
-    throwAt(fs[1], fs[0], 450);
+    // a moment to take in the screen, then one hurls its prop at the other, the other hurls back, then they go at it;
+    // the props stay on the floor (this fight never comes back home)
+    const [first, second] = Math.random() < 0.5 ? fs : [fs[1], fs[0]];
+    const T1 = 1500;
+    const T2 = T1 + 1800; // hit, reel, a second to get angry
+    throwAt(first, second, T1);
+    throwAt(second, first, T2);
     let [px, py] = [-9999, -9999];
     // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
-    const plan = (left, t0 = 1500) => {
+    const plan = (left, t0 = T2 + 1200) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
         let mx;

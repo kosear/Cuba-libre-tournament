@@ -503,7 +503,7 @@ export function createCall(root) {
     d.className = 'dropped';
     d.innerHTML = it.innerHTML;
     Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
-    ring.insertBefore(d, q('.mascot.m1')); // under the mascots: they walk over it
+    if (propsUnder) ring.insertBefore(d, q('.mascot.m1')); else ring.append(d); // a big match's brawl walks over them
     it.style.visibility = 'hidden';
     // a toss: up and back over its shoulder, down on the floor, a little bounce
     anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
@@ -541,7 +541,7 @@ export function createCall(root) {
       d.className = 'dropped';
       d.innerHTML = it.innerHTML;
       Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
-      ring.insertBefore(d, q('.mascot.m1')); // under the mascots: they walk over it
+      if (propsUnder) ring.insertBefore(d, q('.mascot.m1')); else ring.append(d); // a big match's brawl walks over them
       it.style.visibility = 'hidden';
       const FLY = 1250;
       const HIT = 0.3;
@@ -634,7 +634,9 @@ export function createCall(root) {
    * A plain match: both hop under VS, trade punches and hop back home; again a few seconds later while the screen
    * still has time for a whole one (`left`: ms the screen stays from now).
    */
+  let propsUnder = false; // a prop lying in the ring: over the mascots on a plain match, under them in a big match's brawl all over the ring
   function brawl(bobs, bob, left) {
+    propsUnder = false;
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
@@ -652,6 +654,7 @@ export function createCall(root) {
    * a furious exchange, on to the next spot far from the last one.
    */
   function frenzy(bobs, ms) {
+    propsUnder = true;
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();

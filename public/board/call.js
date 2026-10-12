@@ -125,30 +125,6 @@ const CSS = `
    inner half. (paint-order: stroke fill would do it in one layer, but the TV ignores it and the stroke eats the letters.) */
 .fight .vs::before { content: 'VS'; position: absolute; left: 0; right: 0; top: 0; z-index: -1; color: #fff; -webkit-text-stroke: 22px #fff;
   text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
-/* semi-finals and the final: a row of cartoon flames burns along the bottom of the screen, embers fly up; now and then a
-   fire extinguisher pops in, puffs, the flames die down and flare up again, bigger every time. Small SVG pictures that
-   only move and scale (cheap for the TV). The ring is 60 px bigger than the stage on every side. */
-.fight .grow { position: absolute; left: 0; right: 0; bottom: 60px; height: 260px; z-index: 1; transform-origin: 50% 100%; pointer-events: none; }
-.fight .burn { position: absolute; inset: 0; display: none; transform-origin: 50% 100%; font-style: normal; }
-.fight.fire .burn { display: block; animation: tame 8s 1.4s infinite; }
-.fight .burn .g { position: absolute; bottom: -20px; width: 150px; transform-origin: 50% 100%; } /* one tongue; grows wider and taller as a whole */
-.fight .burn .f { position: absolute; inset: 0; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
-.fight .burn .f svg { width: 100%; height: 100%; display: block; overflow: visible; }
-@keyframes flick { 0% { transform: scale(1, 1) rotate(-4deg); } 50% { transform: scale(.9, 1.2) rotate(3deg); } 100% { transform: scale(1.06, .88) rotate(-1deg); } }
-@keyframes tame { 0%, 72% { transform: scale(1); } 76%, 81% { transform: scale(1, .12); } 87% { transform: scale(1.1, 1.5); } 93%, 100% { transform: scale(1); } }
-.fight .burn .e { position: absolute; bottom: 120px; width: 14px; height: 14px; border-radius: 50%; background: #ffd400; box-shadow: 0 0 0 4px #ff7a00;
-  opacity: 0; animation: ember 1.6s ease-out infinite; }
-@keyframes ember { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), -220px) scale(.3); opacity: 0; } }
-.fight .ext { position: absolute; right: 120px; bottom: 230px; font-size: 150px; line-height: 1; font-style: normal; z-index: 4; display: none;
-  transform-origin: 30% 80%; }
-.fight.fire .ext { display: block; animation: ext 8s 1.4s infinite backwards; opacity: 0; }
-@keyframes ext { 0%, 62% { transform: translateX(520px) rotate(0); opacity: 0; } 67% { transform: translateX(0) rotate(-8deg); opacity: 1; }
-  71% { transform: translateX(-10px) rotate(-24deg); opacity: 1; } 84% { transform: translateX(-10px) rotate(-24deg); opacity: 1; }
-  90%, 100% { transform: translateX(520px) rotate(0); opacity: 0; } }
-.fight .puff { position: absolute; left: 0; right: 0; bottom: 40px; height: 300px; z-index: 4; display: none; opacity: 0; transform-origin: 50% 100%; }
-.fight.fire .puff { display: block; animation: puff 8s 1.4s infinite; }
-.fight .puff i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px rgba(74,42,0,.35); }
-@keyframes puff { 0%, 71% { transform: scale(1, .2); opacity: 0; } 74% { transform: scale(1); opacity: .95; } 84% { transform: scale(1.05, 1.2); opacity: .9; } 90%, 100% { transform: scale(1.1, 1.4); opacity: 0; } }
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .pow { position: absolute; z-index: 5; font: italic 900 96px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
   -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl */
@@ -237,24 +213,6 @@ function mascotFor(p, players = []) {
   return set[k];
 }
 
-const FLAME = 'M50 4C62 40 92 58 88 104C85 140 66 156 50 156C34 156 15 140 12 104C9 72 30 64 34 36C42 56 46 30 50 4Z';
-const FLAME_IN = 'M50 62C58 84 72 94 70 120C68 140 60 148 50 148C40 148 32 140 30 120C29 102 40 94 42 78C46 88 48 74 50 62Z';
-/** The flames along the bottom, embers, the extinguisher and its puff (shown only with .fight.fire). */
-function fire() {
-  const tongue = (x, h, d, delay) => `<span class="g" style="left:${x}px;height:${h}px"><span class="f" style="animation-duration:${d}s;animation-delay:-${delay}s">
-    <svg viewBox="0 0 100 160" preserveAspectRatio="none"><path d="${FLAME}" fill="#ff4d1a" stroke="#4a1a00" stroke-width="6" stroke-linejoin="round"/>
-    <path d="${FLAME_IN}" fill="#ffd400"/></svg></span></span>`;
-  // a row of 17 tongues across the 2040 px ring, uneven heights and tempos so it never looks like a pattern
-  const H = [170, 220, 150, 240, 190, 160, 230, 180, 250, 170, 210, 150, 235, 185, 160, 225, 175];
-  const T = [.46, .55, .5, .42, .58, .48, .4, .52, .45, .56, .43, .5, .47, .54, .41, .53, .49];
-  const flames = H.map((h, i) => tongue(i * 120 - 15, h, T[i], (i * 0.13) % 0.5)).join('');
-  const embers = [[200, -30, 0], [520, 20, .4], [860, 40, .9], [1180, -40, 1.2], [1500, 30, .6], [1800, -20, 1.0]]
-    .map(([x, dx, delay]) => `<i class="e" style="left:${x}px;--dx:${dx}px;animation-delay:${delay}s"></i>`).join('');
-  const puff = [[120, 120, 180], [380, 60, 230], [660, 110, 200], [930, 40, 250], [1220, 100, 210], [1500, 50, 240], [1760, 110, 190], [250, 160, 150], [1080, 150, 160], [1640, 160, 150]]
-    .map(([x, y, d]) => `<i style="left:${x}px;top:${y}px;width:${d}px;height:${d}px"></i>`).join('');
-  return `<span class="grow"><span class="burn">${flames}${embers}</span></span><span class="puff">${puff}</span><span class="ext">🧯</span>`;
-}
-
 /** A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left. */
 function mascotInner([body, hat, item], mirrored = false) {
   let html = body;
@@ -284,7 +242,7 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <div class="mascot m1"></div><div class="mascot m2"></div>${fire()}
+      <div class="mascot m1"></div><div class="mascot m2"></div>
       <div class="sub">Now playing</div><div class="label"></div>
       <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
@@ -415,52 +373,93 @@ export function createCall(root) {
     after(700, () => b.remove());
   }
 
+  /** The mascots as fighters: their box, which way they punch, home place in the ring, current shift from it and the shift
+   * they will have when what is already scheduled has played (rounds are scheduled ahead). */
+  const fighters = () => [1, 2].map((n) => {
+    const el = q(`.mascot.m${n}`);
+    return { el, dir: n === 1 ? 1 : -1, home: [el.offsetLeft, el.offsetTop], x: 0, y: 0, plan: [0, 0] };
+  });
+
+  /** Both hop, `at` ms from now, to their shifts `to` ([[x, y], [x, y]]); returns when they have landed. */
+  function hopTo(fs, to, at, wild) {
+    const hopMs = wild ? 300 : 380;
+    const hops = wild ? 2 : 3;
+    fs.forEach((f, k) => {
+      const [x0, y0] = f.plan;
+      const [tx, ty] = to[k];
+      f.plan = [tx, ty];
+      for (let i = 1; i <= hops; i++) {
+        after(at + (i - 1) * hopMs + k * 120, () => {
+          const [fx, fy] = [f.x, f.y];
+          [f.x, f.y] = [x0 + (tx - x0) * i / hops, y0 + (ty - y0) * i / hops];
+          anim(f.el, [
+            { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + f.x) / 2}px, ${(fy + f.y) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
+            { transform: `translate(${f.x}px, ${f.y}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${f.x}px, ${f.y}px)` }],
+          { duration: hopMs, easing: 'linear', fill: 'forwards' });
+        });
+      }
+    });
+    return at + hops * hopMs + 120;
+  }
+
   /**
-   * Both mascots hop to the middle and pound each other in turns, comic bursts between them; nobody wins, nobody is
-   * knocked away, then both hop back. Their bobbing stops for it and starts again after. Transforms only.
+   * Both hop to (mx, my) of the ring (left and top of a box right between them: side by side, half a body apart, m1 on the left) and
+   * pound each other there in turns, comic bursts between them; nobody wins, nobody is knocked away. wild: the big-match
+   * frenzy: faster, harder, now and then two in a row, the screen shakes. Returns when it ends (ms from now). Transforms only.
    */
+  function scuffle(fs, mx, my, at, hits, wild) {
+    const t0 = hopTo(fs, fs.map((f, k) => [mx + (k ? 130 : -130) - f.home[0], my - f.home[1]]), at, wild) + (wild ? 60 : 80);
+    const step = wild ? 210 : 300;
+    const reach = wild ? 80 : 60;
+    let turn = 1;
+    for (let i = 0; i < hits; i++) {
+      if (!(wild && i && Math.random() < 0.3)) turn = 1 - turn;
+      const f = fs[turn];
+      const o = fs[1 - turn];
+      after(t0 + i * step, () => {
+        const px = f.dir * reach;
+        const deg = f.dir * (wild ? 14 : 10);
+        anim(f.el, [{ transform: `translate(${f.x}px, ${f.y}px)` }, { transform: `translate(${f.x + px}px, ${f.y}px) rotate(${deg}deg)`, offset: 0.4 },
+          { transform: `translate(${f.x}px, ${f.y}px)` }], { duration: step - 50, easing: 'ease-out', fill: 'forwards' });
+        anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y}px) rotate(${deg * 0.6}deg)`, offset: 0.5 },
+          { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: step - 50, delay: 70, fill: 'forwards' });
+        pow(mx + 150 + rand(-60, 60), my + 90 + rand(-70, 40));
+      });
+      if (wild && i % 3 === 2) impact(t0 + i * step + 60, 9);
+    }
+    return t0 + hits * step + 150;
+  }
+
+  /** A plain match: once, somewhere in the middle, both hop under VS, trade punches and hop back home. */
   function brawl(bobs, bob) {
-    const boxes = [q('.mascot.m1'), q('.mascot.m2')];
     bobs[1]?.cancel();
     bobs[2]?.cancel();
-    // they meet side by side under VS (VS covers the middle), half a body apart
-    const [l1, t1, l2, t2] = [boxes[0].offsetLeft, boxes[0].offsetTop, boxes[1].offsetLeft, boxes[1].offsetTop];
-    const mx = (l1 + l2) / 2;
-    const my = (t1 + t2) / 2 + MEET_DOWN;
-    const ux = 1;
-    const uy = 0;
-    const fighters = boxes.map((el, i) => ({ el, dir: i ? -1 : 1, tx: mx + (i ? 130 : -130) - (i ? l2 : l1), ty: my - (i ? t2 : t1), x: 0, y: 0 }));
-    const hops = 3;
-    const hopMs = 380;
-    const hop = (f, to, ty2) => {
-      const [fx, fy] = [f.x, f.y];
-      [f.x, f.y] = [to, ty2];
-      anim(f.el, [
-        { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + to) / 2}px, ${(fy + ty2) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
-        { transform: `translate(${to}px, ${ty2}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${to}px, ${ty2}px)` }], { duration: hopMs, easing: 'linear', fill: 'forwards' });
-    };
-    for (let i = 1; i <= hops; i++) {
-      fighters.forEach((f, k) => after((i - 1) * hopMs + k * 120, () => hop(f, f.tx * i / hops, f.ty * i / hops)));
+    const fs = fighters();
+    const [a, b] = fs.map((f) => f.home);
+    const end = scuffle(fs, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + MEET_DOWN, 0, 6 + Math.floor(Math.random() * 3), false);
+    after(hopTo(fs, [[0, 0], [0, 0]], end, false) + 100, () => { bob(1, 0); bob(2, 0); });
+  }
+
+  /**
+   * A big match: from the start to the end of the show the mascots fight all over the screen: hop to a random spot,
+   * a furious exchange, on to the next spot far from the last one.
+   */
+  function frenzy(bobs, ms) {
+    bobs[1]?.cancel();
+    bobs[2]?.cancel();
+    const fs = fighters();
+    let t = 0;
+    let [px, py] = [-9999, -9999];
+    while (t < ms) {
+      let mx;
+      let my;
+      do {
+        mx = rand(220, 1520); // both stay on screen (the ring is 60 px bigger than it on each side)
+        my = rand(150, 740);
+      } while (Math.hypot(mx - px, my - py) < 450);
+      [px, py] = [mx, my];
+      t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
     }
-    const t0 = hops * hopMs + 200;
-    const hits = 6 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < hits; i++) {
-      const f = fighters[i % 2];
-      const o = fighters[1 - i % 2];
-      after(t0 + i * 300, () => {
-        const [px, py] = [ux * f.dir * 60, uy * f.dir * 60];
-        anim(f.el, [{ transform: `translate(${f.x}px, ${f.y}px)` }, { transform: `translate(${f.x + px}px, ${f.y + py}px) rotate(${f.dir * ux > 0 ? 10 : -10}deg)`, offset: 0.4 },
-          { transform: `translate(${f.x}px, ${f.y}px)` }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
-        anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y + py * 0.35}px) rotate(${f.dir * ux > 0 ? 6 : -6}deg)`, offset: 0.5 },
-          { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: 240, delay: 80, fill: 'forwards' });
-        pow(mx + 150 + rand(-50, 50), my + 90 + rand(-60, 30));
-      });
-    }
-    const tb = t0 + hits * 300 + 300;
-    for (let i = 1; i <= hops; i++) {
-      fighters.forEach((f, k) => after(tb + (i - 1) * hopMs + k * 120, () => hop(f, f.tx * (1 - i / hops), f.ty * (1 - i / hops))));
-    }
-    after(tb + hops * hopMs + 250, () => { bob(1, 0); bob(2, 0); });
   }
 
   return {
@@ -475,21 +474,6 @@ export function createCall(root) {
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!hype);
-      const burning = hype === 'Semi-final' || hype === 'Final';
-      fight.classList.toggle('fire', burning); // flames behind VS
-      if (burning) {
-        // every time the extinguisher has put it out, the fire flares up bigger than before and stays so
-        // (the flare-up of the 8 s cycle, started 1.4 s in, is at 87%: see @keyframes tame)
-        const flares = [];
-        for (let t = 1400 + 0.87 * 8000; t < ms; t += 8000) flares.push(t);
-        const frames = [{ transform: 'scale(1)', offset: 0 }];
-        flares.forEach((t, i) => {
-          frames.push({ transform: `scale(${1 + 0.45 * i})`, offset: (t - 50) / ms });
-          frames.push({ transform: `scale(${1 + 0.45 * (i + 1)})`, offset: (t + 250) / ms }); // each tongue taller and wider, from its own foot
-        });
-        frames.push({ transform: frames.at(-1).transform, offset: 1 });
-        q('.grow').querySelectorAll('.g').forEach((g) => anim(g, frames, { duration: ms, fill: 'forwards' }));
-      }
       title(hype);
       if (hype) q('.label').textContent = ''; // the big gold title says it already: no small line under it
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every
@@ -536,8 +520,9 @@ export function createCall(root) {
           { duration: 500, delay, easing: 'cubic-bezier(.2,.8,.3,1.4)', fill: 'backwards' });
         bob(n, delay + 500);
       }
-      // once a show, somewhere in its middle, one mascot hops over to the other and beats it up
-      if (ms > 9000) after(rand(5500, Math.min(10000, ms - 7000)), () => brawl(bobs, bob));
+      // a big match: they fight all over the screen as soon as VS has landed; a plain one: once, somewhere in the middle, under VS
+      if (hype) after(TV + 500, () => frenzy(bobs, ms - TV - 500));
+      else if (ms > 9000) after(rand(5500, Math.min(10000, ms - 7000)), () => brawl(bobs, bob));
       idle(pick(IDLES), TV + 600, ms - TV - 600);
       anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },

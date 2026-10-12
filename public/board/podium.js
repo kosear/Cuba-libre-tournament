@@ -193,41 +193,52 @@ export function createPoster(root) {
      * Hop from where it is to (tx, ty) in its own coordinates, then done(): a few long hops, each a proper arc (a crouch,
      * up slowing, down speeding, a squash on landing). A hop over another mascot goes high enough to clear its head.
      */
+    let mover = null; // one mascot on its way at a time: two hopping across each other looked clumsy
     function hopTo(m, tx, ty, done, stepPx = 150) {
+      if (mover && mover !== m) { later(() => hopTo(m, tx, ty, done, stepPx), 300); return; } // waits its turn
+      mover = m;
       if (Math.abs(tx - m.x) > 1) turn(m, tx > m.x ? 1 : -1);
-      const n = Math.max(1, Math.round(Math.hypot(tx - m.x, ty - m.y) / stepPx));
-      const [sx, sy] = [(tx - m.x) / n, (ty - m.y) / n];
-      let t = 0;
-      for (let i = 0; i < n; i++) {
-        const [fx, fy] = [m.x + sx * i, m.y + sy * i];
-        const [nx, ny] = [fx + sx, fy + sy];
-        // the others under this hop: clear the highest head with some room to spare
+      const step = () => {
+        const [fx, fy] = [m.x, m.y];
+        const dist = Math.hypot(tx - fx, ty - fy);
+        if (dist < 1) { mover = null; m.el.style.zIndex = ''; done(); return; }
+        // a hop of about stepPx, the last one shared out evenly; never landing on another one: then on past it
+        let f = Math.min(1, stepPx / dist);
+        if (f < 1) f = 1 / Math.ceil(dist / stepPx);
+        while (f < 1 && crowded(m, fx + (tx - fx) * f, fy + (ty - fy) * f)) f = Math.min(1, f + 20 / dist);
+        const [nx, ny] = [fx + (tx - fx) * f, fy + (ty - fy) * f];
+        // the others under this hop, where they stand right now: clear the highest head with room to spare
         const ox = m.el.offsetLeft;
         const oy = m.el.offsetTop;
-        const [l, r] = [Math.min(fx, nx) + ox, Math.max(fx, nx) + ox + m.size * 1.25];
+        const [l, r] = [Math.min(fx, nx) + ox - 20, Math.max(fx, nx) + ox + m.size * 1.25 + 20];
         let h = rand(45, 65);
+        let over = false;
         for (const o of list) {
           if (o === m) continue;
           const b = box(o);
           if (b.right < l || b.left > r) continue;
-          const feet = Math.min(fy, ny) + oy + m.size; // its feet at the lowest point of the hop's ends
-          h = Math.max(h, feet - b.top + 30);
+          over = true;
+          h = Math.max(h, Math.min(fy, ny) + oy + m.size - b.top + 40); // its feet at the top of the arc above that head
         }
         const ms = 520 + h * 1.1;
-        const high = h > 90;
-        later(() => {
-          if (high) m.el.style.zIndex = 5; // over the one it leaps
-          m.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${fx}px, ${fy}px)`, offset: 0.14 },
-            { transform: `translate(${nx}px, ${ny}px)`, offset: 0.84 }, { transform: `translate(${nx}px, ${ny}px)` }], { duration: ms });
-          [m.x, m.y] = [nx, ny];
-          place(m);
-          jump(m, h, ms);
-          if (high) later(() => { m.el.style.zIndex = ''; }, ms);
-        }, t);
-        t += ms + 40;
-      }
-      later(done, t);
+        m.el.style.zIndex = over ? 5 : ''; // drawn over the one it leaps
+        m.mv.animate([{ transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${fx}px, ${fy}px)`, offset: 0.14 },
+          { transform: `translate(${nx}px, ${ny}px)`, offset: 0.84 }, { transform: `translate(${nx}px, ${ny}px)` }], { duration: ms });
+        [m.x, m.y] = [nx, ny];
+        place(m);
+        jump(m, h, ms);
+        later(step, ms + 40);
+      };
+      step();
     }
+    /** Would a mascot standing at (x, y) (its own coordinates) be on top of another one? */
+    const crowded = (m, x, y = 0) => list.some((o) => {
+      if (o === m) return false;
+      const b = box(o);
+      const left = m.el.offsetLeft + x;
+      const top = m.el.offsetTop + y;
+      return left < b.right + 10 && left + m.size * 1.25 > b.left - 10 && top < b.floor && top + m.size > b.top;
+    });
 
     // ---------- the props ----------
     const k = () => root.getBoundingClientRect().width / root.offsetWidth; // the stage is scaled to the screen
@@ -304,9 +315,13 @@ export function createPoster(root) {
     /** Goes over to its prop, picks it up, then done(). */
     function fetch(m, done) {
       const p = m.prop;
-      const side = p.x > box(m).mid ? -1 : 1; // stops on the side it comes from
-      const tx = p.x - m.el.offsetLeft - m.size * 0.62 + side * m.size * 0.45;
+      let side = p.x > box(m).mid ? -1 : 1; // stops on the side it comes from, or the other if someone stands there
       const ty = Math.max(-80, Math.min(140, p.y + p.h * 0.4 - m.el.offsetTop - m.size * 1.02));
+      const at = (sd, far = 0) => p.x - m.el.offsetLeft - m.size * 0.62 + sd * (m.size * 0.45 + far);
+      if (crowded(m, at(side), ty)) side = -side;
+      let far = 0;
+      while (far < 300 && crowded(m, at(side, far), ty)) far += 20;
+      const tx = at(side, far);
       hopTo(m, tx, ty, () => {
         turn(m, -side);
         later(() => {
@@ -342,8 +357,13 @@ export function createPoster(root) {
         later(() => next(m), n * 480 + rand(200, 900));
         return;
       }
-      let to = rand(0, m.d); // hop to a new place, at least a quarter of the way off
-      if (Math.abs(to - m.x) < m.d / 4) to = m.x < m.d / 2 ? Math.min(m.d, m.x + m.d / 2) : Math.max(0, m.x - m.d / 2);
+      // hop to a new place, at least a quarter of the way off, never on top of another one
+      let to = null;
+      for (let i = 0; i < 12 && to === null; i++) {
+        const x = rand(0, m.d);
+        if (Math.abs(x - m.x) >= m.d / 4 && !crowded(m, x)) to = x;
+      }
+      if (to === null || mover) { later(() => next(m), rand(600, 1500)); return; } // nowhere free, or another on its way: stays
       hopTo(m, to, 0, () => later(() => next(m), rand(150, 1200)));
     }
     /** A comic burst at (x, y) on the stage: POW!, BAM! or 💥. */
@@ -411,6 +431,7 @@ export function createPoster(root) {
     }
     for (const m of list) {
       m.x = rand(0, m.d);
+      for (let i = 0; i < 12 && crowded(m, m.x); i++) m.x = rand(0, m.d); // not on top of another one
       place(m);
       later(() => next(m), rand(2600, 4200)); // after the entrance
     }

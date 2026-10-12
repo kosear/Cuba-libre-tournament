@@ -277,6 +277,7 @@ export function createPoster(root) {
     });
 
     // ---------- the props ----------
+    const SAFE = 150; // px from the stage's edge a prop never lies closer than: TVs crop the edges of the picture (overscan)
     const k = () => root.getBoundingClientRect().width / root.offsetWidth; // the stage is scaled to the screen
     /** The prop out of the mascot's hands as a copy on the stage, where it was: { el, x, y } (its middle). */
     function detach(m) {
@@ -304,7 +305,7 @@ export function createPoster(root) {
       const p = detach(m);
       if (!p) return;
       const floor = box(m).floor - p.h * 0.4;
-      const dx = toss ? (Math.max(60, Math.min(root.offsetWidth - 60, p.x0 + toss * 1.1)) - p.x0) / 1.1 : 0; // never off the stage
+      const dx = toss ? (Math.max(SAFE, Math.min(root.offsetWidth - SAFE, p.x0 + toss * 1.1)) - p.x0) / 1.1 : 0; // never near the edge
       const lie = p.deg + (toss ? Math.sign(toss) * rand(70, 120) : (Math.random() < 0.5 ? -1 : 1) * rand(60, 90));
       p.el.animate(toss
         ? [{ transform: p.tf(0, 0, p.deg), easing: 'ease-out' }, { transform: p.tf(dx * 0.45, -90, (p.deg + lie) / 2), offset: 0.4, easing: 'ease-in' },
@@ -327,7 +328,7 @@ export function createPoster(root) {
         const [tx, ty] = [b.mid - p.x0, b.top + v.size * 0.45 - p.y0];
         const spin = p.deg + dir * rand(540, 720);
         const lie = spin + dir * rand(60, 120);
-        const fx = Math.max(60, Math.min(root.offsetWidth - 60, b.mid + dir * rand(120, 220))) - p.x0; // on past it, off its side
+        const fx = Math.max(SAFE, Math.min(root.offsetWidth - SAFE, b.mid + dir * rand(120, 220))) - p.x0; // on past it, off its side
         const fy = Math.min(root.offsetHeight - 140, b.floor + rand(10, 50)) - p.h * 0.4 - p.y0;
         const FLY = 1150;
         const HIT = 0.32;

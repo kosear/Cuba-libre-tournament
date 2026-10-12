@@ -305,6 +305,11 @@ export function createButterfly(root) {
       b.onLand = onLand;
       b.after = null;
     },
+    /** Off the screen, unhurried, unless a gecko called it (it is the gecko's) or it is already on its way out. */
+    away() {
+      if (!b || b.sitFor === Infinity || (b.mode === 'fly' && !b.land && !b.after)) return;
+      leave();
+    },
     /** Startled: off and away from `from`, fast. */
     flee(from) { if (b) leave(from, true); },
     /** Caught: the gecko holds it now and draws it itself. Returns its look and how it sat. */

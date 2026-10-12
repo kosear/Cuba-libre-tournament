@@ -118,7 +118,11 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * `?lizard=duo`: the fast mode where every run is a scene of two geckos, one after another;
  *   `?lizard=duo-rivals`, `duo-steal`, `duo-fight`, `duo-family`: only that scene.
  */
-export function startLizard(root, { swarm = () => false } = {}) {
+/**
+ * `calm()`: a screen the geckos keep off (the call screen): no new geckos or butterflies, those on it leave (a hunt is
+ * finished first). `bare()`: a screen with no butterflies (the podium): geckos still come, but do not hunt.
+ */
+export function startLizard(root, { swarm = () => false, calm = () => false, bare = () => false } = {}) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const glutton = mode === 'glutton'; // the fast mode with every gecko a glutton that always eats the wing it can reach
   // ?lizard=duo: the fast pace with every run a scene of two, in turn; ?lizard=duo-fight (rivals, steal, family): only that one
@@ -167,11 +171,12 @@ export function startLizard(root, { swarm = () => false } = {}) {
   let lastStyle = -1;
   let hunts = 0;
 
+  const noButterflies = () => calm() || bare();
   function run() {
     timer = setTimeout(run, period());
-    if (gs.length) return;
-    // now and then two of them (not while a wing waits for the cleaner)
-    if (!bf.wing && (duo || Math.random() < duoP()) && startScene()) return;
+    if (gs.length || calm()) return;
+    // now and then two of them (not while a wing waits for the cleaner; their scenes need a butterfly)
+    if (!bf.wing && !bare() && (duo || Math.random() < duoP()) && startScene()) return;
     show(makeRun());
   }
   /** Puts a gecko on screen on a free canvas. */
@@ -201,7 +206,7 @@ export function startLizard(root, { swarm = () => false } = {}) {
   }
   function flyBy() {
     bTimer = setTimeout(flyBy, bPeriod());
-    if (bf.active || scene || gs.some((g) => g.hunt)) return;
+    if (bf.active || scene || gs.some((g) => g.hunt) || noButterflies()) return;
     bf.wander();
     wake();
   }
@@ -219,12 +224,26 @@ export function startLizard(root, { swarm = () => false } = {}) {
       if (scene.later && (scene.later[0] -= dt) <= 0) { const f = scene.later[1]; scene.later = null; f(); }
       scene.update(dt);
     }
+    if (calm()) clearOff();
+    if (noButterflies()) bf.away();
     for (const g of [...gs]) if (!advance(g, dt)) drop(g);
     if (scene && !gs.length) scene = null;
     for (const g of gs) draw(g);
     const flying = bf.update(dt);
     if (flying) bf.draw();
     raf = gs.length || flying ? requestAnimationFrame(frame) : 0;
+  }
+
+  /** The call screen is up: every gecko not busy with a catch runs off the screen; a scene of two ends. */
+  function clearOff() {
+    if (gs.some((g) => g.hunt || (g.meal && !g.meal.done))) return; // finishing a hunt or a meal first
+    scene = null;
+    for (const g of gs) {
+      if (g.gone) continue;
+      g.gone = true;
+      Object.assign(g, { goal: null, follow: null, force: null, delay: 0, reach: 0, puffTo: 0, waveTo: 0, curl: 0 });
+      go(g, rand(650, 800) * g.k);
+    }
   }
 
   // ---------- the path: a cubic curve from one edge to the opposite one, sampled by arc length ----------
@@ -498,6 +517,7 @@ export function startLizard(root, { swarm = () => false } = {}) {
   }
 
   function startHunt(g, caught, delay = null) {
+    if (noButterflies()) return; // no butterfly to call
     // the butterfly sits a little to one side, just within reach of the nose once the gecko has crept up
     const a = rand(-0.4, 0.4);
     const s = g.s + CREEP;
@@ -635,7 +655,7 @@ export function startLizard(root, { swarm = () => false } = {}) {
     g.hunt = null; g.lick = 0; g.squint = 0; g.gulp = 0; g.lips = 0;
     g.eaten++;
     fatter(g, size); // a big butterfly fills it out more
-    if (!g.scene && bf.wing && toWing(g, bf.wing, glutton ? 1 : WING_EAT)) return;
+    if (!g.scene && !calm() && bf.wing && toWing(g, bf.wing, glutton ? 1 : WING_EAT)) return;
     if (g.scene || !huntMore(g)) g.look = g.until - rand(1, 2);
   }
 

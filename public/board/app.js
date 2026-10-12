@@ -501,7 +501,8 @@ try {
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
 live({ onState: (state) => onState(state) });
 // «lots of geckos» is switched in the admin page
-startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards });
+// no geckos or butterflies coming over the call screen (the mascots' brawl), no butterflies over the podium
+startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards, calm: () => !el('call').hidden, bare: () => !el('poster').hidden });
 
 // Debug hook for checking slides from the browser console.
 window.__board = {

@@ -127,8 +127,9 @@ const CSS = `
   text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
 /* semi-finals and the final: cartoon flames burn behind VS, embers fly up; now and then a fire extinguisher pops in,
    puffs, the flames die down and flare up again bigger. Small SVG pictures that only move and scale (cheap for the TV). */
-.fight .burn { position: absolute; left: 50%; top: -70px; width: 420px; height: 200px; margin-left: -210px; z-index: -2; display: none;
-  transform-origin: 50% 100%; font-style: normal; }
+.fight .grow { position: absolute; left: 50%; top: -30px; width: 420px; height: 200px; margin-left: -210px; z-index: -2; transform-origin: 50% 100%; }
+/* the fire rises from the bottom of the letters (their foot is at about 200 px of the 220 px line) */
+.fight .burn { position: absolute; left: 0; top: 0; width: 420px; height: 200px; display: none; transform-origin: 50% 100%; font-style: normal; }
 .fight.fire .burn { display: block; animation: tame 8s 1.4s infinite; }
 .fight .burn .f { position: absolute; bottom: 0; width: 100px; height: 160px; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
 .fight .burn .f svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -246,7 +247,7 @@ function fire() {
     .map(([x, dx, delay]) => `<i class="e" style="left:${x}px;--dx:${dx}px;animation-delay:${delay}s"></i>`).join('');
   const puff = [[120, 60, 110], [190, 20, 140], [260, 70, 100], [60, 100, 90], [310, 110, 80]]
     .map(([x, y, d]) => `<i style="left:${x}px;top:${y}px;width:${d}px;height:${d}px"></i>`).join('');
-  return `<span class="burn">${flames}${embers}</span><span class="puff">${puff}</span><span class="ext">🧯</span>`;
+  return `<span class="grow"><span class="burn">${flames}${embers}</span></span><span class="puff">${puff}</span><span class="ext">🧯</span>`;
 }
 
 export function createCall(root) {
@@ -388,7 +389,21 @@ export function createCall(root) {
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
       fight.classList.toggle('important', !!hype);
-      fight.classList.toggle('fire', hype === 'Semi-final' || hype === 'Final'); // flames behind VS
+      const burning = hype === 'Semi-final' || hype === 'Final';
+      fight.classList.toggle('fire', burning); // flames behind VS
+      if (burning) {
+        // every time the extinguisher has put it out, the fire flares up bigger than before and stays so
+        // (the flare-up of the 8 s cycle, started 1.4 s in, is at 87%: see @keyframes tame)
+        const flares = [];
+        for (let t = 1400 + 0.87 * 8000; t < ms; t += 8000) flares.push(t);
+        const frames = [{ transform: 'scale(1)', offset: 0 }];
+        flares.forEach((t, i) => {
+          frames.push({ transform: `scale(${1 + 0.45 * i})`, offset: (t - 50) / ms });
+          frames.push({ transform: `scale(${1 + 0.45 * (i + 1)})`, offset: (t + 250) / ms });
+        });
+        frames.push({ transform: frames.at(-1).transform, offset: 1 });
+        anim(q('.grow'), frames, { duration: ms, fill: 'forwards' });
+      }
       title(hype);
       if (hype) q('.label').textContent = ''; // the big gold title says it already: no small line under it
       // each player keeps one mascot for the whole tournament: it comes from the player's id, which is new in every

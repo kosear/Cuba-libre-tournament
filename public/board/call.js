@@ -407,7 +407,11 @@ export function createCall(root) {
     }
   }
 
-  const MEET_DOWN = 230; // px: where the mascots brawl, under VS
+  // Where the mascots brawl: the three patches of the ring with no text on them (the title sits at 130-300, the left
+  // name at 180-850 × 380-600, VS at 800-1120 × 510-730, the right name at 1070-1740 × 640-860). Each is the (left, top)
+  // of the box between the two fighters: the pair takes 560 × 300 px round it.
+  const SPOTS = [[230, 640], [1280, 310], [620, 745]]; // bottom left, top right, bottom centre
+  const spot = (i) => [SPOTS[i][0] + rand(-40, 40), SPOTS[i][1] + rand(-30, 30)];
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
 
@@ -575,7 +579,7 @@ export function createCall(root) {
   }
 
   /**
-   * Both hop to (mx, my) of the ring (left and top of a box right between them: side by side, half a body apart, m1 on the left) and
+   * Both hop to (mx, my) of the ring (left and top of a box right between them: side by side, half a body apart, m1 on the left; one of SPOTS) and
    * pound each other there in turns, comic bursts between them; nobody wins, nobody is knocked away. wild: the big-match
    * frenzy: faster, harder, now and then two in a row, the screen shakes. Returns when it ends (ms from now). Transforms only.
    */
@@ -612,9 +616,9 @@ export function createCall(root) {
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
-    const [a, b] = fs.map((f) => f.home);
     fs.forEach(putDown); // props tossed aside first, then off to fight
-    const end = scuffle(fs, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + MEET_DOWN, 650, 6 + Math.floor(Math.random() * 3), false);
+    const [sx, sy] = spot(2); // under VS, between the names
+    const end = scuffle(fs, sx, sy, 650, 6 + Math.floor(Math.random() * 3), false);
     const home = hopTo(fs, [[0, 0], [0, 0]], end, false) + 100;
     after(home, () => { fs.forEach(pickUp); bob(1, 0); bob(2, 0); });
     const next = home + rand(3000, 7000);
@@ -636,19 +640,16 @@ export function createCall(root) {
     const T2 = T1 + 1800; // hit, reel, a second to get angry
     throwAt(first, second, T1);
     throwAt(second, first, T2);
-    let [px, py] = [-9999, -9999];
+    let last = -1;
     // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
     const plan = (left, t0 = T2 + 1400) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
-        let mx;
-        let my;
-        let tries = 0;
-        do {
-          mx = rand(220, 1520); // both stay on screen (the ring is 60 px bigger than it on each side)
-          my = rand(150, 740);
-        } while (Math.hypot(mx - px, my - py) < 450 && ++tries < 20);
-        [px, py] = [mx, my];
+        // one of the text-free patches, never the same one twice running
+        let i;
+        do i = Math.floor(Math.random() * SPOTS.length); while (i === last);
+        last = i;
+        const [mx, my] = spot(i);
         t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
       }
       if (left > t) after(t, () => plan(left - t, 0));

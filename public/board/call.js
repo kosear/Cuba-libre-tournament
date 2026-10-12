@@ -31,9 +31,11 @@ export function emojify(s) {
   return s.replace(EMOJI, (e) => `<img class="emo" src="/assets/emoji/${[...e].map((c) => c.codePointAt(0)).filter((c) => c !== 0xfe0f).map((c) => c.toString(16)).join('_')}.svg" alt="">`);
 }
 // Bodies drawn side-on looking left (in Noto all side-on animals look left; the rest look at us): turned round to look right.
-const LOOKS_LEFT = new Set([...'🦥🦈🦦🦙🦖🦆🐓🦍🦎🦅🐆🦓🦭🐝🦒🐘🐉🐧🐍🦜🐢🐞🦘🐐🐊🦔🐋🐌🐗🦄🦩🐂']);
-/** Which way a mascot looks as drawn: -1 left, 0 at us. */
-const facing = (m) => (LOOKS_LEFT.has(m[0]) ? -1 : 0);
+const LOOKS_LEFT = new Set([...'🦈🦦🦙🦖🦆🐓🦍🦎🦅🐆🦓🦭🐝🦒🐘🐉🐧🐍🦜🐢🐞🦘🐐🐊🦔🐋🐌🐗🦄🦩🐂']);
+// and these count as looking right: the sloth hangs with its head on the left, it reads best turned away
+const LOOKS_RIGHT = new Set([...'🦥']);
+/** Which way a mascot looks as drawn: -1 left, 1 right, 0 at us. */
+const facing = (m) => (LOOKS_LEFT.has(m[0]) ? -1 : LOOKS_RIGHT.has(m[0]) ? 1 : 0);
 
 // [body, hat, prop, name, scale]; scale (optional) makes the whole mascot a little smaller or bigger; the prop can be
 // [prop, dx, dy, deg] (em of the prop) to move it off the body; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
@@ -44,7 +46,7 @@ const MASCOTS = [
   ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
   ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', ['🥊', -0.25, 0, 14], 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
   ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', ['💸', 0, 0.25, 14], 'Piggy Bank'],
-  ['🦍', ['👑', -0.2, 0.05, 12], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.45, -8], '🪄', 'Hairy Potter'],
+  ['🦍', ['👑', -0.35, -0.15, 8], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.45, -8], '🪄', 'Hairy Potter'],
   // Bali and around
   ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', ['🍔', 0, 0.3, 14], 'Bald Eagle'],
   // more puns
@@ -56,7 +58,7 @@ const MASCOTS = [
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
-  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.25, 0.2, 14], 'Pelan Pelan'],
+  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.6, 0.4, 14], 'Pelan Pelan'],
   ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', -1.6, 0.15, 14], 'Crikey!'],
   ['🦔', '', ['👟', 0, 0.3, 14], 'Gotta Go Fast'], ['🐋', '', ['🎱', 0, 0.5, 14], 'Killer Whale'], ['🐌', '', ['✉️', 0, 0.15, 14], 'Snail Mail'],
@@ -255,7 +257,7 @@ function mascotInner(m, mirrored = false, look = 0) {
 
 /**
  * The player's mascot of this tournament (players: all, in join order) as HTML, for the podium; its size factor and
- * which way it looks as drawn (-1 left, 0 at us).
+ * which way it looks as drawn (-1 left, 1 right, 0 at us).
  */
 export function mascotHTML(p, players = []) {
   const m = mascotFor(p, players);

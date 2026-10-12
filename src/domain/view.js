@@ -156,18 +156,19 @@ function contenders(s, raw = false) {
 /**
  * The semi-finals still to come, for the end of the queue during the group stage (the 3rd place match and the final are
  * not listed: once the play-off starts the queue panel is gone): a name where the participant of
- * that slot is already certain, else a placeholder ({ name, placeholder: true }). A group is settled when it is over or
- * its only match left changes nothing (lastMatchMatters). Certain: with 1-2 groups, the player's group is settled; with
- * 3 and more, every group is settled (the slot depends on comparing all the groups). A tied place is never certain.
+ * that place is already certain, else a placeholder ({ name, placeholder: true }). A group is settled when it is over or
+ * its only match left changes nothing (lastMatchMatters). A group's winner (or runner-up with 1-2 groups) is certain once
+ * the group is settled; the best 2nd place of 3 groups only when every group is settled. A tied place is never certain.
+ * With 3 and more groups the pairing follows the current seeding: it can still swap until all the groups are settled.
  */
 function upcomingPlayoff(s) {
   const n = s.groups.length;
   const settled = new Map(s.groups.map((g) => [g.id, isGroupDone(s, g.id) || lastMatchMatters(s, g) === false]));
   const allSettled = [...settled.values()].every(Boolean);
   const groupOf = (ids) => (ids?.length === 1 ? s.players[ids[0]]?.groupId : null);
-  const sure = (ids) => !!groupOf(ids) && (n <= 2 ? settled.get(groupOf(ids)) : allSettled);
+  const sure = (e) => !!groupOf(e.ids) && settled.get(groupOf(e.ids)) && (e.label !== 'Best 2nd place' || allSettled);
   const projected = contenders(s, true);
-  const side = (e) => (e.ids && sure(e.ids) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
+  const side = (e) => (e.ids && sure(e) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
   const mk = (slot, p1, p2) => ({ id: `next-${slot}`, stage: 'playoff', round: slot, label: ROUND_LABEL[slot], p1, p2, upcoming: true });
   return [
     mk('sf1', side(projected.sf1[0]), side(projected.sf1[1])),

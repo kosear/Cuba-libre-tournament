@@ -128,6 +128,8 @@ const CSS = `
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .pow { position: absolute; z-index: 5; font: italic 900 96px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
   -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl */
+.fight .dust { position: absolute; z-index: 1; width: 0; height: 0; pointer-events: none; } /* a cartoon dust cloud; (left, top) is its middle */
+.fight .dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 5px rgba(74,42,0,.3); }
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
@@ -360,6 +362,25 @@ export function createCall(root) {
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
 
+  /** A cartoon dust cloud of a few puffs at (x, y) of the ring that swells, drifts up and fades; k: its size. */
+  function dust(x, y, k = 1) {
+    const d = document.createElement('div');
+    d.className = 'dust';
+    d.style.left = `${x}px`;
+    d.style.top = `${y}px`;
+    const n = 5 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const r = rand(70, 120) * k;
+      const a = (i / n) * Math.PI + rand(-0.3, 0.3); // a half-ring lying on the floor
+      d.insertAdjacentHTML('beforeend', `<i style="width:${r}px;height:${r}px;left:${Math.cos(a) * 120 * k - r / 2}px;top:${-Math.sin(a) * 45 * k - r / 2}px"></i>`);
+    }
+    ring.append(d);
+    const ms = rand(800, 1100);
+    d.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'translateY(-20px) scale(1)', opacity: 1, offset: 0.4 },
+      { transform: `translate(${rand(-20, 20)}px, -60px) scale(1.35)`, opacity: 0 }], { duration: ms, easing: 'ease-out' });
+    after(ms + 50, () => d.remove());
+  }
+
   /** A comic hit burst (POW!, BAM!…) at (x, y) of the ring. */
   function pow(x, y) {
     const b = document.createElement('div');
@@ -396,6 +417,9 @@ export function createCall(root) {
             { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + f.x) / 2}px, ${(fy + f.y) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
             { transform: `translate(${f.x}px, ${f.y}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${f.x}px, ${f.y}px)` }],
           { duration: hopMs, easing: 'linear', fill: 'forwards' });
+          // a puff of dust from under the feet where it lands
+          const [lx, ly] = [f.home[0] + f.x + 150, f.home[1] + f.y + 290];
+          after(hopMs * 0.85, () => dust(lx, ly, wild ? 0.9 : 0.75));
         });
       }
     });
@@ -424,6 +448,8 @@ export function createCall(root) {
         anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y}px) rotate(${deg * 0.6}deg)`, offset: 0.5 },
           { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: step - 50, delay: 70, fill: 'forwards' });
         pow(mx + 150 + rand(-60, 60), my + 90 + rand(-70, 40));
+        // the scuffle raises dust around their feet
+        if (i % 2 === 0) dust(mx + 150 + rand(-140, 140), my + 280 + rand(-20, 20), wild ? 1.3 : 1);
       });
       if (wild && i % 3 === 2) impact(t0 + i * step + 60, 9);
     }
@@ -453,10 +479,11 @@ export function createCall(root) {
     while (t < ms) {
       let mx;
       let my;
+      let tries = 0;
       do {
         mx = rand(220, 1520); // both stay on screen (the ring is 60 px bigger than it on each side)
         my = rand(150, 740);
-      } while (Math.hypot(mx - px, my - py) < 450);
+      } while (Math.hypot(mx - px, my - py) < 450 && ++tries < 20);
       [px, py] = [mx, my];
       t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
     }
@@ -469,7 +496,7 @@ export function createCall(root) {
       running = [];
       timers.forEach(clearTimeout);
       timers = [];
-      ring.querySelectorAll('.pow').forEach((x) => x.remove());
+      ring.querySelectorAll('.pow, .dust').forEach((x) => x.remove());
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;

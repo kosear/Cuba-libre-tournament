@@ -184,6 +184,23 @@ export function createPoster(root) {
       const top = m.el.offsetTop + m.y;
       return { left, top, right: left + m.size * 1.25, mid: left + m.size * 0.62, floor: top + m.size * 1.02 };
     };
+    // standing about, it dances on the spot, each in its own way (a hop, a punch or a throw plays over the dance)
+    const DANCES = [
+      [[{ transform: 'rotate(-6deg)' }, { transform: 'rotate(6deg)' }], 900], // sways
+      [[{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-12px) scale(.97, 1.04)', offset: 0.4 }, { transform: 'translateY(0) scale(1.05, .95)', offset: 0.8 },
+        { transform: 'translateY(0) scale(1)' }], 520], // bounces to the beat
+      [[{ transform: 'translateX(-5px) rotate(-4deg)' }, { transform: 'translateX(5px) rotate(4deg)' }], 340], // wiggles
+      [[{ transform: 'scale(1)' }, { transform: 'scale(1.06, .92)', offset: 0.5 }, { transform: 'scale(1)' }], 460], // springs
+      [[{ transform: 'rotate(0)' }, { transform: 'translateY(-8px) rotate(-7deg)', offset: 0.25 }, { transform: 'rotate(0)', offset: 0.5 },
+        { transform: 'translateY(-8px) rotate(7deg)', offset: 0.75 }, { transform: 'rotate(0)' }], 1100], // grooves side to side
+    ];
+    function dance(m, on = true, style = Math.floor(Math.random() * DANCES.length)) {
+      m.dance?.cancel();
+      m.dance = null;
+      if (!on) return;
+      const [frames, ms] = DANCES[style];
+      m.dance = m.hop.animate(frames, { duration: ms * rand(0.9, 1.15), iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
+    }
     /** A bounce on the spot: a crouch, up, a squash on landing. */
     const jump = (m, h, ms) => m.hop.animate([
       { transform: 'scale(1)', easing: 'ease-out' }, { transform: 'scale(1.12, .86)', offset: 0.14, easing: 'ease-out' },
@@ -349,8 +366,26 @@ export function createPoster(root) {
         throwAt(m, targets[Math.floor(Math.random() * targets.length)], () => { m.busy = false; later(() => next(m), rand(600, 1500)); });
         return;
       }
-      if (r < 0.3) { later(() => next(m), rand(900, 2600)); return; } // just stand there
+      if (r < 0.3) { if (Math.random() < 0.4) dance(m); later(() => next(m), rand(900, 2600)); return; } // stands there dancing, now and then another way
       if (r < 0.42) { turn(m, -m.dir); later(() => next(m), rand(600, 1400)); return; } // look the other way
+      if (r >= 0.55 && r < 0.68 && m.item && !m.prop) { // tosses its prop up and catches it, like a snowball, a few times
+        const base = getComputedStyle(m.item).transform.replace('none', '');
+        const n = 2 + Math.floor(Math.random() * 3);
+        const h = rand(90, 150) * (m.size / 104);
+        const ms = 620;
+        for (let i = 0; i < n; i++) {
+          later(() => {
+            if (m.busy || m.prop) return;
+            m.item.animate([{ transform: `translateY(0) ${base}`, easing: 'ease-out' },
+              { transform: `translateY(${-h}px) ${base} rotate(${Math.random() < 0.5 ? -180 : 180}deg)`, offset: 0.5, easing: 'ease-in' },
+              { transform: `translateY(0) ${base} rotate(0deg)` }], { duration: ms });
+            m.hop.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04, .95)', offset: 0.12 }, { transform: 'scale(1)', offset: 0.3 },
+              { transform: 'scale(1)', offset: 0.9 }, { transform: 'scale(1.04, .95)', offset: 0.96 }, { transform: 'scale(1)' }], { duration: ms }); // the throw, the catch
+          }, i * (ms + 30));
+        }
+        later(() => next(m), n * (ms + 30) + rand(300, 900));
+        return;
+      }
       if (r < 0.55) { // a couple of bounces on the spot
         const n = 1 + Math.floor(Math.random() * 3);
         for (let i = 0; i < n; i++) later(() => jump(m, 35, 460), i * 480);
@@ -385,6 +420,8 @@ export function createPoster(root) {
       const others = free.filter((m) => m !== a);
       const v = others[Math.floor(Math.random() * others.length)];
       a.busy = v.busy = true;
+      dance(a, false);
+      dance(v, false);
       const [hx, hy] = [a.x, a.y];
       const side0 = box(v).mid > box(a).mid ? -1 : 1;
       putDown(a, side0 * rand(90, 150)); // its prop tossed aside, behind it, before it goes
@@ -419,10 +456,10 @@ export function createPoster(root) {
             stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
             later(() => stars.remove(), 2800);
             // the bully hops back home (picking its prop up on the way), the victim gets up a bit later
-            const back = () => hopTo(a, hx, hy, () => { a.busy = false; later(() => next(a), rand(400, 1200)); });
+            const back = () => hopTo(a, hx, hy, () => { a.busy = false; dance(a); later(() => next(a), rand(400, 1200)); });
             later(() => (a.prop ? fetch(a, back) : back()), 500);
             later(() => {
-              hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => { v.busy = false; later(() => next(v), rand(400, 1200)); });
+              hopTo(v, Math.max(0, Math.min(v.d, v.x)), 0, () => { v.busy = false; dance(v); later(() => next(v), rand(400, 1200)); });
             }, 3000);
             later(fight, rand(22000, 38000)); // the next beating: a couple a minute
           }, punches * 330 + 150);
@@ -433,6 +470,7 @@ export function createPoster(root) {
       m.x = rand(0, m.d);
       for (let i = 0; i < 12 && crowded(m, m.x); i++) m.x = rand(0, m.d); // not on top of another one
       place(m);
+      later(() => dance(m), rand(2000, 3000)); // after the entrance
       later(() => next(m), rand(2600, 4200)); // after the entrance
     }
     if (list.length > 1) later(fight, rand(9000, 16000));

@@ -468,6 +468,51 @@ export function createCall(root) {
     { duration: 560, fill: 'forwards' });
     f.drop = { d, it, deg, lie, dx: dx * 1.12, dy, cx, cy };
   }
+  /**
+   * A big match opens with a throw: the mascot hurls its prop at the other one (`at` ms from now). The prop flies
+   * spinning, hits (a burst, the other one reels), bounces off and falls on the floor by it, and lies there.
+   */
+  function throwAt(f, o, at) {
+    const it = f.el.querySelector('.item');
+    if (!it) return;
+    after(at, () => {
+      const R = ring.getBoundingClientRect();
+      const k = R.width / ring.offsetWidth;
+      const r = it.getBoundingClientRect();
+      const O = o.el.getBoundingClientRect();
+      const [w, h] = [it.offsetWidth, it.offsetHeight];
+      const [cx, cy] = [(r.left + r.width / 2 - R.left) / k, (r.top + r.height / 2 - R.top) / k];
+      const [ox, oy] = [(O.left + O.width / 2 - R.left) / k, (O.top + O.height * 0.45 - R.top) / k]; // its chest
+      const m = new DOMMatrix(getComputedStyle(it).transform);
+      const deg = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+      const [tx, ty] = [ox - cx, oy - cy];
+      const spin = deg + f.dir * rand(540, 720);
+      const lie = spin + f.dir * rand(60, 120);
+      const fx = tx - f.dir * rand(60, 110); // bounced back off it
+      const fy = Math.max(ty, (O.bottom - R.top) / k - h * 0.45 - cy); // down to the floor at its feet
+      const d = document.createElement('div');
+      d.className = 'dropped';
+      d.innerHTML = it.innerHTML;
+      Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
+      ring.append(d);
+      it.style.visibility = 'hidden';
+      const FLY = 760;
+      const HIT = 0.5;
+      anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
+        { transform: `translate(${tx / 2}px, ${Math.min(0, ty) / 2 - 120}px) rotate(${(deg + spin) / 2}deg)`, offset: HIT / 2, easing: 'ease-in' },
+        { transform: `translate(${tx}px, ${ty}px) rotate(${spin}deg)`, offset: HIT, easing: 'ease-out' },
+        { transform: `translate(${(tx + fx) / 2}px, ${ty - 70}px) rotate(${(spin + lie) / 2}deg)`, offset: 0.7, easing: 'ease-in' },
+        { transform: `translate(${fx}px, ${fy}px) rotate(${lie}deg)`, offset: 0.9, easing: 'ease-out' },
+        { transform: `translate(${fx - f.dir * 8}px, ${fy}px) rotate(${lie}deg)` }],
+      { duration: FLY, fill: 'forwards' });
+      after(FLY * HIT, () => {
+        pow(ox + rand(-30, 30), oy + rand(-30, 20));
+        anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + f.dir * 40}px, ${o.y - 12}px) rotate(${f.dir * 10}deg)`, offset: 0.3 },
+          { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+      });
+      f.drop = { d, it, deg, lie, dx: fx - f.dir * 8, dy: fy, cx, cy };
+    });
+  }
   /** Back home: it picks its prop up again, the prop flies back into its hands. */
   function pickUp(f) {
     if (!f.drop) return;
@@ -561,10 +606,12 @@ export function createCall(root) {
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
-    fs.forEach(putDown); // the props stay where they stood: this fight never comes back home
+    // first they hurl their props at each other, then go at it; the props stay on the floor (no coming back home)
+    throwAt(fs[0], fs[1], 0);
+    throwAt(fs[1], fs[0], 450);
     let [px, py] = [-9999, -9999];
     // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
-    const plan = (left, t0 = 650) => {
+    const plan = (left, t0 = 1500) => {
       let t = t0;
       while (t < Math.min(left, 60000)) {
         let mx;

@@ -500,7 +500,7 @@ try {
 
 // Errors are never shown on the TV: it keeps the last picture and reconnects by itself.
 live({ onState: (state) => onState(state) });
-// gecko hours too, also during a tournament: that is when the bar is full; «lots of geckos» is switched in the admin page
+// «lots of geckos» is switched in the admin page
 startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards });
 
 // Debug hook for checking slides from the browser console.

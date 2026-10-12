@@ -19,8 +19,6 @@
 // - run-off: the gecko dashes off with the butterfly flapping in its mouth.
 // A miss: a snap at the air, a look after the butterfly and a lick over the eye (geckos do that).
 // A wing left lying brings the next gecko within a minute: it comes to eat the wing.
-// «Gecko hour»: once in every two hours, at a random minute, for RUSH_MS the geckos come much more often (RUSH, like the
-// fast mode). The minute comes from the clock, so all screens in the bar start together and a reload changes nothing.
 // The butterfly also just flies by on its own now and then.
 // A torn-off wing stays where it fell until the next gecko: its path then leads over the wing, it stops in front of
 // it, snaps it up and eats it.
@@ -40,7 +38,7 @@
 // - family: a mother and her baby of the same colour, the baby trotting after her on her path; she catches a butterfly,
 //   the baby runs up alongside, tears off a wing for itself and eats it.
 // The gecko and the butterflies live «on the glass»: above the whole board (splash, tournament slides, the call
-// screen), never touching what is shown. A gecko hour happens only when `rush()` allows (not during a tournament).
+// screen), never touching what is shown.
 
 import { createButterfly, drawButterfly, drawWing } from '/board/butterfly.js';
 
@@ -61,19 +59,6 @@ const HIP = 11;
 const STRIDE = 100; // px travelled per full gait cycle
 const BOX = 600; // canvas size at size 1, the gecko is drawn around its middle
 // size (scale) and how often: 0.6 a baby ... 1.5 a big one, rare
-const SLOT_MS = 2 * 60 * 60 * 1000; // one gecko hour in every slot
-const RUSH_MS = 5 * 60 * 1000;
-const RUSH = 12; // how many times more often during it: a gecko every 35-65 s, 4-5 of them
-/** Is a gecko hour on now? Its start in each slot is a hash of the slot number: random, but the same on every screen. */
-function rushOn(now = Date.now()) {
-  const slot = Math.floor(now / SLOT_MS);
-  let x = (slot * 2654435761) >>> 0; // integer hash (xorshift-multiply)
-  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
-  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
-  x = (x ^ (x >>> 16)) >>> 0;
-  const start = slot * SLOT_MS + (x % (SLOT_MS - RUSH_MS));
-  return now >= start && now < start + RUSH_MS;
-}
 
 const GLUTTON = 0.25; // share of geckos that eat 2-3 butterflies in a row
 // share of geckos that have lost their tail (they drop it to get away), babies half as often; in the wild it is 30-60%,
@@ -88,7 +73,7 @@ function fatter(g, part = 1) {
   g.fatTo = Math.min(step * 3, g.fatTo + step * part);
 }
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
-const DUO = 1 / 15; // share of runs where two geckos meet (a gecko hour or the fast mode: 1 in 5)
+const DUO = 1 / 15; // share of runs where two geckos meet (lots of geckos or the fast mode: 1 in 5)
 const SMALL_WINS = 0.75; // a standoff of two sizes: the small one wins so often
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
@@ -133,7 +118,7 @@ const WIDTH = Array.from({ length: N }, (_, i) => {
  * `?lizard=duo`: the fast mode where every run is a scene of two geckos, one after another;
  *   `?lizard=duo-rivals`, `duo-steal`, `duo-fight`, `duo-family`: only that scene.
  */
-export function startLizard(root, { rush = () => true, swarm = () => false } = {}) {
+export function startLizard(root, { swarm = () => false } = {}) {
   const mode = new URLSearchParams(location.search).get('lizard');
   const glutton = mode === 'glutton'; // the fast mode with every gecko a glutton that always eats the wing it can reach
   // ?lizard=duo: the fast pace with every run a scene of two, in turn; ?lizard=duo-fight (rivals, steal, family): only that one
@@ -141,9 +126,8 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   const duoP = () => (often() > 1 ? 0.2 : DUO); // share of runs that are a scene of two
   const fast = mode === 'fast' || glutton || duo ? 40 : 1;
   const test = mode !== null && fast === 1;
-  // the fast mode and a gecko hour: many geckos, catches are the rule
-  // ?lizard=fast, «lots of geckos» from the admin page (as often as the fast mode), or a gecko hour
-  const often = () => (fast > 1 ? fast : test || DEMO ? 1 : swarm() ? 40 : rush() && rushOn() ? RUSH : 1);
+  // many geckos, catches are the rule: ?lizard=fast, or «lots of geckos» from the admin page (as often as the fast mode)
+  const often = () => (fast > 1 ? fast : test || DEMO ? 1 : swarm() ? 40 : 1);
   const escapeP = () => (often() > 1 ? 0 : 0.8); // after slipping out of the jaws, the share that gets away at the second snap
   const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
   const huntTest = mode === 'hunt';
@@ -163,17 +147,17 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
   const bf = createButterfly(root);
   let timer = setTimeout(run, test ? 2000 : period());
   let bTimer = setTimeout(flyBy, test ? 8000 : bPeriod());
-  // a gecko hour starting: the long waits of the normal pace are cut short
-  let rushing = false;
-  const rushCheck = setInterval(() => {
+  // «lots of geckos» switched on: the long waits of the normal pace are cut short
+  let swarming = false;
+  const swarmCheck = setInterval(() => {
     const on = often() > 1 && fast === 1;
-    if (on && !rushing) {
+    if (on && !swarming) {
       clearTimeout(timer);
       timer = setTimeout(run, rand(1000, 5000));
       clearTimeout(bTimer);
       bTimer = setTimeout(flyBy, bPeriod());
     }
-    rushing = on;
+    swarming = on;
   }, 3000);
   let raf = 0;
   let last = 0;
@@ -1685,7 +1669,7 @@ export function startLizard(root, { rush = () => true, swarm = () => false } = {
 
   return {
     stop() {
-      clearInterval(rushCheck);
+      clearInterval(swarmCheck);
       clearTimeout(timer);
       clearTimeout(bTimer);
       bf.eaten();

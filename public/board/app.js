@@ -10,6 +10,8 @@ const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
+// TEMPORARY, for looking at the mascots' brawls on dev: the call screen stays until the match changes
+const CALL_STAYS = 24 * 3600 * 1000;
 const DURATION = { groups: 60000, group: 30000, playoff: 30000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
@@ -453,8 +455,8 @@ function showCall(m) {
   const box = el('call');
   box.hidden = false; // visible before show(): it measures the names
   callScreen ??= createCall(box);
-  callScreen.show(m, hypeOf(m), CALL_MS, T.players);
-  call = { id: m.id, timer: setTimeout(hideCall, CALL_MS) };
+  callScreen.show(m, hypeOf(m), CALL_STAYS, T.players);
+  call = { id: m.id, timer: setTimeout(hideCall, CALL_STAYS) };
 }
 
 function hideCall() {

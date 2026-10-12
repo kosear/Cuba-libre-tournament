@@ -451,7 +451,7 @@ export function createCall(root) {
     const deg = (Math.atan2(m.b, m.a) * 180) / Math.PI;
     const back = -f.dir; // tossed a little behind it, away from the other one
     const lie = deg + back * rand(60, 110); // tumbles over in the air
-    const dx = back * rand(70, 120);
+    const dx = back * rand(140, 240);
     const dy = Math.max(0, (B.bottom - R.top) / k - h * 0.45 - cy); // down to the floor
     const d = document.createElement('div');
     d.className = 'dropped';
@@ -461,7 +461,7 @@ export function createCall(root) {
     it.style.visibility = 'hidden';
     // a toss: up and back over its shoulder, down on the floor, a little bounce
     anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
-      { transform: `translate(${dx * 0.45}px, -70px) rotate(${(deg + lie) / 2}deg)`, offset: 0.35, easing: 'ease-in' },
+      { transform: `translate(${dx * 0.45}px, -110px) rotate(${(deg + lie) / 2}deg)`, offset: 0.35, easing: 'ease-in' },
       { transform: `translate(${dx}px, ${dy}px) rotate(${lie}deg)`, offset: 0.75, easing: 'ease-out' },
       { transform: `translate(${dx * 1.08}px, ${dy - 12}px) rotate(${lie}deg)`, offset: 0.87, easing: 'ease-in' },
       { transform: `translate(${dx * 1.12}px, ${dy}px) rotate(${lie}deg)` }],

@@ -410,8 +410,17 @@ export function createCall(root) {
   // Where the mascots brawl: the three patches of the ring with no text on them (the title sits at 130-300, the left
   // name at 180-850 × 380-600, VS at 800-1120 × 510-730, the right name at 1070-1740 × 640-860). Each is the (left, top)
   // of the box between the two fighters: the pair takes 560 × 300 px round it.
-  const SPOTS = [[230, 640], [1280, 310], [620, 745]]; // bottom left, top right, bottom centre
-  const spot = (i) => [SPOTS[i][0] + rand(-40, 40), SPOTS[i][1] + rand(-30, 30)];
+  const SPOTS = [[230, 640], [1300, 320], [620, 750], [150, 70]]; // bottom left, top right, bottom centre, top left
+  const JITTER = [[60, 40], [90, 50], [30, 20], [20, 20]];
+  const spot = (i) => [SPOTS[i][0] + rand(-JITTER[i][0], JITTER[i][0]), SPOTS[i][1] + rand(-JITTER[i][1], JITTER[i][1])];
+  /** How many of SPOTS are free: the top left one only when the title's text starts right of it. */
+  function spots() {
+    const r = document.createRange();
+    r.selectNodeContents(q('.sub'));
+    const R = ring.getBoundingClientRect();
+    const left = (r.getBoundingClientRect().left - R.left) / (R.width / ring.offsetWidth);
+    return left > 660 ? 4 : 3;
+  }
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
 
@@ -599,7 +608,7 @@ export function createCall(root) {
           { transform: `translate(${f.x}px, ${f.y}px)` }], { duration: step - 50, easing: 'ease-out', fill: 'forwards' });
         anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y}px) rotate(${deg * 0.6}deg)`, offset: 0.5 },
           { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: step - 50, delay: 70, fill: 'forwards' });
-        pow(mx + 150 + rand(-90, 90), my + 60 + rand(-80, 50)); // between the two, somewhere else each time
+        pow(mx + 150 + rand(-90, 90), my + 110 + rand(-30, 60)); // between the two, never above them (a name may be there), somewhere else each time
         // the scuffle raises dust around their feet
         if (i % 2 === 0) dust(mx + 150 + rand(-140, 140), my + 280 + rand(-20, 20), wild ? 1.3 : 1);
       });
@@ -645,12 +654,13 @@ export function createCall(root) {
     const plan = (left, t0 = T2 + 1400) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
-        // one of the text-free patches, never the same one twice running
+        // one of the text-free patches, never the same one twice running; now and then a breather in between
+        const n = spots();
         let i;
-        do i = Math.floor(Math.random() * SPOTS.length); while (i === last);
+        do i = Math.floor(Math.random() * n); while (i === last);
         last = i;
         const [mx, my] = spot(i);
-        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
+        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true) + (Math.random() < 0.4 ? rand(600, 1600) : 0);
       }
       if (left > t) after(t, () => plan(left - t, 0));
     };

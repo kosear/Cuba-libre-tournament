@@ -410,8 +410,9 @@ export function createCall(root) {
   // Where the mascots brawl: the three patches of the ring with no text on them (the title sits at 130-300, the left
   // name at 180-850 × 380-600, VS at 800-1120 × 510-730, the right name at 1070-1740 × 640-860). Each is the (left, top)
   // of the box between the two fighters: the pair takes 560 × 300 px round it.
-  const SPOTS = [[230, 640], [1300, 320], [620, 750], [150, 70], [1500, 50]]; // bottom left, top right, bottom centre, top left, top right corner
-  const JITTER = [[60, 40], [90, 50], [30, 20], [20, 20], [20, 20]];
+  // bottom left, bottom left of centre, bottom centre, top right, top right corner, top left corner
+  const SPOTS = [[190, 650], [410, 755], [640, 755], [1300, 330], [1500, 60], [150, 70]];
+  const JITTER = [[40, 30], [30, 20], [20, 15], [60, 40], [15, 15], [15, 15]];
   const spot = (i) => [SPOTS[i][0] + rand(-JITTER[i][0], JITTER[i][0]), SPOTS[i][1] + rand(-JITTER[i][1], JITTER[i][1])];
   /** The SPOTS free of text now: the two at the top only where the title's text leaves room. */
   function spots() {
@@ -421,9 +422,9 @@ export function createCall(root) {
     const k = R.width / ring.offsetWidth;
     const t = r.getBoundingClientRect();
     const [left, right] = [(t.left - R.left) / k, (t.right - R.left) / k];
-    const out = [0, 1, 2];
-    if (left > 660) out.push(3);
-    if (right < 1340) out.push(4);
+    const out = [0, 1, 2, 3];
+    if (right < 1370) out.push(4);
+    if (left > 660) out.push(5);
     return out;
   }
   /** The free spots in a random order, none twice before all have had their turn (a new round never starts where the last ended). */
@@ -502,7 +503,7 @@ export function createCall(root) {
     d.className = 'dropped';
     d.innerHTML = it.innerHTML;
     Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
-    ring.append(d);
+    ring.insertBefore(d, q('.mascot.m1')); // under the mascots: they walk over it
     it.style.visibility = 'hidden';
     // a toss: up and back over its shoulder, down on the floor, a little bounce
     anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
@@ -540,7 +541,7 @@ export function createCall(root) {
       d.className = 'dropped';
       d.innerHTML = it.innerHTML;
       Object.assign(d.style, { left: `${cx - w / 2}px`, top: `${cy - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
-      ring.append(d);
+      ring.insertBefore(d, q('.mascot.m1')); // under the mascots: they walk over it
       it.style.visibility = 'hidden';
       const FLY = 1250;
       const HIT = 0.3;

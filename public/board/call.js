@@ -125,29 +125,29 @@ const CSS = `
    inner half. (paint-order: stroke fill would do it in one layer, but the TV ignores it and the stroke eats the letters.) */
 .fight .vs::before { content: 'VS'; position: absolute; left: 0; right: 0; top: 0; z-index: -1; color: #fff; -webkit-text-stroke: 22px #fff;
   text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
-/* semi-finals and the final: cartoon flames burn behind VS, embers fly up; now and then a fire extinguisher pops in,
-   puffs, the flames die down and flare up again bigger. Small SVG pictures that only move and scale (cheap for the TV). */
-.fight .grow { position: absolute; left: 50%; top: -30px; width: 420px; height: 200px; margin-left: -210px; z-index: -2; transform-origin: 50% 100%; }
-/* the fire rises from the bottom of the letters (their foot is at about 200 px of the 220 px line) */
-.fight .burn { position: absolute; left: 0; top: 0; width: 420px; height: 200px; display: none; transform-origin: 50% 100%; font-style: normal; }
+/* semi-finals and the final: a row of cartoon flames burns along the bottom of the screen, embers fly up; now and then a
+   fire extinguisher pops in, puffs, the flames die down and flare up again, bigger every time. Small SVG pictures that
+   only move and scale (cheap for the TV). The ring is 60 px bigger than the stage on every side. */
+.fight .grow { position: absolute; left: 0; right: 0; bottom: 60px; height: 260px; z-index: 1; transform-origin: 50% 100%; pointer-events: none; }
+.fight .burn { position: absolute; inset: 0; display: none; transform-origin: 50% 100%; font-style: normal; }
 .fight.fire .burn { display: block; animation: tame 8s 1.4s infinite; }
-.fight .burn .f { position: absolute; bottom: 0; width: 100px; height: 160px; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
+.fight .burn .f { position: absolute; bottom: -20px; width: 150px; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
 .fight .burn .f svg { width: 100%; height: 100%; display: block; overflow: visible; }
 @keyframes flick { 0% { transform: scale(1, 1) rotate(-4deg); } 50% { transform: scale(.9, 1.2) rotate(3deg); } 100% { transform: scale(1.06, .88) rotate(-1deg); } }
-@keyframes tame { 0%, 72% { transform: scale(1); } 76%, 81% { transform: scale(.22, .18); } 87% { transform: scale(1.35, 1.5); } 93%, 100% { transform: scale(1); } }
-.fight .burn .e { position: absolute; bottom: 60px; width: 14px; height: 14px; border-radius: 50%; background: #ffd400; box-shadow: 0 0 0 4px #ff7a00;
+@keyframes tame { 0%, 72% { transform: scale(1); } 76%, 81% { transform: scale(1, .12); } 87% { transform: scale(1.1, 1.5); } 93%, 100% { transform: scale(1); } }
+.fight .burn .e { position: absolute; bottom: 120px; width: 14px; height: 14px; border-radius: 50%; background: #ffd400; box-shadow: 0 0 0 4px #ff7a00;
   opacity: 0; animation: ember 1.6s ease-out infinite; }
-@keyframes ember { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), -190px) scale(.3); opacity: 0; } }
-.fight .ext { position: absolute; left: 50%; top: 40px; margin-left: 230px; font-size: 130px; line-height: 1; font-style: normal; z-index: 2; display: none;
+@keyframes ember { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), -220px) scale(.3); opacity: 0; } }
+.fight .ext { position: absolute; right: 120px; bottom: 230px; font-size: 150px; line-height: 1; font-style: normal; z-index: 4; display: none;
   transform-origin: 30% 80%; }
 .fight.fire .ext { display: block; animation: ext 8s 1.4s infinite backwards; opacity: 0; }
 @keyframes ext { 0%, 62% { transform: translateX(520px) rotate(0); opacity: 0; } 67% { transform: translateX(0) rotate(-8deg); opacity: 1; }
   71% { transform: translateX(-10px) rotate(-24deg); opacity: 1; } 84% { transform: translateX(-10px) rotate(-24deg); opacity: 1; }
   90%, 100% { transform: translateX(520px) rotate(0); opacity: 0; } }
-.fight .puff { position: absolute; left: 50%; top: -40px; margin-left: -150px; width: 380px; height: 220px; z-index: 1; display: none; opacity: 0; }
+.fight .puff { position: absolute; left: 0; right: 0; bottom: 40px; height: 300px; z-index: 4; display: none; opacity: 0; transform-origin: 50% 100%; }
 .fight.fire .puff { display: block; animation: puff 8s 1.4s infinite; }
 .fight .puff i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px rgba(74,42,0,.35); }
-@keyframes puff { 0%, 71% { transform: scale(.2); opacity: 0; } 74% { transform: scale(1); opacity: .95; } 84% { transform: scale(1.25); opacity: .9; } 90%, 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes puff { 0%, 71% { transform: scale(1, .2); opacity: 0; } 74% { transform: scale(1); opacity: .95; } 84% { transform: scale(1.05, 1.2); opacity: .9; } 90%, 100% { transform: scale(1.1, 1.4); opacity: 0; } }
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
@@ -236,16 +236,18 @@ function mascotFor(p, players = []) {
 
 const FLAME = 'M50 4C62 40 92 58 88 104C85 140 66 156 50 156C34 156 15 140 12 104C9 72 30 64 34 36C42 56 46 30 50 4Z';
 const FLAME_IN = 'M50 62C58 84 72 94 70 120C68 140 60 148 50 148C40 148 32 140 30 120C29 102 40 94 42 78C46 88 48 74 50 62Z';
-/** The flames, embers, extinguisher and its puff that live inside VS (shown only with .fight.fire). */
+/** The flames along the bottom, embers, the extinguisher and its puff (shown only with .fight.fire). */
 function fire() {
   const tongue = (x, h, d, delay) => `<span class="f" style="left:${x}px;height:${h}px;animation-duration:${d}s;animation-delay:-${delay}s">
     <svg viewBox="0 0 100 160" preserveAspectRatio="none"><path d="${FLAME}" fill="#ff4d1a" stroke="#4a1a00" stroke-width="6" stroke-linejoin="round"/>
     <path d="${FLAME_IN}" fill="#ffd400"/></svg></span>`;
-  const flames = [[10, 120, .46, .1], [70, 160, .55, .3], [130, 190, .5, .05], [190, 150, .42, .2], [250, 180, .58, .4], [315, 130, .48, .15], [160, 110, .4, .25]]
-    .map((f) => tongue(...f)).join('');
-  const embers = [[90, -30, 0], [200, 20, .5], [300, 40, 1.0], [150, -50, 1.3]]
+  // a row of 17 tongues across the 2040 px ring, uneven heights and tempos so it never looks like a pattern
+  const H = [170, 220, 150, 240, 190, 160, 230, 180, 250, 170, 210, 150, 235, 185, 160, 225, 175];
+  const T = [.46, .55, .5, .42, .58, .48, .4, .52, .45, .56, .43, .5, .47, .54, .41, .53, .49];
+  const flames = H.map((h, i) => tongue(i * 120 - 15, h, T[i], (i * 0.13) % 0.5)).join('');
+  const embers = [[200, -30, 0], [520, 20, .4], [860, 40, .9], [1180, -40, 1.2], [1500, 30, .6], [1800, -20, 1.0]]
     .map(([x, dx, delay]) => `<i class="e" style="left:${x}px;--dx:${dx}px;animation-delay:${delay}s"></i>`).join('');
-  const puff = [[120, 60, 110], [190, 20, 140], [260, 70, 100], [60, 100, 90], [310, 110, 80]]
+  const puff = [[120, 120, 180], [380, 60, 230], [660, 110, 200], [930, 40, 250], [1220, 100, 210], [1500, 50, 240], [1760, 110, 190], [250, 160, 150], [1080, 150, 160], [1640, 160, 150]]
     .map(([x, y, d]) => `<i style="left:${x}px;top:${y}px;width:${d}px;height:${d}px"></i>`).join('');
   return `<span class="grow"><span class="burn">${flames}${embers}</span></span><span class="puff">${puff}</span><span class="ext">🧯</span>`;
 }
@@ -257,9 +259,9 @@ export function createCall(root) {
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}
-      <div class="mascot m1"></div><div class="mascot m2"></div>
+      <div class="mascot m1"></div><div class="mascot m2"></div>${fire()}
       <div class="sub">Now playing</div><div class="label"></div>
-      <div class="name n1"></div><div class="vs">VS${fire()}</div><div class="name n2"></div>
+      <div class="name n1"></div><div class="vs">VS</div><div class="name n2"></div>
     </div>
     <div class="flash"></div><div class="bar"></div></div>`;
   const q = (sel) => root.querySelector(sel);
@@ -398,8 +400,8 @@ export function createCall(root) {
         for (let t = 1400 + 0.87 * 8000; t < ms; t += 8000) flares.push(t);
         const frames = [{ transform: 'scale(1)', offset: 0 }];
         flares.forEach((t, i) => {
-          frames.push({ transform: `scale(${1 + 0.45 * i})`, offset: (t - 50) / ms });
-          frames.push({ transform: `scale(${1 + 0.45 * (i + 1)})`, offset: (t + 250) / ms });
+          frames.push({ transform: `scale(1, ${1 + 0.45 * i})`, offset: (t - 50) / ms });
+          frames.push({ transform: `scale(1, ${1 + 0.45 * (i + 1)})`, offset: (t + 250) / ms }); // taller, the row stays as wide as the screen
         });
         frames.push({ transform: frames.at(-1).transform, offset: 1 });
         anim(q('.grow'), frames, { duration: ms, fill: 'forwards' });

@@ -155,13 +155,16 @@ function contenders(s, raw = false) {
 
 /**
  * The play-off matches still to come, for the end of the queue during the group stage: a name where the participant of
- * that slot is already certain, else a placeholder ({ name, placeholder: true }). Certain only with 1-2 groups: the
- * group is over and its place is not tied; with 3 and more groups the slot depends on the seeding of all groups.
+ * that slot is already certain, else a placeholder ({ name, placeholder: true }). A group is settled when it is over or
+ * its only match left changes nothing (lastMatchMatters). Certain: with 1-2 groups, the player's group is settled; with
+ * 3 and more, every group is settled (the slot depends on comparing all the groups). A tied place is never certain.
  */
 function upcomingPlayoff(s) {
   const n = s.groups.length;
+  const settled = new Map(s.groups.map((g) => [g.id, isGroupDone(s, g.id) || lastMatchMatters(s, g) === false]));
+  const allSettled = [...settled.values()].every(Boolean);
   const groupOf = (ids) => (ids?.length === 1 ? s.players[ids[0]]?.groupId : null);
-  const sure = (ids) => n <= 2 && !!groupOf(ids) && isGroupDone(s, groupOf(ids));
+  const sure = (ids) => !!groupOf(ids) && (n <= 2 ? settled.get(groupOf(ids)) : allSettled);
   const projected = contenders(s, true);
   const side = (e) => (e.ids && sure(e.ids) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
   const ph = (name) => ({ name, placeholder: true });

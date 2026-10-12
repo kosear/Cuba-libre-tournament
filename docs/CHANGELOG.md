@@ -9,6 +9,7 @@ Newest on top. What to write and when: section 5 of `CLAUDE.md`.
   when it is `true` (before: always).
 - The state has a new list `upcoming` during the group stage: sf1, sf2, third, final as they will follow the queue, with
   `{ name, placeholder: true }` where the participant is not certain yet. Empty once the bracket exists.
+  Certain: the group is over or its only match left changes nothing (with 3+ groups: every group).
 - Rules of play and replay are unchanged; old archived states simply have no `lastMatters` / `upcoming`.
 
 ## 2026-10-12 — Skip: a group match can be cancelled

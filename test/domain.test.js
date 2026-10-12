@@ -573,3 +573,13 @@ test('upcoming play-off in the queue: names only where certain, placeholders els
   t.rank(['Cat', 'Dan', 'Eva']);
   assert.deepEqual(snapshot(t.s).upcoming, []); // the bracket is there: no more projections
 });
+
+test('upcoming play-off: with 4 groups the names are certain once every group is over or its last match changes nothing', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob', 'Cat', 'Dan'], B: ['Eve', 'Fay'], C: ['Gus', 'Hal'], D: ['Ivy', 'Jon'] }).start();
+  t.win('Eve', 'Fay', 1).win('Gus', 'Hal', 2).win('Ivy', 'Jon', 3);
+  t.win('Ann', 'Bob', 3).win('Ann', 'Cat', 3).win('Ann', 'Dan', 3).win('Bob', 'Cat', 2);
+  assert.ok(snapshot(t.s).upcoming[0].p1.placeholder); // two matches left in A: not certain yet
+  t.win('Bob', 'Dan', 2); // only Cat vs Dan is left, and it changes nothing
+  const up = snapshot(t.s).upcoming;
+  assert.deepEqual([up[0].p1.name, up[0].p2.name, up[1].p1.name, up[1].p2.name], ['Ann', 'Eve', 'Ivy', 'Gus']);
+});

@@ -260,7 +260,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
   100% { transform: translate(0, 0) scale(1.08, .9); } }
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
-.pz-m.m1 { left: 600px; top: 420px; font-size: calc(124px * var(--k, 1)); --d: 600px; } /* across the big trophy's foot, clear of the names */
+.pz-m.m1 { left: 590px; top: 405px; font-size: calc(150px * var(--k, 1)); --d: 590px; } /* across the big trophy's foot, clear of the names */
 .pz-m.m2 { left: 90px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }
 .pz-m.m3 { left: 1270px; top: 340px; font-size: calc(104px * var(--k, 1)); --d: 450px; }
 .pz-caption { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: 8px;

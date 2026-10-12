@@ -31,7 +31,7 @@ export function emojify(s) {
   return s.replace(EMOJI, (e) => `<img class="emo" src="/assets/emoji/${[...e].map((c) => c.codePointAt(0)).filter((c) => c !== 0xfe0f).map((c) => c.toString(16)).join('_')}.svg" alt="">`);
 }
 // Bodies drawn side-on looking left (in Noto all side-on animals look left; the rest look at us): turned round to look right.
-const LOOKS_LEFT = new Set([...'🦈🦦🦙🦖🦆🐓🦍🦎🦅🐆🦓🦭🐝🦒🐘🐉🐧🐍🦜🐢🐞🦘🐐🐊🦔🐋🐌🐗🦄🦩🐂']);
+const LOOKS_LEFT = new Set([...'🦥🦈🦦🦙🦖🦆🐓🦍🦎🦅🐆🦓🦭🐝🦒🐘🐉🐧🐍🦜🐢🐞🦘🐐🐊🦔🐋🐌🐗🦄🦩🐂']);
 /** Which way a mascot looks as drawn: -1 left, 0 at us. */
 const facing = (m) => (LOOKS_LEFT.has(m[0]) ? -1 : 0);
 
@@ -40,35 +40,35 @@ const facing = (m) => (LOOKS_LEFT.has(m[0]) ? -1 : 0);
 // whose head is not in the middle (checked against the Noto emoji the TV uses)
 const MASCOTS = [
   // nicknames with a joke, like a boxer's
-  ['🦈', ['🕶️', -0.33, 0.28, -18], '🎱', 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
+  ['🦈', ['🕶️', -0.33, 0.28, -18], ['🎱', -0.25, 0, 14], 'The Loan Shark'], ['🦥', '', '☕', 'Slow Hand'], ['🐸', '', '🍺', 'Hoppy Hour'],
   ['🦦', '', '🍹', 'Otterly Wasted'], ['🦙', ['🕶️', -0.66, 0.34, -12], '', 'No Prob-llama'], ['🐻‍❄️', '', '🧊', 'Ice Cold'],
-  ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', '🥊', 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
-  ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', '💸', 'Piggy Bank'],
-  ['🦍', ['👑', -0.45, 0.24, -12], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.62, -8], '🪄', 'Hairy Potter'],
+  ['🦁', '', '❤️', 'Lionheart'], ['🦖', '', ['🥊', -0.25, 0, 14], 'Tiny Arms, Big Breaks'], ['🦆', '', '🎯', 'Sitting Duck'],
+  ['🐓', '', '🥊', 'Cocky Rooster'], ['🦝', '🎩', '💰', 'The Bandit'], ['🐷', '', ['💸', 0, 0.25, 14], 'Piggy Bank'],
+  ['🦍', ['👑', -0.2, 0.05, 12], '', 'Kong of the Table'], ['🦍', ['👓', -0.5, 0.45, -8], '🪄', 'Hairy Potter'],
   // Bali and around
-  ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', '🍔', 'Bald Eagle'],
+  ['🦥', '', '⏰', 'Jam Karet'], ['🦎', '', '🌙', 'Tokek'], ['🦅', '', ['🍔', 0, 0.3, 14], 'Bald Eagle'],
   // more puns
-  ['🐆', '', '🤞', 'Cheetah'], ['🦓', '', '🎱', 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
-  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', '🚫', 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
-  ['🐘', '', '🛋️', 'Elephant in the Room'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Hot Shot'],
-  ['🐧', ['🎩', -0.1, 0.02, -10], '🍸', 'The Tuxedo'], ['🐨', '', '🎱', 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
+  ['🐆', '', ['🤞', 0, 0.15, 14], 'Cheetah'], ['🦓', '', ['🎱', 0.5, 0.2, 14], 'Stripes'], ['🦭', '', '👍', 'Seal of Approval'],
+  ['🐥', '', '🧲', 'Chick Magnet'], ['🐝', '', ['🚫', 0, 0.15, 14], 'Buzzkill'], ['🦒', '', '🏁', 'Neck and Neck'],
+  ['🐘', '', ['🛋️', 0, 0.3, 14], 'Elephant in the Room'], ['🦉', ['🕶️', 0, 0.76, 0], '', 'Owl Be Back'], ['🐉', '', '🔥', 'Hot Shot'],
+  ['🐧', ['🎩', -0.1, -0.35, 10], '🍸', 'The Tuxedo'], ['🐨', '', ['🎱', 0, 0.2, 14], 'Koala-ty Shot'], ['🐍', '', '🎲', 'Snake Eyes'],
   // a little flirty
   ['😼', '🎩', '💰', 'Fat Cat'], ['🐺', '🎩', '😉', 'Big Bad Wolf'], ['🐱', '🎀', '💋', 'Naughty Kitten'],
   // the old ones that still make you smile
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
-  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', '🎱', 'Eight-Ball'], ['🐢', '', '🌺', 'Pelan Pelan'],
+  ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.25, 0.2, 14], 'Pelan Pelan'],
   ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
-  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', '🦷', 'Crikey!'],
-  ['🦔', '', '👟', 'Gotta Go Fast'], ['🐋', '', '🎱', 'Killer Whale'], ['🐌', '', '✉️', 'Snail Mail'],
-  ['🐰', '', '🎱', 'Bunny Hop'], ['🐗', '', '🃏', 'Wild Card'], ['🤖', '', '🍺', 'Bender'],
-  ['👻', '🎩', '🎱', 'Ghost of the Table'], ['🍕', '', '🍍', 'Pineapple Pizza'], ['🍔', '👑', '🍟', 'Burger King'],
+  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', -1.6, 0.15, 14], 'Crikey!'],
+  ['🦔', '', ['👟', 0, 0.3, 14], 'Gotta Go Fast'], ['🐋', '', ['🎱', 0, 0.5, 14], 'Killer Whale'], ['🐌', '', ['✉️', 0, 0.15, 14], 'Snail Mail'],
+  ['🐰', '', ['🎱', 0, 0.15, 14], 'Bunny Hop'], ['🐗', '', ['🃏', -0.5, -0.1, 14], 'Wild Card'], ['🤖', '', ['🍺', 0, 0.2, 14], 'Bender'],
+  ['👻', ['🎩', 0, -0.12, -10], ['🎱', 0, 0.1, 14], 'Ghost of the Table'], ['🍕', '', '🍍', 'Pineapple Pizza'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
   CUBAN_PETE,
 ];
 // pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [
-  ['🦄', ['👑', -0.3, 0.18, -10], '🏳️‍🌈', 'Rainbow Unicorn'], ['🦩', ['🕶️', -0.26, 0.13, -10], '🏳️‍🌈', 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
-  ['🐻', '🧢', '🏳️‍🌈', 'Pride Bear'], ['🐙', '🎩', '🏳️‍🌈', 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
+  ['🦄', ['👑', -0.3, 0.18, -10], ['🏳️‍🌈', 0, 0.3, 14], 'Rainbow Unicorn'], ['🦩', ['🕶️', -0.26, 0.13, -10], ['🏳️‍🌈', -0.25, 0, 14], 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
+  ['🐻', '🧢', ['🏳️‍🌈', 0, 0.3, 14], 'Pride Bear'], ['🐙', '🎩', ['🏳️‍🌈', 0, 0.15, 14], 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
 ];
 
 const CSS = `

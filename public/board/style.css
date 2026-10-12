@@ -23,7 +23,7 @@ header.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 
 .bar-logo { height: 112px; width: auto; display: block; position: relative; z-index: 2; transform: translateY(13px); } /* centred on the «CUBA LIBRE» letters (38% of its height), the legs hang over the header line */
 .brand-sub { font-size: 20px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; padding-left: 18px; border-left: 2px solid var(--line); }
 .slide-title { margin-left: auto; font-size: 30px; line-height: 36px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 3px; white-space: nowrap; }
-.content { flex: 1; padding: 40px 28px 32px; min-height: 0; overflow: hidden; }
+.content { flex: 1; padding: 40px 28px 32px; min-height: 0; overflow: hidden; position: relative; z-index: 4; } /* the cards lie above the queue's shadow (z 3); the empty background lets it through */
 
 /* cards and tables */
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px 18px; box-shadow: 0 2px 10px rgba(19,33,58,.05); min-height: 0; overflow: hidden; }

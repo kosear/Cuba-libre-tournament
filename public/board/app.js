@@ -381,7 +381,7 @@ function snapshotContent() {
   const c = el('content');
   const copy = c.cloneNode(true);
   copy.removeAttribute('id');
-  Object.assign(copy.style, { position: 'absolute', left: `${c.offsetLeft}px`, top: `${c.offsetTop}px`, width: `${c.offsetWidth}px`, height: `${c.offsetHeight}px` });
+  Object.assign(copy.style, { position: 'absolute', zIndex: '4', left: `${c.offsetLeft}px`, top: `${c.offsetTop}px`, width: `${c.offsetWidth}px`, height: `${c.offsetHeight}px` });
   c.before(copy);
   return copy;
 }

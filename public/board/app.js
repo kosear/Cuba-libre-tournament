@@ -78,7 +78,7 @@ tickClock();
 setInterval(tickClock, 1000);
 
 const label = (m) => (m ? m.label : '');
-const name = (p) => (p ? esc(p.name) : 'TBD');
+const name = (p) => (!p ? 'TBD' : p.placeholder ? `<span class="ph">${esc(p.name)}</span>` : esc(p.name)); // a play-off place not decided yet: grey italic
 
 /** A name with LIVE before it gets smaller, down to 70%, before it is cut with «…». Not on a group's slide: LIVE is above the name there. */
 function fitLive(root) {
@@ -261,7 +261,8 @@ let qloop = 0; // height of one copy of the rows; 0 = everything fits, no scroll
 let qlast = 0;
 
 function renderQueue() {
-  const q = T.queue;
+  // after the group matches the play-off still to come: certain names, else placeholders (T.upcoming, groups stage only)
+  const q = [...(T.queue.length ? T.queue : [null]), ...(T.upcoming || [])]; // [0] is the match at the table (none: null)
   const big = (m, title, cls) => (m
     ? `<div class="qbig ${cls}"><div class="qlabel">${title} · ${esc(label(m))}</div><div class="qp">${name(m.p1)}</div><div class="qvs">vs</div><div class="qp">${name(m.p2)}</div></div>`
     : '');
@@ -442,7 +443,7 @@ function hypeOf(m) {
   if (m.stage === 'tiebreak') return 'Tie-break';
   const g = T.groups.find((x) => x.id === m.groupId);
   if (!g) return '';
-  if (g.total - g.played === 1) return 'Group decider';
+  if (g.total - g.played === 1 && g.lastMatters) return 'Group decider'; // only if its result can change something
   const top = g.rows.filter((r) => !r.out).slice(0, 2).map((r) => r.id);
   return g.played > 0 && top.includes(m.p1?.id) && top.includes(m.p2?.id) ? 'Top of the group' : '';
 }

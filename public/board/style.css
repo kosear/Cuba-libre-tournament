@@ -141,6 +141,7 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qbig.after { background: #eef1f6; color: #5d6779; }
 .qbig.after .qp { font-size: 34px; text-transform: uppercase; letter-spacing: 2px; } /* capitals like the Next card */
 .qlabel { font-size: 18px; line-height: 22px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph { font-style: italic; opacity: .6; text-transform: none; } /* a play-off place not decided yet (Winner Group A, Loser SF1) */
 .qp { font-size: 42px; font-weight: 800; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qvs { font-size: 20px; font-weight: 700; margin: 2px 0; }
 .qbig.next .qvs { color: #ffd2da; }

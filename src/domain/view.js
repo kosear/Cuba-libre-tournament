@@ -1,5 +1,5 @@
 // Snapshot of the tournament for screens: everything already computed, no rules on the client.
-import { PLAYOFF_SLOTS } from './engine.js';
+import { PLAYOFF_SLOTS, applyAction } from './engine.js';
 import { groupStats, groupTable, groupMatches, isClosed, isGroupDone, matchBalls, qualification, rank, winnerOf, loserOf } from './standings.js';
 
 const MAX_TIED_NAMES = 2; // a contender slot shows at most this many tied names, more -> the placeholder
@@ -39,6 +39,29 @@ function leaders(s, groupId, active) {
   return new Set(first.ids);
 }
 
+/** How many places of one group can go through to the play-off: 1 group top 4, 2-3 groups top 2, 4 and more only the winner. */
+const placesThrough = (n) => (n === 1 ? 4 : n <= 3 ? 2 : 1);
+
+/**
+ * The group's last match decides something: some outcome of it (either player wins, 0-7 balls) changes who of this
+ * group can go through, in what order, or their wins and balls (they decide comparisons with other groups and seeding).
+ * null when the group has not exactly one match left.
+ */
+export function lastMatchMatters(s, g) {
+  const left = groupMatches(s, g.id).filter((m) => !isClosed(m));
+  if (left.length !== 1) return null;
+  const k = placesThrough(s.groups.length);
+  const sig = (st) => JSON.stringify(groupTable(st, g.id).filter((r) => !r.out).slice(0, k).map((r) => [r.id, r.wins, r.balls]));
+  const seen = new Set();
+  for (const winner of [1, 2]) {
+    for (let balls = 0; balls <= 7; balls++) {
+      try { seen.add(sig(applyAction(s, { type: 'match.result', payload: { id: left[0].id, winner, balls } }))); } catch { return true; }
+      if (seen.size > 1) return true;
+    }
+  }
+  return false;
+}
+
 function groupView(s, g) {
   const table = groupTable(s, g.id);
   const active = groupStats(s, g.id).filter((r) => !r.out);
@@ -62,6 +85,7 @@ function groupView(s, g) {
     name: g.name,
     done: isGroupDone(s, g.id),
     played: matches.filter(isClosed).length, // skipped ones count as done
+    lastMatters: lastMatchMatters(s, g), // the last match: a real «group decider» or not
     total: matches.length,
     rows: table.map((r) => ({ ...r, leader: lead.has(r.id) })),
     cross,
@@ -75,7 +99,7 @@ const byStats = (a, b) => b.wins - a.wins || b.balls - a.balls;
 /** Slot entry: { names } for a known or tied contender, { label } for a placeholder. */
 function entry(s, ids, label) {
   if (!ids?.length || ids.length > MAX_TIED_NAMES) return { label };
-  return { names: ids.map((id) => s.players[id].name), ids };
+  return { names: ids.map((id) => s.players[id].name), ids, label };
 }
 
 /** Candidates for places 1..k of a group (tied, unresolved places give several ids); null if nothing played yet. */
@@ -91,7 +115,7 @@ function groupPlaces(s, g, k) {
   return places;
 }
 
-function contenders(s) {
+function contenders(s, raw = false) {
   const groups = s.groups;
   const n = groups.length;
   const stats = new Map(groups.flatMap((g) => groupStats(s, g.id)).map((r) => [r.id, r]));
@@ -124,8 +148,30 @@ function contenders(s) {
       semis = [[w[0], w[3]], [w[1], w[2]]];
     }
   }
+  if (raw) return { sf1: semis[0], sf2: semis[1] };
   const strip = (e) => (e.names ? { names: e.names } : { label: e.label });
   return { sf1: semis[0].map(strip), sf2: semis[1].map(strip) };
+}
+
+/**
+ * The play-off matches still to come, for the end of the queue during the group stage: a name where the participant of
+ * that slot is already certain, else a placeholder ({ name, placeholder: true }). Certain only with 1-2 groups: the
+ * group is over and its place is not tied; with 3 and more groups the slot depends on the seeding of all groups.
+ */
+function upcomingPlayoff(s) {
+  const n = s.groups.length;
+  const groupOf = (ids) => (ids?.length === 1 ? s.players[ids[0]]?.groupId : null);
+  const sure = (ids) => n <= 2 && !!groupOf(ids) && isGroupDone(s, groupOf(ids));
+  const projected = contenders(s, true);
+  const side = (e) => (e.ids && sure(e.ids) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
+  const ph = (name) => ({ name, placeholder: true });
+  const mk = (slot, p1, p2) => ({ id: `next-${slot}`, stage: 'playoff', round: slot, label: ROUND_LABEL[slot], p1, p2, upcoming: true });
+  return [
+    mk('sf1', side(projected.sf1[0]), side(projected.sf1[1])),
+    mk('sf2', side(projected.sf2[0]), side(projected.sf2[1])),
+    mk('third', ph('Loser SF1'), ph('Loser SF2')),
+    mk('final', ph('Winner SF1'), ph('Winner SF2')),
+  ];
 }
 
 function statsFor(s, pid) {
@@ -182,6 +228,7 @@ export function snapshot(s) {
     skipped,
     playoff,
     contenders: projected,
+    upcoming: s.started && s.phase === 'groups' ? upcomingPlayoff(s) : [], // play-off still to come, for the queue panel
     podium,
     qualification: qual,
   };

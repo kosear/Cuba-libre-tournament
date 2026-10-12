@@ -60,9 +60,9 @@ const MASCOTS = [
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.6, 0.4, 14], 'Pelan Pelan'],
   ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', '🏄', 'Canggu Bro'],
-  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', 0, 0.5, 0], 'Crikey!'],
+  ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', -1.6, 0.15, 14], 'Crikey!'],
   ['🦔', '', ['👟', 0, 0.3, 14], 'Gotta Go Fast'], ['🐋', '', ['🎱', 0, 0.5, 14], 'Killer Whale'], ['🐌', '', ['✉️', 0, 0.15, 14], 'Snail Mail'],
-  ['🐰', '', ['🎱', 0, 0.15, 14], 'Bunny Hop'], ['🐗', '', ['🃏', -0.15, 0.45, 10], 'Wild Card'], ['🤖', '', ['🍺', 0, 0.2, 14], 'Bender'],
+  ['🐰', '', ['🎱', 0, 0.15, 14], 'Bunny Hop'], ['🐗', '', ['🃏', -1.8, 0.25, -12], 'Wild Card'], ['🤖', '', ['🍺', 0, 0.2, 14], 'Bender'],
   ['👻', ['🎩', 0, -0.12, -10], ['🎱', 0, 0.1, 14], 'Ghost of the Table'], ['🍕', '', '🍍', 'Pineapple Pizza'], ['🍔', '👑', '🍟', 'Burger King'],
   ['🥑', '🧢', '', 'Avocado Bro'],
   CUBAN_PETE,
@@ -70,7 +70,7 @@ const MASCOTS = [
 // pride squad: only for the regulars in LUCKY, never in the common pool
 const PRIDE = [
   ['🦄', ['👑', -0.3, 0.18, -10], ['🏳️‍🌈', -0.1, 0.6, 0], 'Rainbow Unicorn'], ['🦩', ['🕶️', -0.26, 0.13, -10], ['🏳️‍🌈', -0.25, 0, 14], 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
-  ['🐻', '🧢', ['🏳️‍🌈', -0.2, 0.6, 0], 'Pride Bear'], ['🐙', '🎩', ['🏳️‍🌈', 0, 0.15, 14], 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
+  ['🐻', '🧢', ['🏳️‍🌈', 0.1, 0.6, 10], 'Pride Bear'], ['🐙', '🎩', ['🏳️‍🌈', 0, 0.15, 14], 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
 ];
 
 const CSS = `

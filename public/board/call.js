@@ -410,16 +410,28 @@ export function createCall(root) {
   // Where the mascots brawl: the three patches of the ring with no text on them (the title sits at 130-300, the left
   // name at 180-850 × 380-600, VS at 800-1120 × 510-730, the right name at 1070-1740 × 640-860). Each is the (left, top)
   // of the box between the two fighters: the pair takes 560 × 300 px round it.
-  const SPOTS = [[230, 640], [1300, 320], [620, 750], [150, 70]]; // bottom left, top right, bottom centre, top left
-  const JITTER = [[60, 40], [90, 50], [30, 20], [20, 20]];
+  const SPOTS = [[230, 640], [1300, 320], [620, 750], [150, 70], [1500, 50]]; // bottom left, top right, bottom centre, top left, top right corner
+  const JITTER = [[60, 40], [90, 50], [30, 20], [20, 20], [20, 20]];
   const spot = (i) => [SPOTS[i][0] + rand(-JITTER[i][0], JITTER[i][0]), SPOTS[i][1] + rand(-JITTER[i][1], JITTER[i][1])];
-  /** How many of SPOTS are free: the top left one only when the title's text starts right of it. */
+  /** The SPOTS free of text now: the two at the top only where the title's text leaves room. */
   function spots() {
     const r = document.createRange();
     r.selectNodeContents(q('.sub'));
     const R = ring.getBoundingClientRect();
-    const left = (r.getBoundingClientRect().left - R.left) / (R.width / ring.offsetWidth);
-    return left > 660 ? 4 : 3;
+    const k = R.width / ring.offsetWidth;
+    const t = r.getBoundingClientRect();
+    const [left, right] = [(t.left - R.left) / k, (t.right - R.left) / k];
+    const out = [0, 1, 2];
+    if (left > 660) out.push(3);
+    if (right < 1340) out.push(4);
+    return out;
+  }
+  /** The free spots in a random order, none twice before all have had their turn (a new round never starts where the last ended). */
+  function spotOrder(last) {
+    const free = spots();
+    for (let i = free.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
+    if (free.length > 1 && free[0] === last) free.push(free.shift());
+    return free;
   }
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -650,17 +662,17 @@ export function createCall(root) {
     throwAt(first, second, T1);
     throwAt(second, first, T2);
     let last = -1;
+    let queue = [];
     // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
     const plan = (left, t0 = T2 + 1400) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
-        // one of the text-free patches, never the same one twice running; now and then a breather in between
-        const n = spots();
-        let i;
-        do i = Math.floor(Math.random() * n); while (i === last);
+        // the text-free patches in a random order, each once before any again; a breather in between
+        if (!queue.length) queue = spotOrder(last);
+        const i = queue.shift();
         last = i;
         const [mx, my] = spot(i);
-        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true) + (Math.random() < 0.4 ? rand(600, 1600) : 0);
+        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true) + rand(500, 1400);
       }
       if (left > t) after(t, () => plan(left - t, 0));
     };

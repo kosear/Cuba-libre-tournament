@@ -456,11 +456,14 @@ export function createPoster(root) {
       const b = document.createElement('div');
       b.className = 'pz-pow';
       b.innerHTML = burstHTML(['POW!', 'BAM!', 'WHAM!', 'BOOM!'][Math.floor(Math.random() * 4)]);
-      b.style.left = `${Math.max(150, Math.min(root.offsetWidth - 150, x))}px`; // whole on the stage
-      b.style.top = `${Math.max(60, y)}px`;
+      b.style.left = `${Math.max(150, Math.min(root.offsetWidth - 150, x + rand(-40, 40)))}px`; // whole on the stage, somewhere else each time
+      b.style.top = `${Math.max(60, y + rand(-30, 30))}px`;
+      b.style.setProperty('--tilt', `${rand(-14, 8).toFixed(0)}deg`);
+      const k = rand(0.85, 1.1);
+      const tilt = rand(-10, 10);
       root.append(b);
-      b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.2) rotate(8deg)', opacity: 1, offset: 0.12 },
-        { transform: 'translate(-50%, -50%) scale(1.05) rotate(2deg)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
+      b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: `translate(-50%, -50%) scale(${k * 1.2}) rotate(${tilt + 8}deg)`, opacity: 1, offset: 0.12 },
+        { transform: `translate(-50%, -50%) scale(${k * 1.05}) rotate(${tilt + 2}deg)`, opacity: 1, offset: 0.7 }, { transform: `translate(-50%, -50%) scale(${k}) rotate(${tilt}deg)`, opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
       setTimeout(() => b.remove(), 1000);
     }
     function fight() {
@@ -495,7 +498,7 @@ export function createPoster(root) {
               if (i === 0) { v.dance?.cancel(); v.dance = null; }
               a.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * a.size * 0.25}px) rotate(${-side * 8}deg)`, offset: 0.4 }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
               v.hop.animate([{ transform: 'none' }, { transform: `translateX(${-side * 14}px) rotate(${-side * 6}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
-              burst(v.el.offsetLeft + v.x + v.size * 0.5, v.el.offsetTop + v.y + v.size * 0.3);
+              burst((box(a).mid + box(v).mid) / 2, Math.min(box(a).top, box(v).top) + 10); // between the two, above their heads
             }, i * 330);
           }
           later(() => {

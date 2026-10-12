@@ -149,10 +149,10 @@ const CSS = `
 .fight .vs::before { content: 'VS'; position: absolute; left: 0; right: 0; top: 0; z-index: -1; color: #fff; -webkit-text-stroke: 22px #fff;
   text-shadow: 0 0 50px rgba(0,0,0,.45); } /* the dark glow under the outline, not on it */
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
-.fight .pow { position: absolute; z-index: 5; width: 486px; height: 315px; display: flex; align-items: center; justify-content: center;
-  font: italic 900 78px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px; -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl: the word on a white spiky cloud */
+.fight .pow { position: absolute; z-index: 5; width: 330px; height: 214px; display: flex; align-items: center; justify-content: center;
+  font: 400 66px/1 Bangers, Impact, 'Arial Black', sans-serif; color: #ffd400; letter-spacing: 2px; -webkit-text-stroke: 3.5px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl: the word on a white spiky cloud (Bangers: style.css) */
 .fight .pow .cloud { position: absolute; inset: 0; width: 100%; height: 100%; }
-.fight .pow .w { position: relative; transform: rotate(-6deg); }
+.fight .pow .w { position: relative; transform: rotate(var(--tilt, -6deg)); }
 .fight .dropped { position: absolute; z-index: 1; line-height: 1; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); } /* a prop put down for a fight */
 .fight .dust { position: absolute; z-index: 1; width: 0; height: 0; pointer-events: none; } /* a cartoon dust cloud; (left, top) is its middle */
 .fight .dust i { position: absolute; border-radius: 50%; background: #f3e6c8; box-shadow: 0 0 0 5px rgba(74,42,0,.3); }
@@ -430,9 +430,12 @@ export function createCall(root) {
     b.innerHTML = burstHTML(['POW!', 'BAM!', 'WHAM!', 'BOOM!'][Math.floor(Math.random() * 4)]);
     b.style.left = `${x}px`;
     b.style.top = `${y}px`;
+    b.style.setProperty('--tilt', `${rand(-14, 8).toFixed(0)}deg`); // each one a little different
+    const k = rand(0.85, 1.1);
+    const tilt = rand(-10, 10);
     ring.append(b);
-    b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: 'translate(-50%, -50%) scale(1.15) rotate(8deg)', opacity: 1, offset: 0.2 },
-      { transform: 'translate(-50%, -50%) scale(1.05) rotate(2deg)', opacity: 1, offset: 0.6 }, { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' });
+    b.animate([{ transform: 'translate(-50%, -50%) scale(.2) rotate(-20deg)', opacity: 1 }, { transform: `translate(-50%, -50%) scale(${k * 1.15}) rotate(${tilt + 8}deg)`, opacity: 1, offset: 0.2 },
+      { transform: `translate(-50%, -50%) scale(${k * 1.05}) rotate(${tilt + 2}deg)`, opacity: 1, offset: 0.6 }, { transform: `translate(-50%, -50%) scale(${k}) rotate(${tilt}deg)`, opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' });
     after(700, () => b.remove());
   }
 
@@ -584,7 +587,7 @@ export function createCall(root) {
           { transform: `translate(${f.x}px, ${f.y}px)` }], { duration: step - 50, easing: 'ease-out', fill: 'forwards' });
         anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y}px) rotate(${deg * 0.6}deg)`, offset: 0.5 },
           { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: step - 50, delay: 70, fill: 'forwards' });
-        pow(mx + 150 + rand(-60, 60), my + 90 + rand(-70, 40));
+        pow(mx + 150 + rand(-90, 90), my + 60 + rand(-80, 50)); // between the two, somewhere else each time
         // the scuffle raises dust around their feet
         if (i % 2 === 0) dust(mx + 150 + rand(-140, 140), my + 280 + rand(-20, 20), wild ? 1.3 : 1);
       });

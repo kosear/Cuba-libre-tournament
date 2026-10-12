@@ -44,10 +44,10 @@ import { createButterfly, drawButterfly, drawWing } from '/board/butterfly.js';
 
 const W = 1920;
 const H = 1080;
-const PERIOD_MIN = 7 * 60 * 1000;
-const PERIOD_MAX = 13 * 60 * 1000;
-const BUTTERFLY_MIN = 3 * 60 * 1000; // a butterfly just flying by
-const BUTTERFLY_MAX = 8 * 60 * 1000;
+const PERIOD_MIN = 10.5 * 60 * 1000;
+const PERIOD_MAX = 19.5 * 60 * 1000;
+const BUTTERFLY_MIN = 4.5 * 60 * 1000; // a butterfly just flying by
+const BUTTERFLY_MAX = 12 * 60 * 1000;
 // Demo for watching on the TV: a gecko every 10 s, every run a hunt, every second hunt a miss,
 // a butterfly flying by every 10 s. Normally false.
 const DEMO = false;

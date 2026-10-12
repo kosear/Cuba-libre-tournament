@@ -14,6 +14,15 @@ const COLORS = ['#ffd84a', '#ff9500', '#ffffff', '#8fc1ff', '#ff6b4a'];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rand = (a, b) => a + Math.random() * (b - a);
+// TEMPORARY: reports to the server what happens to the props (a bug seen on the TV only): POST /api/client-log
+const report = (what, data = {}) => {
+  try {
+    const body = JSON.stringify({ t: Date.now(), what, ua: report.ua ? undefined : (report.ua = navigator.userAgent), vv: [innerWidth, innerHeight, visualViewport?.width | 0, visualViewport?.scale], ...data });
+    if (!navigator.sendBeacon?.('/api/client-log', new Blob([body], { type: 'application/json' }))) fetch('/api/client-log', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true });
+  } catch (e) { /* never in the way */ }
+};
+window.addEventListener('error', (e) => report('error', { msg: String(e.message), src: `${e.filename}:${e.lineno}` }));
+window.addEventListener('unhandledrejection', (e) => report('rejection', { msg: String(e.reason && e.reason.message || e.reason) }));
 
 // The evening of the tournament in Bali: a final played after midnight still belongs to the evening before.
 const DATE = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', day: 'numeric', month: 'short', year: 'numeric' });
@@ -297,6 +306,7 @@ export function createPoster(root) {
       Object.assign(el.style, { left: `${x - w / 2}px`, top: `${y - h / 2}px`, width: `${w}px`, height: `${h}px`, fontSize: getComputedStyle(it).fontSize });
       root.append(el);
       it.style.visibility = 'hidden';
+      report('detach', { m: m.el.className, x: Math.round(x), y: Math.round(y), w, h, s: +s.toFixed(3), R: [Math.round(R.left), Math.round(R.top), Math.round(R.width)], ow: root.offsetWidth, deg: Math.round(deg), flip, tf: getComputedStyle(it).transform });
       const flipS = flip ? ' scaleX(-1)' : '';
       return { el, x0: x, y0: y, x, y, h, deg, flipS, tf: (dx, dy, a) => `translate(${dx}px, ${dy}px)${flipS} rotate(${a}deg)` };
     }
@@ -316,6 +326,7 @@ export function createPoster(root) {
       { duration: toss ? 620 : 420, fill: 'forwards' });
       Object.assign(p, { x: p.x0 + (toss ? dx * 1.1 : 0), y: floor, lie });
       m.prop = p;
+      report('putDown', { m: m.el.className, toss: Math.round(toss), x: Math.round(p.x), y: Math.round(p.y), anims: p.el.getAnimations ? p.el.getAnimations().length : -1 });
     }
     /** Hurled at v: flies spinning, hits it (a burst, it reels), bounces off away from it and lies on the floor there. */
     function throwAt(m, v, done) {
@@ -346,6 +357,7 @@ export function createPoster(root) {
         }, FLY * HIT - 110);
         Object.assign(p, { x: p.x0 + fx + (fx - tx) * 0.12, y: p.y0 + fy, lie: lie - dir * 35 });
         m.prop = p;
+        report('throw', { m: m.el.className, at: v.el.className, x: Math.round(p.x), y: Math.round(p.y) });
         later(done, FLY);
       }, 250);
     }
@@ -368,7 +380,7 @@ export function createPoster(root) {
           const [hx, hy] = [(r.left + r.width / 2 - R.left) / s - p.x0, (r.top + r.height / 2 - R.top) / s - p.y0];
           p.el.animate([{ transform: p.tf(p.x - p.x0, p.y - p.y0, p.lie) }, { transform: p.tf((p.x - p.x0 + hx) / 2, Math.min(p.y - p.y0, hy) - 50, p.deg), offset: 0.5 },
             { transform: p.tf(hx, hy, p.deg) }], { duration: 360, easing: 'ease-out', fill: 'forwards' });
-          later(() => { p.el.remove(); m.item.style.visibility = ''; m.prop = null; done(); }, 370);
+          later(() => { report('pickup', { m: m.el.className, rect: (() => { const r = p.el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; })() }); p.el.remove(); m.item.style.visibility = ''; m.prop = null; done(); }, 370);
         }, 200);
       });
     }
@@ -510,6 +522,7 @@ export function createPoster(root) {
         });
       }
     }
+    report('mascots', { n: list.length, items: list.map((m) => !!m.item), sizes: list.map((m) => m.size) });
     for (const m of list) {
       m.x = rand(0, m.d);
       for (let i = 0; i < 12 && crowded(m, m.x); i++) m.x = rand(0, m.d); // not on top of another one

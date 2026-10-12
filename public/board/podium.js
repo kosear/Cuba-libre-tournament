@@ -5,7 +5,7 @@
 // calm motion is left: the rays turn, the glow breathes, a firework now and then.
 // Light for the TV: transforms and opacity only, one small rays picture, a handful of firework sparks.
 
-import { mascotHTML } from '/board/call.js';
+import { mascotHTML, emojify } from '/board/call.js';
 
 const W = 1920;
 const ENTRANCE = { trophy: 500, flash: 1150, champion: 1250, label: 1500, mascot: 1600, second: 1750, third: 1950, caption: 2200 };
@@ -85,7 +85,7 @@ export function createPoster(root) {
     const masc = (p, cls) => {
       if (!p) return '';
       const m = mascotHTML(p, players);
-      return `<div class="pz-m ${cls}" style="--k:${m.scale}"><span class="mv"><span class="face"><span class="hop">${m.html}</span></span></span></div>`; // --k: a mascot drawn a little bigger or smaller
+      return `<div class="pz-m ${cls}" style="--k:${m.scale}" data-facing="${m.facing}"><span class="mv"><span class="face"><span class="hop">${m.html}</span></span></span></div>`; // --k: a mascot drawn a little bigger or smaller
     };
     const side = (p, n, kind, label) => (p ? `<div class="pz-side pz-p${n} ${kind}">${smallCup(kind, n)}<div class="pz-slabel">${label}</div>
       <div class="pz-sname"><span>${esc(p.name)}</span></div></div>` : '');
@@ -168,11 +168,13 @@ export function createPoster(root) {
     const later = (fn, ms) => setTimeout(() => alive() && fn(), ms);
     const list = [...root.querySelectorAll('.pz-m')].map((el) => ({
       el, mv: el.querySelector('.mv'), face: el.querySelector('.face'), hop: el.querySelector('.hop'),
-      d: parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300, x: 0, y: 0, dir: 1, busy: false,
+      d: parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300, x: 0, y: 0, busy: false,
+      dir: +el.dataset.facing || 1, // as drawn: an animal side-on looks left, the rest count as looking right
       size: parseFloat(getComputedStyle(el).fontSize) || 110,
     }));
     const place = (m) => { m.mv.style.transform = `translate(${m.x}px, ${m.y}px)`; };
-    const turn = (m, to) => { m.dir = to; m.face.style.transform = to < 0 ? 'scaleX(-1)' : ''; };
+    // look the `to` way (1 right, -1 left): turned round when the picture looks the other way
+    const turn = (m, to) => { m.dir = to; m.face.style.transform = to * (+m.el.dataset.facing || 1) < 0 ? 'scaleX(-1)' : ''; };
     const jump = (m, h, ms) => m.hop.animate([
       { transform: 'scale(1.08, .9)' }, { transform: 'translateY(0) scale(1)', offset: 0.15 },
       { transform: `translateY(${-h}px) scale(.95, 1.06)`, offset: 0.55 }, { transform: 'translateY(0) scale(1.1, .88)', offset: 0.92 },
@@ -213,7 +215,7 @@ export function createPoster(root) {
     function burst(x, y) {
       const b = document.createElement('div');
       b.className = 'pz-pow';
-      b.textContent = ['POW!', 'BAM!', 'WHAM!', '💥'][Math.floor(Math.random() * 4)];
+      b.innerHTML = emojify(['POW!', 'BAM!', 'WHAM!', '💥'][Math.floor(Math.random() * 4)]);
       b.style.left = `${x}px`;
       b.style.top = `${y}px`;
       root.append(b);
@@ -253,7 +255,7 @@ export function createPoster(root) {
           v.hop.animate([{ transform: 'rotate(0)' }, { transform: `translateY(-50px) rotate(${-side * 360}deg)` }, { transform: `rotate(${-side * 720}deg)` }], { duration: 600, easing: 'ease-out' });
           const stars = document.createElement('span');
           stars.className = 'pz-daze';
-          stars.textContent = '💫';
+          stars.innerHTML = emojify('💫');
           v.face.append(stars);
           stars.animate([{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
           later(() => stars.remove(), 2800);

@@ -141,6 +141,13 @@ runuser -u cubalibre -- node scripts/admin.js remove <login>
 ```
 Locally: `npm run admin -- add <login> <password>`.
 
+**Emoji on the TV board are pictures, not font glyphs.** `emojify()` in `public/board/call.js` swaps each emoji for
+`<img class="emo">` from `public/assets/emoji/` (Noto emoji v2.047 SVGs), so the TV, phones, Macs and your screenshots
+show the same drawing. When you add an emoji to the board, add its SVG too: `https://raw.githubusercontent.com/googlefonts/noto-emoji/v2.047/svg/emoji_u<code>.svg`,
+saved as `<code>.svg` (code points in lowercase hex joined by `_`, without `fe0f`, e.g. `1f43b_200d_2744.svg`).
+A mascot body drawn side-on goes into `LOOKS_LEFT` in `call.js` if it looks left (all side-on Noto animals do):
+the board turns it round to face its opponent.
+
 **TV page:** 16:9, viewed from several meters: big type, high contrast, no scrolling, no interaction.
 It runs unattended for hours: handle reconnects, never show raw errors.
 

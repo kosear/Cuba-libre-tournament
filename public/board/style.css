@@ -216,6 +216,9 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
    the left, 3rd on the right (like on the call screen: emoji body, hat and prop) */
 /* a mascot wanders about its cup (podium.js): .mv moves it sideways, .face turns it round at once (no in-between scale:
    that flashed), .hop jumps and squashes. No filter on anything that moves: a drop-shadow made the TV redraw and flicker. */
+/* an emoji drawn from our Noto SVG (emojify() in call.js), placed and sized like the Noto Color Emoji font draws it
+   (1.17 em square, 1.25 em advance, 0.25 em below the baseline), taking no more line height than text */
+.emo { display: inline-block; width: 1.174em; height: 1.174em; margin: -.085em .037em -.089em; vertical-align: -.158em; }
 .pz-m { position: absolute; z-index: 3; line-height: 1; font-style: normal; }
 .pz-m .mv, .pz-m .face, .pz-m .hop { display: block; position: relative; transform-origin: 50% 100%; will-change: transform; }
 .pz-daze { position: absolute; left: 50%; top: -.45em; font-size: .45em; transform-origin: 50% 60%; } /* dazed after a beating */

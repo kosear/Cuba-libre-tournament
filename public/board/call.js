@@ -20,6 +20,21 @@ const PETE_HAT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" 
 const MARACAS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="1.6em" height="1.6em" style="display:block"><g transform="rotate(-24 60 60)"><rect x="30" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="30" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="34.5" cy="38" rx="21" ry="26" fill="#e23b2e"/><path d="M15 32 Q34.5 42 54 32 M14 44 Q34.5 54 55 44" fill="none" stroke="#ffd23f" stroke-width="5"/><path d="M19 22 Q34.5 28 50 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="27" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g><g transform="rotate(22 60 60)"><rect x="80" y="58" width="9" height="52" rx="4.5" fill="#8a5a2b"/><rect x="80" y="58" width="4" height="52" rx="2" fill="#a8743f"/><ellipse cx="84.5" cy="38" rx="21" ry="26" fill="#ffc21f"/><path d="M65 32 Q84.5 42 104 32 M64 44 Q84.5 54 105 44" fill="none" stroke="#e23b2e" stroke-width="5"/><path d="M69 22 Q84.5 28 100 22" fill="none" stroke="#2fa84f" stroke-width="4"/><ellipse cx="77" cy="27" rx="6" ry="9" fill="#fff" opacity=".35"/></g></svg>`;
 const CUBAN_PETE = ['🐸', [PETE_HAT, 0, -0.32, -8], [MARACAS, 0.75, -0.1, 16], 'Cuban Pete', 0.95]; // the hat above the eyes, the maracas off the body
 
+// Every emoji is drawn from our own copy of the Noto emoji (public/assets/emoji/, Apache 2.0, googlefonts/noto-emoji
+// v2.047, svg/: the version of the Noto Color Emoji font the mascots were fitted to), not by the screen's font: the TV,
+// phones, Macs and screenshots all show the same picture, so which way an animal looks is known. A new emoji needs its
+// SVG there too (file name: its code points in hex, joined by _, without FE0F).
+// an emoji: a pictograph, joined by ZWJ to more (🐻‍❄️, 🏳️‍🌈); no /v flag (\p{RGI_Emoji}): too new for the TV's browser
+const EMOJI = /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+/** The emoji in `s` turned into pictures (.emo in style.css sizes them like the font did). */
+export function emojify(s) {
+  return s.replace(EMOJI, (e) => `<img class="emo" src="/assets/emoji/${[...e].map((c) => c.codePointAt(0)).filter((c) => c !== 0xfe0f).map((c) => c.toString(16)).join('_')}.svg" alt="">`);
+}
+// Bodies drawn side-on looking left (in Noto all side-on animals look left; the rest look at us): turned round to look right.
+const LOOKS_LEFT = new Set([...'🦈🦦🦙🦖🦆🐓🦍🦎🦅🐆🦓🦭🐝🦒🐘🐉🐧🐍🦜🐢🐞🦘🐐🐊🦔🐋🐌🐗🦄🦩🐂']);
+/** Which way a mascot looks as drawn: -1 left, 0 at us. */
+const facing = (m) => (LOOKS_LEFT.has(m[0]) ? -1 : 0);
+
 // [body, hat, prop, name, scale]; scale (optional) makes the whole mascot a little smaller or bigger; the prop can be
 // [prop, dx, dy, deg] (em of the prop) to move it off the body; a body starting with «<» is an inline SVG; a hat is centred over the emoji, or [hat, dx, dy, deg] (em) for animals drawn side-on,
 // whose head is not in the middle (checked against the Noto emoji the TV uses)
@@ -133,6 +148,7 @@ const CSS = `
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
+.fight .mascot .who { display: inline-block; position: relative; transform: scaleX(-1); } /* body and hat turned round */
 /* left mascot right under the left name (380-600), right mascot right above the right name (640-860); centred on the names */
 .fight .mascot.m1 { left: 515px; top: 615px; transform-origin: 50% 50%; margin-left: -150px; }
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
@@ -215,26 +231,34 @@ function mascotFor(p, players = []) {
   return set[k];
 }
 
-/** A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left. */
-function mascotInner([body, hat, item], mirrored = false) {
-  let html = body;
+/**
+ * A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left; look: the way it
+ * should look (1 right, -1 left, 0 as drawn): a side-on body looking the other way is turned round, its hat with it.
+ */
+function mascotInner(m, mirrored = false, look = 0) {
+  const [body, hat, item] = m;
+  let html = emojify(body);
   if (Array.isArray(hat)) {
     const [h, dx, dy, deg] = hat;
-    html += `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${h}</span>`;
-  } else if (hat) html += `<span class="hat">${hat}</span>`;
+    html += `<span class="hat" style="transform: translate(calc(-50% + ${dx}em), ${dy}em) rotate(${deg}deg)">${emojify(h)}</span>`;
+  } else if (hat) html += `<span class="hat">${emojify(hat)}</span>`;
+  if (look && facing(m) === -look) html = `<span class="who">${html}</span>`;
   if (Array.isArray(item)) {
     // [prop, dx, dy, deg] (em of the prop): moved off the body; mirrored for a mascot whose prop is on its left
     const [it, dx, dy, deg] = item;
-    const m = mirrored ? -1 : 1;
-    html += `<span class="item" style="transform: translate(${m * dx}em, ${dy}em) rotate(${m * deg}deg)">${it}</span>`;
-  } else if (item) html += `<span class="item">${item}</span>`;
+    const k = mirrored ? -1 : 1;
+    html += `<span class="item" style="transform: translate(${k * dx}em, ${dy}em) rotate(${k * deg}deg)">${emojify(it)}</span>`;
+  } else if (item) html += `<span class="item">${emojify(item)}</span>`;
   return html;
 }
 
-/** The player's mascot of this tournament (players: all, in join order) as HTML, for the podium; and its size factor. */
+/**
+ * The player's mascot of this tournament (players: all, in join order) as HTML, for the podium; its size factor and
+ * which way it looks as drawn (-1 left, 0 at us).
+ */
 export function mascotHTML(p, players = []) {
   const m = mascotFor(p, players);
-  return { html: mascotInner(m), scale: m[4] ?? 1 };
+  return { html: mascotInner(m), scale: m[4] ?? 1, facing: facing(m) };
 }
 
 export function createCall(root) {
@@ -276,12 +300,13 @@ export function createCall(root) {
     }
   }
 
-  function setMascot(n, [body, hat, item, , scale = 1]) {
+  function setMascot(n, m) {
+    const scale = m[4] ?? 1;
     const box = q(`.mascot.m${n}`);
     // a mascot a little smaller or bigger than the rest: the font size (hat and prop follow), kept centred
     box.style.fontSize = scale === 1 ? '' : `${300 * scale}px`;
     box.style.marginLeft = scale === 1 ? '' : `${-150 * scale}px`;
-    box.innerHTML = mascotInner([body, hat, item], n === 2); // the right mascot is mirrored: its prop on the left
+    box.innerHTML = mascotInner(m, n === 2, n === 1 ? 1 : -1); // they look at each other; the right one's prop on the left
   }
 
   // The whole ring jolts, a white flash.
@@ -385,7 +410,7 @@ export function createCall(root) {
   function pow(x, y) {
     const b = document.createElement('div');
     b.className = 'pow';
-    b.textContent = ['POW!', 'BAM!', 'WHAM!', 'BOOM!', '💥'][Math.floor(Math.random() * 5)];
+    b.innerHTML = emojify(['POW!', 'BAM!', 'WHAM!', 'BOOM!', '💥'][Math.floor(Math.random() * 5)]);
     b.style.left = `${x}px`;
     b.style.top = `${y}px`;
     ring.append(b);

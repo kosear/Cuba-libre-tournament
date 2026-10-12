@@ -59,7 +59,7 @@ const MASCOTS = [
   // the old ones that still make you smile
   [PUG, ['🕶️', 0, 1.12, 0], '', 'Pug Life'], ['🐻', '', '🧸', 'Bear Hug'], ['🦜', '', '⚔️', 'Pirate Parrot'],
   ['🐵', '', '🍌', 'Cheeky Monkey'], ['🐙', '🎩', ['🎱', 0, 0.15, 14], 'Eight-Ball'], ['🐢', '', ['🌺', -0.6, 0.4, 14], 'Pelan Pelan'],
-  ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', ['🏄', 0.25, -0.3, 14], 'Canggu Bro'],
+  ['🐞', '', '🍀', 'Lady Luck'], ['🥔', '🕶️', '📺', 'Couch Potato'], ['🦘', '', ['🏄', 0.05, -0.35, 14], 'Canggu Bro'],
   ['🐐', '', '🏆', 'The G.O.A.T.'], ['🦋', '', '🥂', 'Social Butterfly'], ['🐊', '', ['🦷', -1.6, 0.15, 14], 'Crikey!'],
   ['🦔', '', ['👟', 0, 0.3, 14], 'Gotta Go Fast'], ['🐋', '', ['🎱', 0, 0.5, 14], 'Killer Whale'], ['🐌', '', ['✉️', 0, 0.15, 14], 'Snail Mail'],
   ['🐰', '', ['🎱', 0, 0.15, 14], 'Bunny Hop'], ['🐗', '', ['🃏', -1.8, 0.25, -12], 'Wild Card'], ['🤖', '', ['🍺', 0, 0.2, 14], 'Bender'],

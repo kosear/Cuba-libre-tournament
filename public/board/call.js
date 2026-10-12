@@ -152,7 +152,6 @@ const CSS = `
 .fight .mascot { position: absolute; z-index: 1; font-size: 300px; line-height: 1; font-style: normal; will-change: transform; filter: drop-shadow(0 10px 0 rgba(0,0,0,.4)); }
 .fight .pow { position: absolute; z-index: 5; font: italic 900 96px/1 Inter, system-ui, sans-serif; color: #ffd400; letter-spacing: 1px;
   -webkit-text-stroke: 6px #4a1a00; pointer-events: none; } /* comic hit burst of the mascots' brawl */
-.fight .daze { position: absolute; left: 50%; top: -.3em; font-size: .35em; transform-origin: 50% 60%; } /* dazed after a beating */
 .fight .mascot .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .fight .mascot .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .fight .mascot.m2 .item { right: auto; left: -.18em; transform: rotate(-14deg); }
@@ -399,6 +398,7 @@ export function createCall(root) {
     }
   }
 
+  const MEET_DOWN = 230; // px: where the mascots brawl, under VS
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
 
@@ -416,65 +416,51 @@ export function createCall(root) {
   }
 
   /**
-   * One mascot hops over to the other and beats it up: punches with comic bursts, the other spins off and sits dazed
-   * under circling stars, the bully hops back. Their bobbing stops for it and starts again after. Transforms only.
+   * Both mascots hop to the middle and pound each other in turns, comic bursts between them; nobody wins, nobody is
+   * knocked away, then both hop back. Their bobbing stops for it and starts again after. Transforms only.
    */
   function brawl(bobs, bob) {
-    const [an, vn] = Math.random() < 0.5 ? [1, 2] : [2, 1];
-    const a = q(`.mascot.m${an}`);
-    const v = q(`.mascot.m${vn}`);
-    bobs[an]?.cancel();
-    bobs[vn]?.cancel();
-    const size = 300;
-    // the victim's place in the bully's own coordinates; stop a body short of it, on the bully's side
-    const dx = v.offsetLeft - a.offsetLeft;
-    const dy = v.offsetTop - a.offsetTop;
-    const dist = Math.hypot(dx, dy);
-    const [ux, uy] = [dx / dist, dy / dist];
-    const tx = dx - ux * size * 0.85;
-    const ty = dy - uy * size * 0.85;
-    let x = 0;
-    let y = 0;
-    const hops = 4;
+    const boxes = [q('.mascot.m1'), q('.mascot.m2')];
+    bobs[1]?.cancel();
+    bobs[2]?.cancel();
+    // they meet side by side under VS (VS covers the middle), half a body apart
+    const [l1, t1, l2, t2] = [boxes[0].offsetLeft, boxes[0].offsetTop, boxes[1].offsetLeft, boxes[1].offsetTop];
+    const mx = (l1 + l2) / 2;
+    const my = (t1 + t2) / 2 + MEET_DOWN;
+    const ux = 1;
+    const uy = 0;
+    const fighters = boxes.map((el, i) => ({ el, dir: i ? -1 : 1, tx: mx + (i ? 130 : -130) - (i ? l2 : l1), ty: my - (i ? t2 : t1), x: 0, y: 0 }));
+    const hops = 3;
     const hopMs = 380;
-    const hop = (fx, fy, to, ty2, ms) => anim(a, [
-      { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + to) / 2}px, ${(fy + ty2) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
-      { transform: `translate(${to}px, ${ty2}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${to}px, ${ty2}px)` }], { duration: ms, easing: 'linear', fill: 'forwards' });
+    const hop = (f, to, ty2) => {
+      const [fx, fy] = [f.x, f.y];
+      [f.x, f.y] = [to, ty2];
+      anim(f.el, [
+        { transform: `translate(${fx}px, ${fy}px)` }, { transform: `translate(${(fx + to) / 2}px, ${(fy + ty2) / 2 - 90}px) scale(.95, 1.06)`, offset: 0.5 },
+        { transform: `translate(${to}px, ${ty2}px) scale(1.1, .88)`, offset: 0.9 }, { transform: `translate(${to}px, ${ty2}px)` }], { duration: hopMs, easing: 'linear', fill: 'forwards' });
+    };
     for (let i = 1; i <= hops; i++) {
-      after((i - 1) * hopMs, () => { const [fx, fy] = [x, y]; x = tx * i / hops; y = ty * i / hops; hop(fx, fy, x, y, hopMs); });
+      fighters.forEach((f, k) => after((i - 1) * hopMs + k * 120, () => hop(f, f.tx * i / hops, f.ty * i / hops)));
     }
-    const t0 = hops * hopMs;
-    const punches = 3 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < punches; i++) {
-      after(t0 + i * 330, () => {
-        anim(a, [{ transform: `translate(${x}px, ${y}px)` }, { transform: `translate(${x + ux * 70}px, ${y + uy * 70}px) rotate(${ux > 0 ? 10 : -10}deg)`, offset: 0.4 },
-          { transform: `translate(${x}px, ${y}px)` }], { duration: 260, easing: 'ease-out', fill: 'forwards' });
-        anim(v, [{ transform: 'none' }, { transform: `translate(${ux * 24}px, ${uy * 24}px) rotate(${ux > 0 ? 8 : -8}deg)`, offset: 0.5 }, { transform: 'none' }], { duration: 260, delay: 90 });
-        pow(v.offsetLeft + 150 + rand(-60, 60), v.offsetTop + 90 + rand(-40, 40));
+    const t0 = hops * hopMs + 200;
+    const hits = 6 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < hits; i++) {
+      const f = fighters[i % 2];
+      const o = fighters[1 - i % 2];
+      after(t0 + i * 300, () => {
+        const [px, py] = [ux * f.dir * 60, uy * f.dir * 60];
+        anim(f.el, [{ transform: `translate(${f.x}px, ${f.y}px)` }, { transform: `translate(${f.x + px}px, ${f.y + py}px) rotate(${f.dir * ux > 0 ? 10 : -10}deg)`, offset: 0.4 },
+          { transform: `translate(${f.x}px, ${f.y}px)` }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+        anim(o.el, [{ transform: `translate(${o.x}px, ${o.y}px)` }, { transform: `translate(${o.x + px * 0.35}px, ${o.y + py * 0.35}px) rotate(${f.dir * ux > 0 ? 6 : -6}deg)`, offset: 0.5 },
+          { transform: `translate(${o.x}px, ${o.y}px)` }], { duration: 240, delay: 80, fill: 'forwards' });
+        pow(mx + 150 + rand(-50, 50), my + 90 + rand(-60, 30));
       });
     }
-    const t1 = t0 + punches * 330 + 150;
-    after(t1, () => {
-      // knocked away: a spin and a slide, then dazed under circling stars
-      anim(v, [{ transform: 'none' }, { transform: `translate(${ux * 70}px, ${uy * 70 - 80}px) rotate(${ux > 0 ? 360 : -360}deg)`, offset: 0.6 },
-        { transform: `translate(${ux * 110}px, ${uy * 110}px) rotate(${ux > 0 ? 720 : -720}deg)` }], { duration: 700, easing: 'ease-out', fill: 'forwards' });
-      const stars = document.createElement('span');
-      stars.className = 'daze';
-      stars.textContent = '💫';
-      v.append(stars);
-      anim(stars, [{ transform: 'translateX(-50%) rotate(0)' }, { transform: 'translateX(-50%) rotate(360deg)' }], { duration: 700, iterations: 4 });
-      // the bully hops back home
-      for (let i = 1; i <= hops; i++) {
-        after(500 + (i - 1) * hopMs, () => { const [fx, fy] = [x, y]; x = tx * (1 - i / hops); y = ty * (1 - i / hops); hop(fx, fy, x, y, hopMs); });
-      }
-      after(500 + hops * hopMs + 100, () => bob(an, 0));
-      // the victim gets up and slides back
-      after(3000, () => {
-        stars.remove();
-        anim(v, [{ transform: `translate(${ux * 110}px, ${uy * 110}px)` }, { transform: 'none' }], { duration: 500, easing: 'ease-in-out', fill: 'forwards' });
-        after(520, () => bob(vn, 0));
-      });
-    });
+    const tb = t0 + hits * 300 + 300;
+    for (let i = 1; i <= hops; i++) {
+      fighters.forEach((f, k) => after(tb + (i - 1) * hopMs + k * 120, () => hop(f, f.tx * (1 - i / hops), f.ty * (1 - i / hops))));
+    }
+    after(tb + hops * hopMs + 250, () => { bob(1, 0); bob(2, 0); });
   }
 
   return {
@@ -484,7 +470,7 @@ export function createCall(root) {
       running = [];
       timers.forEach(clearTimeout);
       timers = [];
-      ring.querySelectorAll('.pow, .daze').forEach((x) => x.remove());
+      ring.querySelectorAll('.pow').forEach((x) => x.remove());
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;

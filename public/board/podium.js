@@ -352,7 +352,7 @@ export function createPoster(root) {
           { transform: p.tf(fx + (fx - tx) * 0.12, fy, lie - dir * 35) }], { duration: FLY, fill: 'forwards' });
         later(() => { // the burst a touch before the prop's middle gets there: it has to grow, and the edge hits first
           burst(b.mid, b.top + v.size * 0.4);
-          if (!v.busy) turn(v, -dir); // looks at who threw it
+          turn(v, -dir); // turns round at once to who threw it
           v.hop.animate([{ transform: 'none' }, { transform: `translateX(${dir * 22}px) rotate(${dir * 12}deg)`, offset: 0.3 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
         }, FLY * HIT - 110);
         Object.assign(p, { x: p.x0 + fx + (fx - tx) * 0.12, y: p.y0 + fy, lie: lie - dir * 35 });

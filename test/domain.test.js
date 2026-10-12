@@ -562,14 +562,13 @@ test('group decider: the last match of a group counts only if some outcome chang
 test('upcoming play-off in the queue: names only where certain, placeholders elsewhere', () => {
   const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan', 'Eva'] }).start();
   let up = snapshot(t.s).upcoming;
-  assert.deepEqual(up.map((m) => m.round), ['sf1', 'sf2', 'third', 'final']);
+  assert.deepEqual(up.map((m) => m.round), ['sf1', 'sf2']);
   assert.ok(up.every((m) => m.p1.placeholder && m.p2.placeholder));
   t.win('Ann', 'Bob', 2); // group A is over: its winner and runner-up are certain (2 groups: A1-B2, B1-A2)
   up = snapshot(t.s).upcoming;
   assert.equal(up[0].p1.name, 'Ann');
   assert.ok(up[0].p2.placeholder); // 2nd of group B: not yet
   assert.equal(up[1].p2.name, 'Bob');
-  assert.equal(up[3].p1.name, 'Winner SF1');
   t.rank(['Cat', 'Dan', 'Eva']);
   assert.deepEqual(snapshot(t.s).upcoming, []); // the bracket is there: no more projections
 });

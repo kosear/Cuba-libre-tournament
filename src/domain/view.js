@@ -154,7 +154,8 @@ function contenders(s, raw = false) {
 }
 
 /**
- * The play-off matches still to come, for the end of the queue during the group stage: a name where the participant of
+ * The semi-finals still to come, for the end of the queue during the group stage (the 3rd place match and the final are
+ * not listed: once the play-off starts the queue panel is gone): a name where the participant of
  * that slot is already certain, else a placeholder ({ name, placeholder: true }). A group is settled when it is over or
  * its only match left changes nothing (lastMatchMatters). Certain: with 1-2 groups, the player's group is settled; with
  * 3 and more, every group is settled (the slot depends on comparing all the groups). A tied place is never certain.
@@ -167,13 +168,10 @@ function upcomingPlayoff(s) {
   const sure = (ids) => !!groupOf(ids) && (n <= 2 ? settled.get(groupOf(ids)) : allSettled);
   const projected = contenders(s, true);
   const side = (e) => (e.ids && sure(e.ids) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
-  const ph = (name) => ({ name, placeholder: true });
   const mk = (slot, p1, p2) => ({ id: `next-${slot}`, stage: 'playoff', round: slot, label: ROUND_LABEL[slot], p1, p2, upcoming: true });
   return [
     mk('sf1', side(projected.sf1[0]), side(projected.sf1[1])),
     mk('sf2', side(projected.sf2[0]), side(projected.sf2[1])),
-    mk('third', ph('Loser SF1'), ph('Loser SF2')),
-    mk('final', ph('Winner SF1'), ph('Winner SF2')),
   ];
 }
 

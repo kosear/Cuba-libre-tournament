@@ -411,7 +411,7 @@ export function createCall(root) {
   // name at 180-850 × 380-600, VS at 800-1120 × 510-730, the right name at 1070-1740 × 640-860). Each is the (left, top)
   // of the box between the two fighters: the pair takes 560 × 300 px round it.
   // bottom left, bottom left of centre, bottom centre, top right, top right corner, top left corner
-  const SPOTS = [[190, 650], [410, 755], [640, 755], [1300, 330], [1500, 60], [150, 70]];
+  const SPOTS = [[190, 650], [410, 755], [640, 755], [1300, 330], [1520, 60], [150, 70]];
   const JITTER = [[40, 30], [30, 20], [20, 15], [60, 40], [15, 15], [15, 15]];
   const spot = (i) => [SPOTS[i][0] + rand(-JITTER[i][0], JITTER[i][0]), SPOTS[i][1] + rand(-JITTER[i][1], JITTER[i][1])];
   /** The SPOTS free of text now: the two at the top only where the title's text leaves room. */
@@ -423,7 +423,7 @@ export function createCall(root) {
     const t = r.getBoundingClientRect();
     const [left, right] = [(t.left - R.left) / k, (t.right - R.left) / k];
     const out = [0, 1, 2, 3];
-    if (right < 1370) out.push(4);
+    if (right < 1330) out.push(4);
     if (left > 660) out.push(5);
     return out;
   }

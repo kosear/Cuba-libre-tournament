@@ -36,6 +36,7 @@ table.std td { padding: .4em 6px; text-align: center; border-bottom: 1px solid v
 table.std tr:last-child td { border-bottom: none; }
 table.std .name { text-align: left; width: 43%; /* Frames, Win, Balls get 19% each */ overflow: hidden; text-overflow: ellipsis; }
 table.std tr.leader td { font-weight: 800; }
+table.std td.balls { color: #8a94a8; } /* balls: less important, grey (the leader's row stays bold) */
 table.std tr.out td { color: #a8b2c4; }
 table.std tr.out td.name { text-decoration: line-through; }
 .card { display: flex; flex-direction: column; }

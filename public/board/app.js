@@ -10,7 +10,7 @@ const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
-const DURATION = { groups: 30000, group: 30000, playoff: 30000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 60000, group: 30000, playoff: 30000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 
@@ -137,7 +137,7 @@ const liveName = (name) => `${LIVE}<span class="ln">${esc(name)}</span>`;
 
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
-    <td class="name">${r.leader ? '🏆 ' : ''}${isLive(r.id) ? liveName(r.name) : esc(r.name)}</td><td>${r.frames}</td><td>${r.wins}</td><td>${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
+    <td class="name">${r.leader ? '🏆 ' : ''}${isLive(r.id) ? liveName(r.name) : esc(r.name)}</td><td>${r.frames}</td><td>${r.wins}</td><td class="balls">${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
   return `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 

@@ -668,12 +668,12 @@ export function createCall(root) {
     const plan = (left, t0 = T2 + 1400) => { // when the second prop has landed
       let t = t0;
       while (t < Math.min(left, 60000)) {
-        // the text-free patches in a random order, each once before any again; a breather in between
+        // the text-free patches in a random order, each once before any again; straight on from one to the next
         if (!queue.length) queue = spotOrder(last);
         const i = queue.shift();
         last = i;
         const [mx, my] = spot(i);
-        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true) + rand(500, 1400);
+        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
       }
       if (left > t) after(t, () => plan(left - t, 0));
     };

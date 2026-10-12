@@ -214,50 +214,10 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 .pz-side.bronze .pz-sname span { color: #ffd2a8; text-shadow: 0 2px 0 #e09a5e, 0 4px 0 #c47a3e, 0 6px 0 #a35f2a, 0 8px 0 #7d461c, 0 16px 24px rgba(0,0,0,.4); }
 /* the players' mascots of the tournament by their cups: the champion's leans on the big trophy, 2nd outside its cup on
    the left, 3rd on the right (like on the call screen: emoji body, hat and prop) */
-.pz-m { position: absolute; line-height: 1; font-style: normal; filter: drop-shadow(0 10px 0 rgba(0,0,0,.3)); }
-/* hopping right across its cup and back (in front of it): six hops one way, turn round, six back; squashed on landing.
-   --d: how far it goes (set per mascot). Transforms only. */
-.pz-m { z-index: 3; }
-.pz-m .hop { display: block; position: relative; animation: pz-hop 7s linear infinite; transform-origin: 50% 100%; }
-.pz-m.m2 .hop { animation-delay: -2.3s; } .pz-m.m3 .hop { animation-delay: -4.6s; }
-@keyframes pz-hop {
-  0.00% { transform: translate(calc(var(--d) * 0.0000), 0) scale(1.08, .9); }
-  1.25% { transform: translate(calc(var(--d) * 0.0000), 0) scale(1, 1); }
-  4.58% { transform: translate(calc(var(--d) * 0.0833), -60px) scale(0.95, 1.06); }
-  8.33% { transform: translate(calc(var(--d) * 0.1667), 0) scale(1.08, .9); }
-  9.58% { transform: translate(calc(var(--d) * 0.1667), 0) scale(1, 1); }
-  12.92% { transform: translate(calc(var(--d) * 0.2500), -60px) scale(0.95, 1.06); }
-  16.67% { transform: translate(calc(var(--d) * 0.3333), 0) scale(1.08, .9); }
-  17.92% { transform: translate(calc(var(--d) * 0.3333), 0) scale(1, 1); }
-  21.25% { transform: translate(calc(var(--d) * 0.4167), -60px) scale(0.95, 1.06); }
-  25.00% { transform: translate(calc(var(--d) * 0.5000), 0) scale(1.08, .9); }
-  26.25% { transform: translate(calc(var(--d) * 0.5000), 0) scale(1, 1); }
-  29.58% { transform: translate(calc(var(--d) * 0.5833), -60px) scale(0.95, 1.06); }
-  33.33% { transform: translate(calc(var(--d) * 0.6667), 0) scale(1.08, .9); }
-  34.58% { transform: translate(calc(var(--d) * 0.6667), 0) scale(1, 1); }
-  37.92% { transform: translate(calc(var(--d) * 0.7500), -60px) scale(0.95, 1.06); }
-  41.67% { transform: translate(calc(var(--d) * 0.8333), 0) scale(1.08, .9); }
-  42.92% { transform: translate(calc(var(--d) * 0.8333), 0) scale(1, 1); }
-  46.25% { transform: translate(calc(var(--d) * 0.9167), -60px) scale(0.95, 1.06); }
-  50.00% { transform: translate(calc(var(--d) * 1.0000), 0) scale(-1.08, .9); }
-  51.25% { transform: translate(calc(var(--d) * 1.0000), 0) scale(-1, 1); }
-  54.58% { transform: translate(calc(var(--d) * 0.9167), -60px) scale(-0.95, 1.06); }
-  58.33% { transform: translate(calc(var(--d) * 0.8333), 0) scale(-1.08, .9); }
-  59.58% { transform: translate(calc(var(--d) * 0.8333), 0) scale(-1, 1); }
-  62.92% { transform: translate(calc(var(--d) * 0.7500), -60px) scale(-0.95, 1.06); }
-  66.67% { transform: translate(calc(var(--d) * 0.6667), 0) scale(-1.08, .9); }
-  67.92% { transform: translate(calc(var(--d) * 0.6667), 0) scale(-1, 1); }
-  71.25% { transform: translate(calc(var(--d) * 0.5833), -60px) scale(-0.95, 1.06); }
-  75.00% { transform: translate(calc(var(--d) * 0.5000), 0) scale(-1.08, .9); }
-  76.25% { transform: translate(calc(var(--d) * 0.5000), 0) scale(-1, 1); }
-  79.58% { transform: translate(calc(var(--d) * 0.4167), -60px) scale(-0.95, 1.06); }
-  83.33% { transform: translate(calc(var(--d) * 0.3333), 0) scale(-1.08, .9); }
-  84.58% { transform: translate(calc(var(--d) * 0.3333), 0) scale(-1, 1); }
-  87.92% { transform: translate(calc(var(--d) * 0.2500), -60px) scale(-0.95, 1.06); }
-  91.67% { transform: translate(calc(var(--d) * 0.1667), 0) scale(-1.08, .9); }
-  92.92% { transform: translate(calc(var(--d) * 0.1667), 0) scale(-1, 1); }
-  96.25% { transform: translate(calc(var(--d) * 0.0833), -60px) scale(-0.95, 1.06); }
-  100% { transform: translate(0, 0) scale(1.08, .9); } }
+/* a mascot wanders about its cup (podium.js): .mv moves it sideways, .face turns it round at once (no in-between scale:
+   that flashed), .hop jumps and squashes. No filter on anything that moves: a drop-shadow made the TV redraw and flicker. */
+.pz-m { position: absolute; z-index: 3; line-height: 1; font-style: normal; }
+.pz-m .mv, .pz-m .face, .pz-m .hop { display: block; position: relative; transform-origin: 50% 100%; will-change: transform; }
 .pz-m .hat { position: absolute; left: 50%; top: -.36em; font-size: .52em; transform: translateX(-50%) rotate(-10deg); }
 .pz-m .item { position: absolute; right: -.18em; bottom: -.02em; font-size: .46em; transform: rotate(14deg); }
 .pz-m.m1 { left: 590px; top: 405px; font-size: calc(150px * var(--k, 1)); --d: 590px; } /* across the big trophy's foot, clear of the names */

@@ -85,7 +85,7 @@ export function createPoster(root) {
     const masc = (p, cls) => {
       if (!p) return '';
       const m = mascotHTML(p, players);
-      return `<div class="pz-m ${cls}" style="--k:${m.scale}"><span class="hop">${m.html}</span></div>`; // --k: a mascot drawn a little bigger or smaller
+      return `<div class="pz-m ${cls}" style="--k:${m.scale}"><span class="mv"><span class="face"><span class="hop">${m.html}</span></span></span></div>`; // --k: a mascot drawn a little bigger or smaller
     };
     const side = (p, n, kind, label) => (p ? `<div class="pz-side pz-p${n} ${kind}">${smallCup(kind, n)}<div class="pz-slabel">${label}</div>
       <div class="pz-sname"><span>${esc(p.name)}</span></div></div>` : '');
@@ -157,6 +157,56 @@ export function createPoster(root) {
   }
 
   /** One burst of sparks from (x, y): out, then they droop and fade. */
+  /**
+   * A mascot wandering about its cup at random: it stands a while (sometimes bounces on the spot or looks round), or hops
+   * a few times to a random place within --d px, crossing the cup or not. Each hop: a little jump with a squash.
+   */
+  function wander(el, key) {
+    const d = parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 300;
+    const mv = el.querySelector('.mv');
+    const face = el.querySelector('.face');
+    const hop = el.querySelector('.hop');
+    let x = rand(0, d);
+    let dir = 1;
+    mv.style.transform = `translateX(${x}px)`;
+    const alive = () => shown === key && el.isConnected;
+    const later = (fn, ms) => setTimeout(() => alive() && fn(), ms);
+    const turn = (to) => { dir = to; face.style.transform = dir < 0 ? 'scaleX(-1)' : ''; };
+    const jump = (h, ms) => hop.animate([
+      { transform: 'scale(1.08, .9)' }, { transform: 'translateY(0) scale(1)', offset: 0.15 },
+      { transform: `translateY(${-h}px) scale(.95, 1.06)`, offset: 0.55 }, { transform: 'translateY(0) scale(1.1, .88)', offset: 0.92 },
+      { transform: 'scale(1)' }], { duration: ms, easing: 'linear' });
+    function next() {
+      const r = Math.random();
+      if (r < 0.3) { later(next, rand(900, 2600)); return; } // just stand there
+      if (r < 0.42) { turn(-dir); later(next, rand(600, 1400)); return; } // look the other way
+      if (r < 0.55) { // a couple of bounces on the spot
+        const n = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < n; i++) later(() => jump(35, 420), i * 440);
+        later(next, n * 440 + rand(200, 900));
+        return;
+      }
+      // hop to a new place, at least a quarter of the way off
+      let to = rand(0, d);
+      if (Math.abs(to - x) < d / 4) to = x < d / 2 ? Math.min(d, x + d / 2) : Math.max(0, x - d / 2);
+      turn(to > x ? 1 : -1);
+      const n = Math.max(1, Math.round(Math.abs(to - x) / 80));
+      const step = (to - x) / n;
+      const ms = rand(400, 520);
+      for (let i = 0; i < n; i++) {
+        later(() => {
+          const from = x;
+          x += step;
+          mv.animate([{ transform: `translateX(${from}px)` }, { transform: `translateX(${x}px)` }], { duration: ms, easing: 'ease-in-out' }); // the style already holds the end: no piling fill-forwards
+          mv.style.transform = `translateX(${x}px)`;
+          jump(rand(50, 75), ms);
+        }, i * (ms + 30));
+      }
+      later(next, n * (ms + 30) + rand(150, 1200));
+    }
+    later(next, rand(2600, 4200)); // after the entrance
+  }
+
   function firework(x, y) {
     const box = q('.pz-sparks');
     if (!box) return;
@@ -209,6 +259,7 @@ export function createPoster(root) {
       build(podium || [], players);
       shown = key;
       if (first) entrance(); // a corrected final only redraws the name
+      root.querySelectorAll('.pz-m').forEach((el) => wander(el, key));
       idleFireworks();
     },
     hide() {

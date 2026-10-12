@@ -134,10 +134,13 @@ const CSS = `
 .fight .mascot.m2 { left: 1525px; top: 325px; margin-left: -150px; }
 /* important matches: the title says why, in gold. The element itself draws a dark brown outline and shadow,
    its ::after copy on top fills the letters (the outline stays outside the letters, as with VS) */
-.fight.important .sub { top: 112px; font-size: 132px; font-style: italic; letter-spacing: 4px; color: #4a2a00; -webkit-text-stroke: 16px #4a2a00;
-  text-shadow: 0 10px 0 rgba(0,0,0,.45); } /* no yellow glow: on the TV it lit up the whole box, not the letters */
-.fight.important .sub::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; color: #ffd23f; -webkit-text-stroke: 0;
-  text-shadow: none; } /* plain gold: a gradient clipped to the letters (background-clip: text) came out broken on the TV */
+.fight.important .sub { top: 112px; font-size: 132px; font-style: italic; letter-spacing: 4px; color: #4a2a00;
+  display: flex; justify-content: center; align-items: center; gap: .18em; text-shadow: none; }
+/* the words: a dark outline drawn by the element, its ::after copy on top fills the letters (outline outside, as with VS) */
+.fight .sub .t { position: relative; -webkit-text-stroke: 16px #4a2a00; text-shadow: 0 10px 0 rgba(0,0,0,.45); }
+.fight .sub .t::after { content: attr(data-text); position: absolute; left: 0; top: 0; color: #ffd23f; -webkit-text-stroke: 0; text-shadow: none; }
+/* the stars: SVG with round joins (text ★ with a thick stroke came out spiky and broken on the TV) */
+.fight .sub .star { width: .85em; height: .85em; flex: none; overflow: visible; }
 .fight.important .label { top: 272px; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
@@ -277,19 +280,19 @@ export function createCall(root) {
   }
 
   /** The title: «Now playing», or for a big match why it is big, in gold with stars, as large as fits (132 px down to 60). */
+  const STAR = 'M0-10 2.94-4.05 9.51-3.09 4.76 1.55 5.88 8.09 0 5 -5.88 8.09 -4.76 1.55 -9.51-3.09 -2.94-4.05Z';
   function title(hype) {
     const sub = q('.sub');
-    const text = hype ? `★ ${hype} ★` : 'Now playing';
-    sub.textContent = text;
-    sub.dataset.text = text;
     sub.style.fontSize = '';
-    if (!hype) return;
-    // the letters' own width (a range over the text) against the full-width box, both as drawn on the scaled stage
-    const range = document.createRange();
-    range.selectNodeContents(sub);
+    if (!hype) { sub.textContent = 'Now playing'; return; }
+    const star = `<svg class="star" viewBox="-12 -12 24 24" aria-hidden="true"><path d="${STAR}" transform="translate(0 1.8)" fill="#000" fill-opacity=".45" stroke="#000" stroke-opacity=".45" stroke-width="4.4" stroke-linejoin="round"/><path d="${STAR}" fill="#4a2a00" stroke="#4a2a00" stroke-width="4.4" stroke-linejoin="round"/><path d="${STAR}" fill="#ffd23f" stroke="#ffd23f" stroke-width=".6" stroke-linejoin="round"/></svg>`; // outline below, gold on top: no paint-order needed
+    const word = hype.replace(/[&<>"]/g, '');
+    sub.innerHTML = `${star}<span class="t" data-text="${word}">${word}</span>${star}`;
+    // the stars and the word as drawn on the scaled stage, against the full-width box
     const box = sub.getBoundingClientRect().width;
+    const words = () => [...sub.children].reduce((w, c) => w + c.getBoundingClientRect().width, 0) * 1.08; // with the gaps
     let size = parseFloat(getComputedStyle(sub).fontSize);
-    while (size > 60 && range.getBoundingClientRect().width > box * 0.92) sub.style.fontSize = `${(size -= 4)}px`;
+    while (size > 60 && words() > box * 0.92) sub.style.fontSize = `${(size -= 4)}px`;
   }
 
   const loop = (el, frames, ms, delay, extra = {}) => anim(el, frames, { duration: ms, delay, iterations: Infinity, easing: 'ease-in-out', ...extra });

@@ -279,7 +279,12 @@ export function createCall(root) {
   let running = []; // animations of the current show, cancelled by the next one
   let timers = []; // timeouts of the current show (the mascots' fight), cleared by the next one
 
-  const anim = (el, frames, opts) => { const a = el.animate(frames, opts); running.push(a); return a; };
+  const anim = (el, frames, opts) => {
+    const a = el.animate(frames, opts);
+    if (running.length > 400) running = running.filter((x) => x.playState !== 'finished'); // a screen that stays long
+    running.push(a);
+    return a;
+  };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
   function setName(el, text, nickname) {
@@ -481,14 +486,20 @@ export function createCall(root) {
     return t0 + hits * step + 150;
   }
 
-  /** A plain match: once, somewhere in the middle, both hop under VS, trade punches and hop back home. */
-  function brawl(bobs, bob) {
+  /**
+   * A plain match: both hop under VS, trade punches and hop back home; again a few seconds later while the screen
+   * still has time for a whole one (`left`: ms the screen stays from now).
+   */
+  function brawl(bobs, bob, left) {
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
     const [a, b] = fs.map((f) => f.home);
     const end = scuffle(fs, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + MEET_DOWN, 0, 6 + Math.floor(Math.random() * 3), false);
-    after(hopTo(fs, [[0, 0], [0, 0]], end, false) + 100, () => { bob(1, 0); bob(2, 0); });
+    const home = hopTo(fs, [[0, 0], [0, 0]], end, false) + 100;
+    after(home, () => { bob(1, 0); bob(2, 0); });
+    const next = home + rand(3000, 7000);
+    if (left - next > 9000) after(next, () => brawl(bobs, bob, left - next));
   }
 
   /**
@@ -499,19 +510,24 @@ export function createCall(root) {
     bobs[1]?.cancel();
     bobs[2]?.cancel();
     const fs = fighters();
-    let t = 0;
     let [px, py] = [-9999, -9999];
-    while (t < ms) {
-      let mx;
-      let my;
-      let tries = 0;
-      do {
-        mx = rand(220, 1520); // both stay on screen (the ring is 60 px bigger than it on each side)
-        my = rand(150, 740);
-      } while (Math.hypot(mx - px, my - py) < 450 && ++tries < 20);
-      [px, py] = [mx, my];
-      t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
-    }
+    // planned a minute at a time (a screen that stays long would otherwise get all its fights at once)
+    const plan = (left) => {
+      let t = 0;
+      while (t < Math.min(left, 60000)) {
+        let mx;
+        let my;
+        let tries = 0;
+        do {
+          mx = rand(220, 1520); // both stay on screen (the ring is 60 px bigger than it on each side)
+          my = rand(150, 740);
+        } while (Math.hypot(mx - px, my - py) < 450 && ++tries < 20);
+        [px, py] = [mx, my];
+        t = scuffle(fs, mx, my, t, 6 + Math.floor(Math.random() * 7), true);
+      }
+      if (left > t) after(t, () => plan(left - t));
+    };
+    plan(ms);
   }
 
   return {
@@ -574,7 +590,7 @@ export function createCall(root) {
       }
       // a big match: they fight all over the screen as soon as VS has landed; a plain one: once, somewhere in the middle, under VS
       if (hype) after(TV + 500, () => frenzy(bobs, ms - TV - 500));
-      else if (ms > 9000) after(rand(5500, Math.min(10000, ms - 7000)), () => brawl(bobs, bob));
+      else if (ms > 9000) { const at = rand(5500, Math.min(10000, ms - 7000)); after(at, () => brawl(bobs, bob, ms - at)); }
       idle(pick(IDLES), TV + 600, ms - TV - 600);
       anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },

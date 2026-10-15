@@ -161,9 +161,10 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qm i { font-style: normal; color: var(--red); font-weight: 700; font-size: .75em; }
 .qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;
   min-width: 29px; text-align: center; line-height: 19px; }
-/* longer tags (TB, SF1, 3rd, Final) in smaller type, as wide as a group letter's plate (29 px): the tag column
+/* longer tags (TB, SF1, 3rd, the final's 🏆) in smaller type, as wide as a group letter's plate (29 px): the tag column
    is about the same width on every row and «vs» does not move between A and SF1 rows */
 .qg.long { font-size: 13px; padding: 3px 4px; letter-spacing: -.5px; }
+.qg .emo { font-size: 17px; vertical-align: middle; } /* the final's 🏆: as big as still fits a letter's plate */
 .qempty { font-size: 24px; color: var(--muted); }
 
 /* EXPERIMENT (2026-10-10): blue queue panel, light text, orange Next card. Delete this block to go back. */

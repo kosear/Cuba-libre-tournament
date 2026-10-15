@@ -2,7 +2,7 @@
 // data comes live over SSE, the page reloads itself after a deploy (shared/live.js).
 import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
-import { createCall } from '/board/call.js';
+import { createCall, emojify } from '/board/call.js';
 import { createPoster } from '/board/podium.js';
 import { startLizard } from '/board/lizard.js';
 
@@ -303,13 +303,13 @@ function scrollQueue(now) {
 }
 requestAnimationFrame(scrollQueue);
 
-// the tag at the end of a queue row; longer than a group letter: smaller type (.qg.long)
-const tag = (t) => `<span class="qg${t.length > 1 ? ' long' : ''}">${esc(t)}</span>`;
+// the tag at the end of a queue row; anything but a group letter: smaller type (.qg.long), as wide as a letter's plate
+const tag = (t) => `<span class="qg${/^[A-Z]$/i.test(t) ? '' : ' long'}">${emojify(esc(t))}</span>`;
 
 function shortLabel(m) {
   if (m.stage === 'group') return m.label.replace(/^group\s+/i, '');
   if (m.stage === 'tiebreak') return 'TB';
-  return { sf1: 'SF1', sf2: 'SF2', third: '3rd', final: 'Final' }[m.round] ?? '';
+  return { sf1: 'SF1', sf2: 'SF2', third: '3rd', final: '🏆' }[m.round] ?? '';
 }
 
 // ---------- render ----------

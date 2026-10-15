@@ -151,17 +151,19 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
   -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);
   mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent); }
 .qrest.still { -webkit-mask-image: none; mask-image: none; } /* the whole queue fits and stands still: no fade */
-.qrest-inner { will-change: transform; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; column-gap: 10px; } /* 44 px: the 40 px number column and the row's 4 px side padding */
-/* the rows share these columns (subgrid): the tag column is as wide as the longest tag in the list, so «vs» stands in one line
-   on every row, also when SF1 rows follow A rows; with group letters only it stays narrow */ /* scrolled by app.js, keeps its place across updates */
-.qrow { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 30px; }
+.qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
+.qrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 30px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }
 .qm { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; min-width: 0; line-height: 1.2; }
 /* name1 left, vs in the middle, name2 right; a long name wraps to 2 lines at most, then an ellipsis */
 .qm > span { min-width: 0; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .qm > .b { text-align: right; }
 .qm i { font-style: normal; color: var(--red); font-weight: 700; font-size: .75em; }
-.qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; justify-self: end; }
+.qg { font-size: 16px; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 3px 9px; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;
+  min-width: 29px; text-align: center; line-height: 19px; }
+/* longer tags (TB, SF1, 3rd, Final) in smaller type, as wide as a group letter's plate (29 px): the tag column
+   is about the same width on every row and «vs» does not move between A and SF1 rows */
+.qg.long { font-size: 13px; padding: 3px 4px; letter-spacing: -.5px; }
 .qempty { font-size: 24px; color: var(--muted); }
 
 /* EXPERIMENT (2026-10-10): blue queue panel, light text, orange Next card. Delete this block to go back. */

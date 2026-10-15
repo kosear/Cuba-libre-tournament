@@ -267,7 +267,7 @@ function renderQueue() {
     ? `<div class="qbig ${cls}"><div class="qlabel">${title} · ${esc(label(m))}</div><div class="qp">${name(m.p1)}</div><div class="qvs">vs</div><div class="qp">${name(m.p2)}</div></div>`
     : '');
   const rest = q.slice(3);
-  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 4}</span><span class="qm"><span class="a">${name(m.p1)}</span><i>vs</i><span class="b">${name(m.p2)}</span></span><span class="qg">${esc(shortLabel(m))}</span></div>`).join('');
+  const rows = rest.map((m, i) => `<div class="qrow"><span class="qn">${i + 4}</span><span class="qm"><span class="a">${name(m.p1)}</span><i>vs</i><span class="b">${name(m.p2)}</span></span>${tag(shortLabel(m))}</div>`).join('');
   // q[0] is being played: not shown, the players at the table know it.
   const top = q.length > 1 ? `${big(q[1], 'Next', 'next')}${big(q[2], 'After next', 'after')}` : '<div class="qempty">No matches in the queue</div>';
   const key = top + rows;
@@ -302,6 +302,9 @@ function scrollQueue(now) {
   requestAnimationFrame(scrollQueue);
 }
 requestAnimationFrame(scrollQueue);
+
+// the tag at the end of a queue row; longer than a group letter: smaller type (.qg.long)
+const tag = (t) => `<span class="qg${t.length > 1 ? ' long' : ''}">${esc(t)}</span>`;
 
 function shortLabel(m) {
   if (m.stage === 'group') return m.label.replace(/^group\s+/i, '');

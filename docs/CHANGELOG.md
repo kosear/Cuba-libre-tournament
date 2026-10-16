@@ -4,8 +4,8 @@ Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
 ## 2026-10-16 — Re-buy places play at the end of the group stage
 
-- `tournament.start` takes an optional `later: [player ids]`: the matches of those players go to the end of the queue,
-  each after one of the other matches. The admin page sends the re-buy places of quick setup there («Re-buy A»…).
+- `tournament.start` takes an optional `later: [player ids]`: the matches of those players go to the very end of the queue
+  as one block; one of the other matches goes in between only where someone would play twice in a row. The admin page sends the re-buy places of quick setup there («Re-buy A»…).
 - Old tournaments replay unchanged: their start has no `later`.
 
 ## 2026-10-16 — The start withdraws the BYE fillers in the same action

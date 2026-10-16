@@ -576,8 +576,18 @@ test('start with re-buy places: their matches at the end of the queue, never two
   assert.deepEqual([...q].sort(), [...plain.s.queue].sort()); // the same matches, only the order differs
   const has = (id) => [t.s.matches[id].p1, t.s.matches[id].p2].includes('Reb');
   const at = q.map((id, i) => (has(id) ? i : -1)).filter((i) => i >= 0);
-  assert.deepEqual(at, [q.length - 5, q.length - 3, q.length - 1]); // every other match at the very end
+  assert.deepEqual(at, [q.length - 5, q.length - 3, q.length - 1]); // one place: every other match at the very end
   tour().setup(groups).fails('bad_payload', 'tournament.start', { seed: 1, later: 'Reb' });
+});
+
+test('start with re-buy places in different groups: their matches are one block at the very end', () => {
+  const groups = { A: ['Ann', 'Bob', 'RA'], B: ['Cat', 'Dan', 'RB'], C: ['Eva', 'Fay', 'RC'] };
+  const t = tour().setup(groups).do('tournament.start', { seed: 1, later: ['RA', 'RB', 'RC'] });
+  const q = t.s.queue;
+  const ps = (id) => [t.s.matches[id].p1, t.s.matches[id].p2];
+  const late = q.map((id) => ps(id).some((x) => x.startsWith('R'))).map(Number).join('');
+  assert.equal(late, '000111111'); // 6 matches of the places, all at the end
+  for (let i = 1; i < q.length; i++) assert.ok(!ps(q[i]).some((x) => ps(q[i - 1]).includes(x)), `twice in a row at ${i}`);
 });
 
 test('upcoming play-off in the queue: names only where certain, placeholders elsewhere', () => {

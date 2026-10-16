@@ -122,18 +122,31 @@ function requirePhase(s, ...phases) {
   if (!phases.includes(s.phase)) throw new DomainError('wrong_phase', { phase: s.phase });
 }
 
-/** The queue with the matches of `later` players moved to its end, each after one of the other matches (as far as they go). */
+/**
+ * The queue with the matches of `later` players moved to its very end, as one block: nobody plays twice in a row inside
+ * it (the next match is one without the players of the last one); only where no such match is left, one of the other
+ * matches goes in between (the latest one that fits).
+ */
 function laterLast(s, queue, later) {
-  const isLater = (id) => later.has(s.matches[id].p1) || later.has(s.matches[id].p2);
+  const players = (id) => [s.matches[id].p1, s.matches[id].p2];
+  const clash = (a, b) => !!a && !!b && players(a).some((x) => players(b).includes(x));
+  const isLater = (id) => players(id).some((x) => later.has(x));
   const late = queue.filter(isLater);
   const rest = queue.filter((id) => !isLater(id));
-  const k = Math.min(late.length, rest.length); // the last k of the rest go between them
-  const out = rest.slice(0, rest.length - k);
-  late.forEach((id, i) => {
-    if (i < k) out.push(rest[rest.length - k + i]);
-    out.push(id);
-  });
-  return out;
+  const tail = [];
+  while (late.length) {
+    const prev = tail[tail.length - 1];
+    let i = late.findIndex((id) => !clash(prev, id));
+    if (i < 0) {
+      // every late match left shares a player with the last one: one of the others in between
+      let j = -1;
+      for (let k = rest.length - 1; k >= 0 && j < 0; k--) if (!clash(prev, rest[k]) && !clash(rest[k], late[0])) j = k;
+      if (j >= 0) { tail.push(rest.splice(j, 1)[0]); continue; }
+      i = 0; // nothing fits: twice in a row cannot be helped
+    }
+    tail.push(late.splice(i, 1)[0]);
+  }
+  return [...rest, ...tail];
 }
 
 function newMatch(s, fields) {
@@ -322,8 +335,8 @@ const handlers = {
       const match = newMatch(s, { stage: 'group', groupId: m.groupId, p1: m.p1, p2: m.p2 });
       s.queue.push(match.id);
     }
-    // Re-buy places (players who come later): their matches go to the end of the queue, every other match, so they still
-    // never play twice in a row. Renaming the place later changes nothing in the queue.
+    // Re-buy places (players who come later): their matches go to the very end of the queue, still never twice in a row
+    // for anyone. Renaming the place later changes nothing in the queue.
     if (p.later !== undefined && !Array.isArray(p.later)) throw new DomainError('bad_payload');
     if (p.later?.length) {
       for (const id of p.later) getPlayer(s, id);

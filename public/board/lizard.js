@@ -73,7 +73,8 @@ function fatter(g, part = 1) {
   g.fatTo = Math.min(step * 3, g.fatTo + step * part);
 }
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
-const DUO = 1 / 15; // share of runs where two geckos meet (lots of geckos or the fast mode: 1 in 5)
+const AFTER_WING = 0.05; // a gecko that has eaten a wing: its hunt rarely ends in a catch (else wing → catch → wing… never ends)
+const DUO = 1 / 3; // share of runs where two geckos meet (2026-10-16, was 1 in 15)
 const SMALL_WINS = 0.75; // a standoff of two sizes: the small one wins so often
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten
@@ -127,7 +128,7 @@ export function startLizard(root, { swarm = () => false, calm = () => false, bar
   const glutton = mode === 'glutton'; // the fast mode with every gecko a glutton that always eats the wing it can reach
   // ?lizard=duo: the fast pace with every run a scene of two, in turn; ?lizard=duo-fight (rivals, steal, family): only that one
   const duo = mode?.startsWith('duo') ? mode.split('-')[1] || true : null;
-  const duoP = () => (often() > 1 ? 0.2 : DUO); // share of runs that are a scene of two
+  const duoP = () => DUO; // share of runs that are a scene of two
   const fast = mode === 'fast' || glutton || duo ? 40 : 1;
   const test = mode !== null && fast === 1;
   // many geckos, catches are the rule: ?lizard=fast, or «lots of geckos» from the admin page (as often as the fast mode)
@@ -659,13 +660,13 @@ export function startLizard(root, { swarm = () => false, calm = () => false, bar
     if (g.scene || !huntMore(g)) g.look = g.until - rand(1, 2);
   }
 
-  /** A glutton with room left: sits on and calls the next butterfly. */
-  function huntMore(g) {
+  /** A glutton with room left (or a gecko that has just eaten a wing): sits on and calls the next butterfly. */
+  function huntMore(g, catchChance = NEXT_CATCH) {
     if (g.scene || g.eaten >= g.limit) return false;
     g.mode = 'stop';
     g.until = Math.max(g.until, rand(8, 11));
     g.look = g.until - rand(0.5, 1);
-    startHunt(g, Math.random() < NEXT_CATCH, rand(1, 2.5));
+    startHunt(g, Math.random() < catchChance, rand(1, 2.5));
     return !!g.hunt;
   }
 
@@ -872,7 +873,7 @@ export function startLizard(root, { swarm = () => false, calm = () => false, bar
         g.gulp = t < 2.2 ? 3 + ((t - 1.4) / 0.8) * 6 : 0;
         g.squint = t < 2.3 ? Math.sin(Math.min(1, (t - 1.4) / 0.9) * Math.PI) : 0;
         g.lips = t > 2.4 && t < 3.3 ? (t - 2.4) / 0.9 : 0;
-        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); fatter(g, 1 / 3); huntMore(g); }
+        if (t >= 3.5) { g.hunt = null; g.until = rand(0.3, 0.8); fatter(g, 1 / 3); huntMore(g, AFTER_WING); }
       }
     }
   }

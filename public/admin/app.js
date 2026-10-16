@@ -487,6 +487,7 @@ async function bulkSetup() {
   bulkText = '';
   refresh();
   toast(t('bulk.done')); // what was skipped is already shown under the list
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // the new groups start at the top
 }
 
 /** Start the tournament and withdraw the BYE fillers in the same action: undo and redo take them together. */

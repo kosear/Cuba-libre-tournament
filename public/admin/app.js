@@ -429,7 +429,7 @@ function bulkNames() {
 // Their number starts from the «Re-buy» lines in the list and is changed with − / +.
 const REBUY = /^re-?\s?buy\b/i;
 const REBUY_MAX = 8;
-const REBUY_PLACE = /^Re-buy [A-Z]$/; // a re-buy place not renamed yet
+const REBUY_PLACE = /^re-?\s?buy[\s-]?[a-z]$/i; // a re-buy place not renamed yet («Re-buy A», «Re-Buy-B», «Rebuy C»)
 let bulkRebuys = { found: 0, n: 0 };
 
 /** The list as parsed, with the re-buy places in step with it; total: players plus re-buy places. */

@@ -394,7 +394,7 @@ const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th Octob
 
 /**
  * Names from the list: trimmed, the numbering in front dropped (in a mostly numbered list, so «3 Musketeers» in a plain
- * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines with a colon,
+ * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines with a colon, an @mention or 5+ words,
  * empty lines and repeats (any case, or already in the tournament) skipped.
  */
 let bulkText = ''; // the pasted list: kept here, so a re-render (an update from the server) does not wipe it
@@ -409,8 +409,9 @@ function bulkNames() {
     if (TITLE.test(line)) { skipped.push(line); continue; }
     const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
-    // a colon after the numbering: not a name («Time: 7pm», «Players:»)
-    if (taken.has(name.toLowerCase()) || name.length > 40 || name.includes(':') || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
+    // not a name: a colon after the numbering («Time: 7pm», «Players:»), an @mention, 5 words and more (a sentence)
+    const notName = name.includes(':') || /(^|\s)@\S/.test(name) || name.split(' ').length >= 5;
+    if (taken.has(name.toLowerCase()) || name.length > 40 || notName || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
     taken.add(name.toLowerCase());
     names.push(name);
   }

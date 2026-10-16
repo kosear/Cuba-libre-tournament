@@ -375,7 +375,7 @@ function viewGroupsSetup() {
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}">${esc(bulkText)}</textarea>
     <div class="bulk-found" id="bulk-count">${bulkFound()}</div>
-    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
+    <div class="bulk-row"><div class="lbl"><span class="bulk-q">${esc(t('bulk.groups'))}</span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>

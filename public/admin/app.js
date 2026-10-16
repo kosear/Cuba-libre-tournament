@@ -206,7 +206,7 @@ function renderChrome() {
 
 function render() {
   if (!S) return;
-  if (document.activeElement?.closest('#view input')) { deferred = true; return; }
+  if (document.activeElement?.closest('#view input, #view textarea')) { deferred = true; return; }
   deferred = false;
   renderChrome();
   const views = { game: viewGame, queue: viewQueue, groups: viewGroups, playoff: viewPlayoff, journal: viewJournal };
@@ -371,9 +371,9 @@ function viewGroupsSetup() {
   // Quick setup, only before the first group: a list of names, shuffled into N groups (see bulkSetup()).
   const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
     <div class="muted">${esc(t('bulk.hint'))}</div>
-    <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}"></textarea>
-    <div class="bulk-found" id="bulk-count"></div>
-    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
+    <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}">${esc(bulkText)}</textarea>
+    <div class="bulk-found" id="bulk-count">${bulkFound()}</div>
+    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
@@ -395,11 +395,13 @@ const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th Octob
  * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre),
  * empty lines and repeats (any case, or already in the tournament) skipped.
  */
+let bulkText = ''; // the pasted list: kept here, so a re-render (an update from the server) does not wipe it
+
 function bulkNames() {
   const taken = new Set(T().players.map((p) => p.name.toLowerCase()));
   const names = [];
   const skipped = [];
-  const lines = $('bulk-names').value.split('\n').map((l) => l.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const lines = bulkText.split('\n').map((l) => l.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
   const numbered = lines.filter((l) => NUMBERED.test(l)).length >= lines.length / 2;
   for (const line of lines) {
     if (TITLE.test(line)) { skipped.push(line); continue; }
@@ -480,6 +482,7 @@ async function bulkSetup() {
     setup.push({ id: uuid(), name, players: members.map((n) => ({ id: uuid(), name: n })) });
   }
   if (!(await step('groups.setup', { groups: setup }))) return;
+  bulkText = '';
   refresh();
   toast(skipped.length ? t('bulk.doneSkipped', { names: skipped.join(', ') }) : t('bulk.done'));
 }
@@ -821,15 +824,25 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
+// Quick setup: after a paste (a whole list from a chat) the keyboard goes away and the group options come into view.
+document.addEventListener('paste', (e) => {
+  if (e.target.id !== 'bulk-names') return;
+  setTimeout(() => {
+    e.target.blur();
+    $('bulk-groups')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+});
+
 // Quick setup: the number of names found in the list (to check by eye against the sign-up) and the group buttons.
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'bulk-names') return;
+  bulkText = e.target.value;
   const n = bulkNames().names.length;
   $('bulk-count').innerHTML = bulkFound();
   $('bulk-groups').innerHTML = bulkGroupButtons(n);
 });
 
-document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input')) render(); }, 0));
+document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input, #view textarea')) render(); }, 0));
 
 // ---------- start ----------
 

@@ -375,7 +375,7 @@ function viewGroupsSetup() {
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}">${esc(bulkText)}</textarea>
     <div class="bulk-found" id="bulk-count">${bulkFound()}</div>
-    <div class="bulk-row"><div class="lbl"><span class="bulk-q">${esc(t('bulk.groups'))}</span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
+    <div class="bulk-row" id="bulk-gwrap" ${bulkMax(bulkNames().names.length) < 2 ? 'hidden' : ''}><div class="lbl"><span class="bulk-q">${esc(t('bulk.groups'))}</span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
@@ -435,7 +435,7 @@ function bulkMatches(n, g) {
   return big * ((small + 1) * small) / 2 + (g - big) * (small * (small - 1)) / 2 + 4;
 }
 function bulkGroupButtons(n) {
-  if (bulkMax(n) < 2) { bulkPick = { n, groups: 0, manual: false }; return `<span class="muted">${esc(t('bulk.needNames'))}</span>`; }
+  if (bulkMax(n) < 2) { bulkPick = { n, groups: 0, manual: false }; return ''; } // the question is hidden until there are options
   if (bulkPick.n !== n || !bulkPick.groups) {
     const keep = bulkPick.manual && bulkPick.groups <= bulkMax(n);
     bulkPick = { n, groups: keep ? bulkPick.groups : bulkSuggest(n), manual: keep };
@@ -840,6 +840,7 @@ document.addEventListener('input', (e) => {
   const n = bulkNames().names.length;
   $('bulk-count').innerHTML = bulkFound();
   $('bulk-groups').innerHTML = bulkGroupButtons(n);
+  $('bulk-gwrap').hidden = bulkMax(n) < 2;
 });
 
 document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input, #view textarea')) render(); }, 0));

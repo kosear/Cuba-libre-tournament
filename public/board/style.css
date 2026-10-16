@@ -284,7 +284,8 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 #stage.po aside.queue { grid-column: 2; grid-row: 1; justify-self: end; align-self: start; width: auto; height: 120px;
   padding: 41.5px 30px 0; z-index: 4; box-shadow: -8px 0 24px rgba(19,33,58,.11); } /* the clock where it is on the other slides */
 #stage.po aside.queue::after, #stage.po .qtitle, #stage.po #qtop, #stage.po .qrest { display: none; }
-#stage.po .qhead { font-size: 48px; line-height: 1; letter-spacing: 3px; margin-top: -5.5px; } /* the clock big in its plate (2026-10-16), the plate's 120 px kept: centred */
+#stage.po aside.queue { justify-content: center; padding-top: 0; } /* the clock in the middle of its plate whatever the font */
+#stage.po .qhead { font-size: 48px; line-height: 1; letter-spacing: 3px; } /* the clock big in its plate (2026-10-16) */
 /* the big final of the play-offs: fills the right side, two tall rows with huge names */
 .bm.big { display: flex; flex-direction: column; }
 .bm.big .t { font-size: 52px; padding: 20px 32px 14px; }

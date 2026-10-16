@@ -73,6 +73,27 @@ const BALI = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', hour:
 function tickClock() {
   const t = BALI.format(new Date());
   if (el('clock').textContent !== t) el('clock').textContent = t;
+  centreClock();
+}
+// The play-off's big clock: digits sit higher or lower in their line depending on the TV's font, so they are measured
+// in that font and moved to the very middle of the plate. Elsewhere the clock stays as it is.
+const clockCtx = document.createElement('canvas').getContext('2d');
+let clockFont = '';
+function centreClock() {
+  const c = el('clock');
+  const cs = getComputedStyle(c); // not cs.font: that shorthand comes back empty here
+  const font = stage.classList.contains('po') ? `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}` : '';
+  if (font === clockFont) return;
+  clockFont = font;
+  let shift = 0;
+  if (font) {
+    clockCtx.font = font;
+    const m = clockCtx.measureText('00:00');
+    // the line box is centred (font ascent - descent) / 2 above the baseline, the digits (ink ascent - descent) / 2: move by the difference
+    if (m.fontBoundingBoxAscent) shift = ((m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) - (m.fontBoundingBoxAscent - m.fontBoundingBoxDescent)) / 2;
+  }
+  c.style.transform = shift ? `translateY(${shift.toFixed(1)}px)` : '';
+  c.style.display = shift ? 'inline-block' : '';
 }
 tickClock();
 setInterval(tickClock, 1000);

@@ -9,8 +9,9 @@ import { t, lang, setLang, LANGS, has } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const TABS = [
-  { id: 'game', icon: '🎱' }, { id: 'queue', icon: '☰' }, { id: 'groups', icon: '▦' },
-  { id: 'playoff', icon: '🏆' }, { id: 'journal', icon: '⟲' },
+  // all emoji, so they come out the same size on any phone (text glyphs like ☰ fell back to random fonts)
+  { id: 'game', icon: '🎱' }, { id: 'queue', icon: '📋' }, { id: 'groups', icon: '👥' },
+  { id: 'playoff', icon: '🏆' }, { id: 'journal', icon: '\u21A9\uFE0F' }, // ↩️ undo
 ];
 const SLOTS = ['sf1', 'sf2', 'third', 'final'];
 

@@ -429,6 +429,7 @@ function bulkNames() {
 // Their number starts from the «Re-buy» lines in the list and is changed with − / +.
 const REBUY = /^re-?\s?buy\b/i;
 const REBUY_MAX = 8;
+const REBUY_PLACE = /^Re-buy [A-Z]$/; // a re-buy place not renamed yet
 let bulkRebuys = { found: 0, n: 0 };
 
 /** The list as parsed, with the re-buy places in step with it; total: players plus re-buy places. */
@@ -541,7 +542,8 @@ async function bulkSetup() {
 /** Start the tournament and withdraw the BYE fillers in the same action: undo and redo take them together. */
 async function startTournament() {
   const withdraw = T().players.filter((p) => BYE.test(p.name) && !p.withdrawn).map((p) => p.id);
-  if (!(await step('tournament.start', withdraw.length ? { withdraw } : {}))) return;
+  const later = T().players.filter((p) => REBUY_PLACE.test(p.name)).map((p) => p.id); // re-buy places: to the end of the queue
+  if (!(await step('tournament.start', { ...(withdraw.length && { withdraw }), ...(later.length && { later }) }))) return;
   refresh();
 }
 

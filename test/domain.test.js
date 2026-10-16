@@ -568,6 +568,18 @@ test('start with BYE fillers withdrawn in the same action: same state as withdra
   tour().setup(groups).fails('bad_payload', 'tournament.start', { seed: 1, withdraw: 'BYE' });
 });
 
+test('start with re-buy places: their matches at the end of the queue, never two in a row', () => {
+  const groups = { A: ['Ann', 'Bob', 'Cat', 'Reb'], B: ['Dan', 'Eva', 'Fay', 'Gus'] };
+  const plain = tour().setup(groups).start();
+  const t = tour().setup(groups).do('tournament.start', { seed: 1, later: ['Reb'] });
+  const q = t.s.queue;
+  assert.deepEqual([...q].sort(), [...plain.s.queue].sort()); // the same matches, only the order differs
+  const has = (id) => [t.s.matches[id].p1, t.s.matches[id].p2].includes('Reb');
+  const at = q.map((id, i) => (has(id) ? i : -1)).filter((i) => i >= 0);
+  assert.deepEqual(at, [q.length - 5, q.length - 3, q.length - 1]); // every other match at the very end
+  tour().setup(groups).fails('bad_payload', 'tournament.start', { seed: 1, later: 'Reb' });
+});
+
 test('upcoming play-off in the queue: names only where certain, placeholders elsewhere', () => {
   const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan', 'Eva'] }).start();
   let up = snapshot(t.s).upcoming;

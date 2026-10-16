@@ -122,6 +122,20 @@ function requirePhase(s, ...phases) {
   if (!phases.includes(s.phase)) throw new DomainError('wrong_phase', { phase: s.phase });
 }
 
+/** The queue with the matches of `later` players moved to its end, each after one of the other matches (as far as they go). */
+function laterLast(s, queue, later) {
+  const isLater = (id) => later.has(s.matches[id].p1) || later.has(s.matches[id].p2);
+  const late = queue.filter(isLater);
+  const rest = queue.filter((id) => !isLater(id));
+  const k = Math.min(late.length, rest.length); // the last k of the rest go between them
+  const out = rest.slice(0, rest.length - k);
+  late.forEach((id, i) => {
+    if (i < k) out.push(rest[rest.length - k + i]);
+    out.push(id);
+  });
+  return out;
+}
+
 function newMatch(s, fields) {
   const id = `m${++s.seq.match}`;
   s.matches[id] = {
@@ -307,6 +321,13 @@ const handlers = {
     for (const m of interleave(perGroup)) {
       const match = newMatch(s, { stage: 'group', groupId: m.groupId, p1: m.p1, p2: m.p2 });
       s.queue.push(match.id);
+    }
+    // Re-buy places (players who come later): their matches go to the end of the queue, every other match, so they still
+    // never play twice in a row. Renaming the place later changes nothing in the queue.
+    if (p.later !== undefined && !Array.isArray(p.later)) throw new DomainError('bad_payload');
+    if (p.later?.length) {
+      for (const id of p.later) getPlayer(s, id);
+      s.queue = laterLast(s, s.queue, new Set(p.later));
     }
     s.started = true;
     // The quick-setup fillers (BYE) withdrawn in the same action, so undo and redo take the start and them as one step.

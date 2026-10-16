@@ -394,7 +394,7 @@ const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th Octob
 
 /**
  * Names from the list: trimmed, the numbering in front dropped (in a mostly numbered list, so «3 Musketeers» in a plain
- * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre),
+ * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines with a colon,
  * empty lines and repeats (any case, or already in the tournament) skipped.
  */
 let bulkText = ''; // the pasted list: kept here, so a re-render (an update from the server) does not wipe it
@@ -409,7 +409,8 @@ function bulkNames() {
     if (TITLE.test(line)) { skipped.push(line); continue; }
     const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
-    if (taken.has(name.toLowerCase()) || name.length > 40 || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
+    // a colon after the numbering: not a name («Time: 7pm», «Players:»)
+    if (taken.has(name.toLowerCase()) || name.length > 40 || name.includes(':') || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
     taken.add(name.toLowerCase());
     names.push(name);
   }

@@ -2,6 +2,12 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-16 — The 3rd place match and the final in the queue too
+
+- `upcoming` in the state now lists all four play-off matches: sf1, sf2, then `third` (Loser SF1 vs Loser SF2) and `final`
+  (Winner SF1 vs Winner SF2), both always placeholders. The queue on the TV shows how many matches the evening has in all.
+- Rules of play and replay are unchanged; archived states from before list only sf1 and sf2.
+
 ## 2026-10-12 — Group decider only when it matters; the play-off to come in the queue
 
 - Each group in the state has a new field `lastMatters`: `true`/`false` when one match is left (does any outcome of it change who

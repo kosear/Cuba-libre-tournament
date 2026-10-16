@@ -154,9 +154,9 @@ function contenders(s, raw = false) {
 }
 
 /**
- * The semi-finals still to come, for the end of the queue during the group stage (the 3rd place match and the final are
- * not listed: once the play-off starts the queue panel is gone): a name where the participant of
- * that place is already certain, else a placeholder ({ name, placeholder: true }). A group is settled when it is over or
+ * The play-off still to come, for the end of the queue during the group stage, so the queue shows every match of the
+ * evening: the semi-finals with a name where the participant of that place is already certain, else a placeholder
+ * ({ name, placeholder: true }); the 3rd place match and the final always with placeholders (losers / winners of the SFs). A group is settled when it is over or
  * its only match left changes nothing (lastMatchMatters). A group's winner (or runner-up with 1-2 groups) is certain once
  * the group is settled; the best 2nd place of 3 groups only when every group is settled. A tied place is never certain.
  * With 3 and more groups the pairing follows the current seeding: it can still swap until all the groups are settled.
@@ -168,11 +168,14 @@ function upcomingPlayoff(s) {
   const groupOf = (ids) => (ids?.length === 1 ? s.players[ids[0]]?.groupId : null);
   const sure = (e) => !!groupOf(e.ids) && settled.get(groupOf(e.ids)) && (e.label !== 'Best 2nd place' || allSettled);
   const projected = contenders(s, true);
-  const side = (e) => (e.ids && sure(e) ? playerRef(s, e.ids[0]) : { name: e.label, placeholder: true });
+  const ph = (name) => ({ name, placeholder: true });
+  const side = (e) => (e.ids && sure(e) ? playerRef(s, e.ids[0]) : ph(e.label));
   const mk = (slot, p1, p2) => ({ id: `next-${slot}`, stage: 'playoff', round: slot, label: ROUND_LABEL[slot], p1, p2, upcoming: true });
   return [
     mk('sf1', side(projected.sf1[0]), side(projected.sf1[1])),
     mk('sf2', side(projected.sf2[0]), side(projected.sf2[1])),
+    mk('third', ph('Loser SF1'), ph('Loser SF2')),
+    mk('final', ph('Winner SF1'), ph('Winner SF2')),
   ];
 }
 

@@ -153,6 +153,7 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qbig.after .qlabel { font-size: 38px; line-height: 44px; margin-bottom: 8px; opacity: 1; }
 .qbig.after .qp { font-size: 46px; }
 .qbig.after .qvs { font-size: 44px; line-height: 1.1; margin: 4px 0; }
+.qbig .qvs { position: relative; top: -.09em; } /* lowercase «vs» sits low in its line: lifted to the middle between the names in capitals */
 .qrest { flex: 1; position: relative; overflow: hidden; min-height: 0;
   /* the list itself fades out at both edges (a mask, not white overlays: rows can never show above the fade) */
   -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);

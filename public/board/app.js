@@ -10,7 +10,7 @@ const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
-const DURATION = { groups: 60000, group: 15000, playoff: 15000, podium: 60000, splash: 60000 };
+const DURATION = { groups: 120000, group: 15000, playoff: 15000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
 

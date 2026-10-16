@@ -150,10 +150,9 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qbig.next .qlabel { font-size: 44px; line-height: 50px; margin-bottom: 10px; opacity: 1; }
 .qbig.next .qp { font-size: 76px; }
 .qbig.next .qvs { font-size: 52px; line-height: 1.1; margin: 2px 0; }
-.qbig.after { padding-top: 14px; padding-bottom: 14px; } /* bigger label and vs in the same card height */
-.qbig.after .qlabel { font-size: 42px; line-height: 44px; margin-bottom: 4px; opacity: 1; }
+.qbig.after .qlabel { font-size: 38px; line-height: 44px; margin-bottom: 8px; opacity: 1; }
 .qbig.after .qp { font-size: 46px; }
-.qbig.after .qvs { font-size: 48px; line-height: 1; margin: 0; }
+.qbig.after .qvs { font-size: 44px; line-height: 1.1; margin: 4px 0; }
 .qrest { flex: 1; position: relative; overflow: hidden; min-height: 0;
   /* the list itself fades out at both edges (a mask, not white overlays: rows can never show above the fade) */
   -webkit-mask-image: linear-gradient(transparent, #000 60px, #000 calc(100% - 90px), transparent);

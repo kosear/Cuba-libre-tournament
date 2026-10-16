@@ -386,11 +386,13 @@ const BYE = /^BYE( \d+)?$/; // filler players: withdrawn right at the start, the
 // A list pasted from a chat: «1. Name», «2) Name», «3 Name»; WhatsApp also puts invisible characters around the number.
 const INVISIBLE = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
 const NUMBERED = /^\d{1,3}\s*[.)\-:–]?\s+|^\d{1,3}[.)\-:–]\s*/;
+const NOTE = /\([^()]*\)/g; // «Jazmine (Going away party)»: the note is not part of the name
 const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th October at Cuba libre»
 
 /**
  * Names from the list: trimmed, the numbering in front dropped (in a mostly numbered list, so «3 Musketeers» in a plain
- * one stays), the title line (mentions Cuba Libre), empty lines and repeats (any case, or already in the tournament) skipped.
+ * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre),
+ * empty lines and repeats (any case, or already in the tournament) skipped.
  */
 function bulkNames() {
   const taken = new Set(T().players.map((p) => p.name.toLowerCase()));
@@ -400,7 +402,7 @@ function bulkNames() {
   const numbered = lines.filter((l) => NUMBERED.test(l)).length >= lines.length / 2;
   for (const line of lines) {
     if (TITLE.test(line)) { skipped.push(line); continue; }
-    const name = numbered ? line.replace(NUMBERED, '').trim() : line;
+    const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
     if (taken.has(name.toLowerCase()) || name.length > 40 || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
     taken.add(name.toLowerCase());

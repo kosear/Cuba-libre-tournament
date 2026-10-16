@@ -399,8 +399,7 @@ const NOTE = /\([^()]*\)/g; // «Jazmine (Going away party)»: the note is not p
 const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th October at Cuba libre»
 
 /**
- * Names from the list: trimmed, the numbering in front dropped (in a mostly numbered list, so «3 Musketeers» in a plain
- * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines that are no name (a colon, an @mention,
+ * Names from the list: trimmed, the numbering in front dropped (always, even when only some lines are numbered), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines that are no name (a colon, an @mention,
  * 5+ words, no letters, a link, 5+ digits, <Media omitted>),
  * empty lines and repeats (any case, or already in the tournament) skipped.
  */
@@ -412,10 +411,9 @@ function bulkNames() {
   const skipped = [];
   let rebuys = 0;
   const lines = bulkText.split('\n').map((l) => l.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
-  const numbered = lines.filter((l) => NUMBERED.test(l)).length >= lines.length / 2;
   for (const line of lines) {
     if (TITLE.test(line)) { skipped.push(line); continue; }
-    const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
+    const name = line.replace(NUMBERED, '').replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
     if (REBUY.test(name)) { rebuys++; continue; } // «Re-buy-A»: a place kept for someone who comes later, counted apart
     // not a name: a colon after the numbering («Time: 7pm», «Players:»), an @mention, 5 words and more (a sentence),

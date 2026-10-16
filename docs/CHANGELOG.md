@@ -2,6 +2,12 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-16 — Qualified among the play-off contenders
+
+- A `contenders` entry with names can carry `qualified: true`: that player is certain to go through (the group is over or
+  its last match changes nothing; the best 2nd place once every group is; never with 5 groups and more). The board shows
+  QUALIFIED in green instead of CONTENDER. Old archived states have no such field: everyone reads as a contender.
+
 ## 2026-10-16 — Tie-breaks foreseen in the queue panel
 
 - `upcoming` in the state (groups stage) can now start with tie-break matches (`stage: 'tiebreak'`, `label: 'Tie-break'`,

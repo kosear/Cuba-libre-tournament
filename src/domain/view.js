@@ -97,7 +97,7 @@ function groupView(s, g) {
 
 const byStats = (a, b) => b.wins - a.wins || b.balls - a.balls;
 
-/** Slot entry: { names } for a known or tied contender, { label } for a placeholder. */
+/** Slot entry: { names } for a known or tied contender (in the state also `qualified` when certain), { label } for a placeholder. */
 function entry(s, ids, label) {
   if (!ids?.length || ids.length > MAX_TIED_NAMES) return { label };
   return { names: ids.map((id) => s.players[id].name), ids, label };
@@ -150,7 +150,9 @@ function contenders(s, raw = false) {
     }
   }
   if (raw) return { sf1: semis[0], sf2: semis[1] };
-  const strip = (e) => (e.names ? { names: e.names } : { label: e.label });
+  const sure = certain(s);
+  // qualified: certain to play in the semi-finals (which one may still change)
+  const strip = (e) => (e.names ? { names: e.names, ...(sure(e) && { qualified: true }) } : { label: e.label });
   return { sf1: semis[0].map(strip), sf2: semis[1].map(strip) };
 }
 
@@ -175,12 +177,21 @@ function upcomingTiebreaks(s) {
     }))));
 }
 
-function upcomingPlayoff(s) {
+/**
+ * Whether a projected semi-final entry is certain to go through: one player, from a group that is over (or whose last
+ * match changes nothing); the best 2nd place only once every group is. With 5 groups and more only the 4 best winners
+ * go, which depends on the other groups: never certain before the bracket.
+ */
+function certain(s) {
   const n = s.groups.length;
   const settled = new Map(s.groups.map((g) => [g.id, isGroupDone(s, g.id) || lastMatchMatters(s, g) === false]));
   const allSettled = [...settled.values()].every(Boolean);
   const groupOf = (ids) => (ids?.length === 1 ? s.players[ids[0]]?.groupId : null);
-  const sure = (e) => !!groupOf(e.ids) && settled.get(groupOf(e.ids)) && (e.label !== 'Best 2nd place' || allSettled);
+  return (e) => n <= 4 && !!groupOf(e.ids) && settled.get(groupOf(e.ids)) && (e.label !== 'Best 2nd place' || allSettled);
+}
+
+function upcomingPlayoff(s) {
+  const sure = certain(s);
   const projected = contenders(s, true);
   const ph = (name) => ({ name, placeholder: true });
   const side = (e) => (e.ids && sure(e) ? playerRef(s, e.ids[0]) : ph(e.label));

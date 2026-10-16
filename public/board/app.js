@@ -194,7 +194,7 @@ function slidePlayoff() {
     const m = po?.[slot];
     if (cand && cand[slot]) {
       const side = (e) => (e.names
-        ? `<div class="p cand"><div class="cn"><span>${esc(e.names.join(' / '))}</span></div><i class="ctag">Contender</i></div>`
+        ? `<div class="p cand${e.qualified ? ' q' : ''}"><div class="cn"><span${e.names.length > 1 ? ' class="two"' : ''}>${esc(e.names.join(' / '))}</span></div><i class="ctag">${e.qualified ? 'Qualified' : 'Contender'}</i></div>`
         : `<div class="p tbd"><span>${esc(e.label)}</span></div>`);
       return `<div class="bm cand ${extra}" style="${style}"><div class="t"><span>${esc(title)}</span></div>${side(cand[slot][0])}${side(cand[slot][1])}</div>`;
     }

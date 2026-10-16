@@ -638,3 +638,24 @@ test('upcoming: a tie for a place that does not go through foresees nothing', ()
   t.win('Jon', 'Kim', 1).win('Kim', 'Lou', 1).win('Lou', 'Jon', 1); // the rest tied for 2nd: with 4 groups only winners go
   assert.deepEqual(snapshot(t.s).upcoming.map((m) => m.stage), ['playoff', 'playoff', 'playoff', 'playoff']);
 });
+
+test('contenders: Qualified only where certain to go through', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan'], C: ['Eve', 'Fay', 'Gus'], D: ['Ivy', 'Jon', 'Kim'] }).start();
+  t.win('Ann', 'Bob', 1); // A is over: Ann goes through
+  t.win('Eve', 'Fay', 1); // C goes on: Eve leads, not certain
+  t.win('Ivy', 'Jon', 1).win('Jon', 'Kim', 1).win('Kim', 'Ivy', 1); // D is over, a 3-way tie: shown as a placeholder
+  const all = (c) => [...c.sf1, ...c.sf2];
+  const q = (c) => all(c).filter((e) => e.qualified).map((e) => e.names.join('/'));
+  let c = snapshot(t.s).contenders;
+  assert.deepEqual(q(c), ['Ann']);
+  assert.ok(all(c).some((e) => e.names?.[0] === 'Eve' && !e.qualified));
+  t.win('Eve', 'Gus', 1); // Eve has won both: C's last match (Fay vs Gus) changes nothing
+  assert.deepEqual(q(snapshot(t.s).contenders).sort(), ['Ann', 'Eve']);
+});
+
+test('contenders: with 5 groups nobody is Qualified before the bracket (only the 4 best winners go)', () => {
+  const t = tour().setup({ A: ['a1', 'a2'], B: ['b1', 'b2'], C: ['c1', 'c2'], D: ['d1', 'd2'], E: ['e1', 'e2', 'e3'] }).start();
+  t.win('a1', 'a2', 5).win('b1', 'b2', 4).win('c1', 'c2', 3).win('d1', 'd2', 2);
+  const c = snapshot(t.s).contenders;
+  assert.ok([...c.sf1, ...c.sf2].every((e) => !e.qualified));
+});

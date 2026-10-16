@@ -372,8 +372,7 @@ function viewGroupsSetup() {
   const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}"></textarea>
-    <div class="bulk-row"><label>${esc(t('bulk.count'))} <input class="text" id="bulk-count" type="number" min="0" value="0" inputmode="numeric"></label></div>
-    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
+    <div class="bulk-row"><div class="lbl"><span class="bulk-head"><span>${esc(t('bulk.groups'))}</span><span id="bulk-count"></span></span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
@@ -447,7 +446,6 @@ async function bulkSetup() {
   const { names, skipped } = bulkNames();
   const groups = bulkPick.n === names.length ? bulkPick.groups : 0;
   if (!(groups >= 2 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
-  if (Number($('bulk-count').value) !== names.length) { toast(t('bulk.countMismatch', { n: names.length, count: $('bulk-count').value }), true); return; }
   if (names.length < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
   // Shuffle, deal round-robin: group sizes differ by at most one; the shorter groups get a BYE so all are equal.
   for (let i = names.length - 1; i > 0; i--) {
@@ -808,12 +806,11 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
-// Quick setup: the «players» field follows the number of names in the list (it can still be edited, it is checked),
-// the group buttons too.
+// Quick setup: the number of names found in the list (to check by eye against the sign-up) and the group buttons.
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'bulk-names') return;
   const n = bulkNames().names.length;
-  $('bulk-count').value = n;
+  $('bulk-count').textContent = n ? t('bulk.count', { n }) : '';
   $('bulk-groups').innerHTML = bulkGroupButtons(n);
 });
 

@@ -492,9 +492,17 @@ function viewPlayoff() {
 
 // ---------- tab: journal ----------
 
+/** A match the current state no longer has (its action undone, or the start undone): players from the journal's replay. */
+function pastMatch(id) {
+  const m = S.journal.matches?.[id];
+  if (!m) return null;
+  const ref = (pid) => (pid ? { name: playerName(pid) } : null);
+  return { id, stage: m.stage, p1: ref(m.p1), p2: ref(m.p2) };
+}
+
 function describe(e) {
   const p = e.payload;
-  const m = allMatches().get(p.id);
+  const m = allMatches().get(p.id) ?? pastMatch(p.id);
   const matchText = m ? `${m.p1?.name ?? '?'} vs ${m.p2?.name ?? '?'}` : '';
   switch (e.type) {
     case 'group.add': case 'group.rename': return t(`log.${e.type}`, { name: p.name });

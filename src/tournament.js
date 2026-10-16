@@ -123,7 +123,11 @@ export function cancelTournament(adminId) {
   })();
 }
 
-/** Action log for the admin journal, newest first, plus names of every player and group ever mentioned. */
+/**
+ * Action log for the admin journal, newest first, plus names of every player and group ever mentioned and the players
+ * of every match (as if every undone action were redone): an undone result still reads «Ann beat Bob» once its match
+ * is gone from the current state, e.g. after undoing the start.
+ */
 export function journal() {
   const tid = currentTournamentId();
   const rows = db.prepare(`
@@ -144,9 +148,17 @@ export function journal() {
     if (id && p.name) names[id] = p.name;
   }
   const entries = rows.map((r) => ({ ...r, payload: JSON.parse(r.payload) }));
+  // undone actions are always the tail of the non-discarded ones (a new action discards them), so this replays a real past
+  const replay = initialState();
+  for (const r of db.prepare("SELECT type, payload FROM actions WHERE tournament_id = ? AND status IN ('active', 'undone') ORDER BY id").all(tid)) {
+    try { applyInPlace(replay, { type: r.type, payload: JSON.parse(r.payload) }); } catch { /* keep what applied */ }
+  }
+  const matches = {};
+  for (const m of Object.values(replay.matches)) matches[m.id] = { p1: m.p1, p2: m.p2, stage: m.stage };
   return {
     entries,
     names,
+    matches,
     canUndo: entries.some((e) => e.status === 'active'),
     canRedo: entries.some((e) => e.status === 'undone'),
   };

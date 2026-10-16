@@ -79,11 +79,13 @@ const MASCOTS = [
   ['🥑', '🧢', '', 'Avocado Bro'],
   CUBAN_PETE,
 ];
-// pride squad: only for the regulars in LUCKY, never in the common pool
+// pride squad: the regulars in LUCKY draw from it, everyone else meets it in the common pool, 4 times rarer
 const PRIDE = [
   ['🦄', ['👑', -0.3, 0.18, -10], ['🏳️‍🌈', -0.1, 0.6, 0], 'Rainbow Unicorn'], ['🦩', ['🕶️', -0.26, 0.13, -10], ['🏳️‍🌈', -0.25, 0, 14], 'Pride Flamingo'], ['🦚', '', '🏳️‍🌈', 'Proud Peacock'],
   ['🐻', '🧢', ['🏳️‍🌈', 0.1, 0.6, 10], 'Pride Bear'], ['🐙', '🎩', ['🏳️‍🌈', 0, 0.15, 14], 'Fabulous Octopus'], ['🐂', ['🩰', -0.32, 0.25, -10], '🏳️‍🌈', 'Ballet Bull'],
 ];
+// the common pool: each ordinary mascot 4 times, each pride one once
+const POOL = [...MASCOTS.flatMap((m) => [m, m, m, m]), ...PRIDE];
 
 const CSS = `
 .fight { position: absolute; inset: 0; overflow: hidden; background: #0b0d14; color: #fff; }
@@ -203,7 +205,7 @@ function rays() {
 // pool. Decided by their id like everyone else, so it stays for the tournament and looks like plain luck.
 // Key: the name in lower case without spaces and dots.
 const LUCKY = {
-  kc: { set: PRIDE, chance: 1 },
+  kc: { set: PRIDE, chance: 0.5 },
   david: { set: PRIDE, chance: 0.5 },
 };
 // every Pete (Peter, Pedro, Петя...) gets Cuban Pete in half the tournaments; the name only has to start so
@@ -214,12 +216,12 @@ const PETE = { set: [CUBAN_PETE], chance: 0.5 };
 function mascotPick(p) {
   const key = (p?.name || '').toLowerCase().replace(/[\s.]/g, '').replace(/ё/g, 'е');
   const lucky = LUCKY[key] || (PETES.test(key) ? PETE : null);
-  if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : MASCOTS; return [set, Math.floor(Math.random() * set.length)]; }
+  if (!p?.id) { const set = lucky && Math.random() < lucky.chance ? lucky.set : POOL; return [set, Math.floor(Math.random() * set.length)]; }
   let h = 0x811c9dc5;
   for (let i = 0; i < p.id.length; i++) h = Math.imul(h ^ p.id.charCodeAt(i), 0x01000193) >>> 0;
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; // mix the bits: similar ids land far apart
   h = (h ^ (h >>> 16)) >>> 0;
-  const set = lucky && ((h >>> 20) % 1000) / 1000 < lucky.chance ? lucky.set : MASCOTS; // high bits: independent of the pick
+  const set = lucky && ((h >>> 20) % 1000) / 1000 < lucky.chance ? lucky.set : POOL; // high bits: independent of the pick
   return [set, h % set.length];
 }
 
@@ -234,7 +236,7 @@ function mascotsFor(players) {
     const [set, start] = mascotPick(p);
     // all of a small set taken (a second Pete): the common pool instead, never a mascot twice
     const free = (s, i) => { for (let k = 0; k < s.length; k++) { const c = s[(i + k) % s.length]; if (!used.has(c)) return c; } return null; };
-    const m = free(set, start) || free(MASCOTS, start % MASCOTS.length) || set[start];
+    const m = free(set, start) || free(POOL, start % POOL.length) || set[start];
     used.add(m);
     out.set(p.id, m);
   }

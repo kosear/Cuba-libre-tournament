@@ -54,6 +54,11 @@ textarea.text { width: 100%; border: 1px solid var(--line); border-radius: 11px;
 .bulk-row { display: flex; gap: 10px; }
 .bulk-row label, .bulk-row .lbl { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 .bulk-q { font-size: 17px; font-weight: 700; color: var(--ink); margin: 8px 0 4px; } /* a step of its own, not a field label */
+.bulk-rebuy { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+.bulk-rebuy span { flex: 1; }
+.bulk-rebuy button { width: 38px; height: 34px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 20px; line-height: 1; color: var(--ink); }
+.bulk-rebuy button:disabled { color: #c3cbd8; }
+.bulk-rebuy b { min-width: 18px; text-align: center; font-size: 17px; }
 .bulk-found { font-size: 14px; font-weight: 600; margin-top: -4px; }
 .bulk-found:empty { display: none; }
 /* one option per row: the number of groups, their size, the games of the evening */

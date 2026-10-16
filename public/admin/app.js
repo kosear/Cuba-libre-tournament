@@ -213,6 +213,7 @@ function render() {
   const listTop = $('bulk-names')?.scrollTop; // a re-render keeps the place in the pasted list
   $('view').innerHTML = views[tab]();
   if (listTop && $('bulk-names')) $('bulk-names').scrollTop = listTop;
+  bulkRefresh();
   if (tab === 'queue') enableDrag();
 }
 
@@ -374,9 +375,10 @@ function viewGroupsSetup() {
   const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}">${esc(bulkText)}</textarea>
-    <div class="bulk-found" id="bulk-count">${bulkFound()}</div>
-    <div class="bulk-row" id="bulk-gwrap" ${bulkMax(bulkNames().names.length) < 2 ? 'hidden' : ''}><div class="lbl"><span class="bulk-q">${esc(t('bulk.groups'))}</span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(bulkNames().names.length)}</div></div></div>
-    <button class="btn primary" id="bulk-go" data-bulk ${bulkMax(bulkNames().names.length) < 2 ? 'hidden' : ''}>${esc(t('bulk.go'))}</button></div>` : '';
+    <div class="bulk-found" id="bulk-count"></div>
+    <div class="bulk-rebuy" id="bulk-rebuy"></div>
+    <div class="bulk-row" id="bulk-gwrap"><div class="lbl"><span class="bulk-q">${esc(t('bulk.groups'))}</span> <div class="bulk-g" id="bulk-groups"></div></div></div>
+    <button class="btn primary" id="bulk-go" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
     <button class="btn primary" data-start>${esc(t('groups.start'))}</button>`;
@@ -404,12 +406,14 @@ function bulkNames() {
   const taken = new Set(T().players.map((p) => p.name.toLowerCase()));
   const names = [];
   const skipped = [];
+  let rebuys = 0;
   const lines = bulkText.split('\n').map((l) => l.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
   const numbered = lines.filter((l) => NUMBERED.test(l)).length >= lines.length / 2;
   for (const line of lines) {
     if (TITLE.test(line)) { skipped.push(line); continue; }
     const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
+    if (REBUY.test(name)) { rebuys++; continue; } // «Re-buy-A»: a place kept for someone who comes later, counted apart
     // not a name: a colon after the numbering («Time: 7pm», «Players:»), an @mention, 5 words and more (a sentence),
     // no letter at all («🎱🎱», «-----»), a link, 5 digits and more (a phone, a price), WhatsApp's «<Media omitted>»
     const notName = name.includes(':') || /(^|\s)@\S/.test(name) || name.split(' ').length >= 5 || !/\p{L}/u.test(name) ||
@@ -418,7 +422,31 @@ function bulkNames() {
     taken.add(name.toLowerCase());
     names.push(name);
   }
-  return { names, skipped };
+  return { names, skipped, rebuys };
+}
+
+// Re-buy places: players named «Re-buy A», «Re-buy B»…, renamed when someone takes the place, withdrawn if nobody does.
+// Their number starts from the «Re-buy» lines in the list and is changed with − / +.
+const REBUY = /^re-?\s?buy\b/i;
+const REBUY_MAX = 8;
+let bulkRebuys = { found: 0, n: 0 };
+
+/** The list as parsed, with the re-buy places in step with it; total: players plus re-buy places. */
+function bulkList() {
+  const r = bulkNames();
+  if (r.rebuys !== bulkRebuys.found) bulkRebuys = { found: r.rebuys, n: Math.min(REBUY_MAX, r.rebuys) };
+  return { ...r, total: r.names.length + bulkRebuys.n };
+}
+
+/** Everything under the list follows it: what was found, the re-buy places, the group options, the button. */
+function bulkRefresh() {
+  if (!$('bulk-count')) return;
+  const { names, total } = bulkList();
+  $('bulk-count').innerHTML = bulkFound();
+  $('bulk-rebuy').hidden = !names.length && !bulkRebuys.n;
+  $('bulk-rebuy').innerHTML = `<span>${esc(t('bulk.rebuys'))}</span><button data-rebuy="-1" ${bulkRebuys.n ? '' : 'disabled'}>−</button><b>${bulkRebuys.n}</b><button data-rebuy="1" ${bulkRebuys.n < REBUY_MAX ? '' : 'disabled'}>+</button>`;
+  $('bulk-groups').innerHTML = bulkGroupButtons(total);
+  $('bulk-gwrap').hidden = $('bulk-go').hidden = bulkMax(total) < 2;
 }
 
 // A series of actions in a row: compose after each one, so the next is checked against the state that includes it.
@@ -467,29 +495,44 @@ function bulkFound() {
 }
 
 async function bulkSetup() {
-  const { names } = bulkNames();
-  const groups = bulkPick.n === names.length ? bulkPick.groups : 0;
+  const { names, total } = bulkList();
+  const groups = bulkPick.n === total ? bulkPick.groups : 0;
   if (!(groups >= 2 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
-  if (names.length < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
+  if (total < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
   // Shuffle, deal round-robin: group sizes differ by at most one; the shorter groups get a BYE so all are equal.
   for (let i = names.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [names[i], names[j]] = [names[j], names[i]];
   }
+  // The re-buy places are dealt first, so they land in different groups; then the groups are shuffled, so which ones
+  // get them is random too.
+  const taken = new Set(names.map((n) => n.toLowerCase()));
+  const rebuys = [];
+  for (let k = 0; rebuys.length < bulkRebuys.n; k++) {
+    const n = `Re-buy ${String.fromCharCode(65 + k)}`;
+    if (!taken.has(n.toLowerCase())) rebuys.push(n);
+  }
+  const all = [...rebuys, ...names];
+  const dealt = Array.from({ length: groups }, (_, g) => all.filter((_, k) => k % groups === g));
+  for (let i = dealt.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [dealt[i], dealt[j]] = [dealt[j], dealt[i]];
+  }
   // One action for the whole setup: one journal entry, one undo.
-  const size = Math.ceil(names.length / groups);
+  const size = Math.ceil(all.length / groups);
   const used = new Set(T().groups.map((g) => g.name));
   const setup = [];
   let bye = 0;
   for (let g = 0, letter = 0; g < groups; g++) {
     let name;
     do name = `Group ${String.fromCharCode(65 + letter++)}`; while (used.has(name));
-    const members = names.filter((_, k) => k % groups === g);
+    const members = dealt[g];
     while (members.length < size) members.push(++bye === 1 ? 'BYE' : `BYE ${bye}`);
     setup.push({ id: uuid(), name, players: members.map((n) => ({ id: uuid(), name: n })) });
   }
   if (!(await step('groups.setup', { groups: setup }))) return;
   bulkText = '';
+  bulkRebuys = { found: 0, n: 0 };
   refresh();
   toast(t('bulk.done')); // what was skipped is already shown under the list
   window.scrollTo({ top: 0, behavior: 'smooth' }); // the new groups start at the top
@@ -768,6 +811,7 @@ document.addEventListener('click', async (e) => {
   if (d.start !== undefined) { if (confirm(t('groups.startConfirm'))) startTournament(); return; }
   if (d.bulk !== undefined) { bulkSetup(); return; }
   if (d.bulkG) { bulkPick.groups = Number(d.bulkG); bulkPick.manual = true; $('bulk-groups').innerHTML = bulkGroupButtons(bulkPick.n); return; }
+  if (d.rebuy) { bulkList(); bulkRebuys.n = Math.max(0, Math.min(REBUY_MAX, bulkRebuys.n + Number(d.rebuy))); bulkRefresh(); return; }
 
   // match sheet
   if (d.shWinner) { sheet.winner = Number(d.shWinner); el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); return; }
@@ -842,10 +886,7 @@ document.addEventListener('paste', (e) => {
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'bulk-names') return;
   bulkText = e.target.value;
-  const n = bulkNames().names.length;
-  $('bulk-count').innerHTML = bulkFound();
-  $('bulk-groups').innerHTML = bulkGroupButtons(n);
-  $('bulk-gwrap').hidden = $('bulk-go').hidden = bulkMax(n) < 2;
+  bulkRefresh();
 });
 
 document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input, #view textarea')) render(); }, 0));

@@ -372,8 +372,8 @@ function viewGroupsSetup() {
   const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}"></textarea>
-    <div class="bulk-row"><label>${esc(t('bulk.groups'))} <input class="text" id="bulk-groups" type="number" min="1" max="8" value="2" inputmode="numeric"></label>
-      <label>${esc(t('bulk.count'))} <input class="text" id="bulk-count" type="number" min="0" value="0" inputmode="numeric"></label></div>
+    <div class="bulk-row"><label>${esc(t('bulk.count'))} <input class="text" id="bulk-count" type="number" min="0" value="0" inputmode="numeric"></label></div>
+    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
@@ -419,10 +419,34 @@ async function step(type, payload) {
   return ok;
 }
 
+// The number of groups is picked with buttons, from 2 to as many as give each group 2 players (8 at most).
+// Suggested: groups of 3-4 (about 2-3 games each); a choice made by hand stays while it still fits the list.
+let bulkPick = { n: 0, groups: 0, manual: false };
+const bulkMax = (n) => Math.min(8, Math.floor(n / 2));
+const bulkSuggest = (n) => Math.max(2, Math.min(bulkMax(n), Math.floor(n / 3)));
+/** Matches of the evening: round robin in groups whose sizes differ by at most one (BYE games are walkovers), plus 4 play-off. */
+function bulkMatches(n, g) {
+  const small = Math.floor(n / g);
+  const big = n % g; // groups one player bigger
+  return big * ((small + 1) * small) / 2 + (g - big) * (small * (small - 1)) / 2 + 4;
+}
+function bulkGroupButtons(n) {
+  if (bulkMax(n) < 2) { bulkPick = { n, groups: 0, manual: false }; return `<span class="muted">${esc(t('bulk.needNames'))}</span>`; }
+  if (bulkPick.n !== n || !bulkPick.groups) {
+    const keep = bulkPick.manual && bulkPick.groups <= bulkMax(n);
+    bulkPick = { n, groups: keep ? bulkPick.groups : bulkSuggest(n), manual: keep };
+  }
+  let html = '';
+  for (let g = 2; g <= bulkMax(n); g++) {
+    html += `<button data-bulk-g="${g}" class="${g === bulkPick.groups ? 'on' : ''}"><b>${g}</b><small>${esc(t('bulk.matches', { n: bulkMatches(n, g) }))}</small></button>`;
+  }
+  return html;
+}
+
 async function bulkSetup() {
   const { names, skipped } = bulkNames();
-  const groups = Math.round(Number($('bulk-groups').value));
-  if (!(groups >= 1 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
+  const groups = bulkPick.n === names.length ? bulkPick.groups : 0;
+  if (!(groups >= 2 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
   if (Number($('bulk-count').value) !== names.length) { toast(t('bulk.countMismatch', { n: names.length, count: $('bulk-count').value }), true); return; }
   if (names.length < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
   // Shuffle, deal round-robin: group sizes differ by at most one; the shorter groups get a BYE so all are equal.
@@ -719,6 +743,7 @@ document.addEventListener('click', async (e) => {
   if (d.addGroup !== undefined) { act('group.add', { id: uuid(), name: nextGroupName() }); return; }
   if (d.start !== undefined) { if (confirm(t('groups.startConfirm'))) startTournament(); return; }
   if (d.bulk !== undefined) { bulkSetup(); return; }
+  if (d.bulkG) { bulkPick.groups = Number(d.bulkG); bulkPick.manual = true; $('bulk-groups').innerHTML = bulkGroupButtons(bulkPick.n); return; }
 
   // match sheet
   if (d.shWinner) { sheet.winner = Number(d.shWinner); el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el)); return; }
@@ -783,9 +808,13 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
-// Quick setup: the «players» field follows the number of names in the list (it can still be edited, it is checked).
+// Quick setup: the «players» field follows the number of names in the list (it can still be edited, it is checked),
+// the group buttons too.
 document.addEventListener('input', (e) => {
-  if (e.target.id === 'bulk-names') $('bulk-count').value = bulkNames().names.length;
+  if (e.target.id !== 'bulk-names') return;
+  const n = bulkNames().names.length;
+  $('bulk-count').value = n;
+  $('bulk-groups').innerHTML = bulkGroupButtons(n);
 });
 
 document.addEventListener('focusout', () => setTimeout(() => { if (deferred && !document.activeElement?.closest('#view input')) render(); }, 0));

@@ -110,7 +110,7 @@ table.cross td.skip { color: #a8b2c4; font-size: .5em; font-weight: 700; letter-
 /* the final looks like the semi-finals (customer's decision 2026-10-11) */
 .bm.third { border-style: dashed; }
 .bm.third .t { color: var(--blue); }
-.bm .t .tnote { display: block; font-size: .6em; letter-spacing: 1px; margin-top: 2px; } /* not broken mid-phrase across the title */
+.bm .t .tnote { display: block; font-size: .6em; letter-spacing: 1px; margin-top: 2px; white-space: nowrap; } /* not broken mid-phrase across the title */
 .bm.live { box-shadow: 0 12px 30px rgba(19,33,58,.16), 0 3px 8px rgba(19,33,58,.08); } /* the match being played: lifted a little over the others */
 .bm .t { position: relative; }
 .bm .t .live-tag { position: absolute; right: 18px; top: 50%; transform: translateY(-46%); margin: 0; font-size: 46px; letter-spacing: 0; } /* no taller header */

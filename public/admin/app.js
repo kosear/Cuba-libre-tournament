@@ -437,7 +437,9 @@ function bulkGroupButtons(n) {
   }
   let html = '';
   for (let g = 2; g <= bulkMax(n); g++) {
-    html += `<button data-bulk-g="${g}" class="${g === bulkPick.groups ? 'on' : ''}"><b>${g}</b><small>${esc(t('bulk.matches', { n: bulkMatches(n, g) }))}</small></button>`;
+    const small = Math.floor(n / g);
+    const sizes = n % g ? `${small}–${small + 1}` : `${small}`;
+    html += `<button data-bulk-g="${g}" class="${g === bulkPick.groups ? 'on' : ''}"><b>${g}</b><span>${esc(t('bulk.sizes', { sizes }))}</span><small>${esc(t('bulk.matches', { n: bulkMatches(n, g) }))}</small></button>`;
   }
   return html;
 }

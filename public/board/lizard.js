@@ -131,10 +131,11 @@ export function startLizard(root, { swarm = () => false, calm = () => false, bar
   const duoP = () => DUO; // share of runs that are a scene of two
   const fast = mode === 'fast' || glutton || duo ? 40 : 1;
   const test = mode !== null && fast === 1;
-  // many geckos, catches are the rule: ?lizard=fast, or «lots of geckos» from the admin page (as often as the fast mode)
+  // many geckos, the same shares only 40 times as often: ?lizard=fast, or «lots of geckos» from the admin page (as often as the fast mode)
   const often = () => (fast > 1 ? fast : test || DEMO ? 1 : swarm() ? 40 : 1);
-  const escapeP = () => (often() > 1 ? 0 : 0.8); // after slipping out of the jaws, the share that gets away at the second snap
-  const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
+  // the many-geckos and fast modes only speed things up, the shares stay as they are (2026-10-16)
+  const escapeP = () => 0.8; // after slipping out of the jaws, the share that gets away at the second snap
+  const catchP = () => 0.15; // share of long sits that end in a catch
   const huntTest = mode === 'hunt';
   const huntAll = huntTest || DEMO;
   // random, so it is never expected; the many-geckos and fast modes keep their old pace (from 10.5-19.5 min)

@@ -279,12 +279,12 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
    top right corner; the slide gets the whole width, the bracket stands in the middle */
 #stage.po main { grid-column: 1 / -1; grid-row: 1; }
 #stage.po main::after { display: none; }
-#stage.po header.top { padding-right: 330px; } /* room for the big clock's plate */
+#stage.po header.top { padding-right: 280px; } /* room for the big clock's plate */
 #stage.po .content { padding: 48px 35px 45px 45px; } /* from the logo's left edge (45 px) to the clock's right edge (1885 px); 45 px under the header line (120-123 px) and above the bottom */
 #stage.po aside.queue { grid-column: 2; grid-row: 1; justify-self: end; align-self: start; width: auto; height: 120px;
   padding: 41.5px 30px 0; z-index: 4; box-shadow: -8px 0 24px rgba(19,33,58,.11); } /* the clock where it is on the other slides */
 #stage.po aside.queue::after, #stage.po .qtitle, #stage.po #qtop, #stage.po .qrest { display: none; }
-#stage.po .qhead { font-size: 64px; line-height: 1; letter-spacing: 4px; margin-top: -13.5px; } /* the clock big in its plate (2026-10-16), the plate's 120 px kept: centred */
+#stage.po .qhead { font-size: 48px; line-height: 1; letter-spacing: 3px; margin-top: -5.5px; } /* the clock big in its plate (2026-10-16), the plate's 120 px kept: centred */
 /* the big final of the play-offs: fills the right side, two tall rows with huge names */
 .bm.big { display: flex; flex-direction: column; }
 .bm.big .t { font-size: 52px; padding: 20px 32px 14px; }

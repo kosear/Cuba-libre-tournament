@@ -206,7 +206,7 @@ function rays() {
 // Key: the name in lower case without spaces and dots.
 const LUCKY = {
   kc: { set: PRIDE, chance: 0.5 },
-  david: { set: PRIDE, chance: 0.5 },
+  david: { set: PRIDE, chance: 0.3 },
 };
 // every Pete (Peter, Pedro, Петя...) gets Cuban Pete in half the tournaments; the name only has to start so
 const PETES = /^(pete|peter|petr|pyotr|piet|pietro|pierre|pedro|петя|петр|питер|пит)/;

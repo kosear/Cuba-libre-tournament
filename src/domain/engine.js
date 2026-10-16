@@ -309,6 +309,13 @@ const handlers = {
       s.queue.push(match.id);
     }
     s.started = true;
+    // The quick-setup fillers (BYE) withdrawn in the same action, so undo and redo take the start and them as one step.
+    // Same as separate player.withdraw actions right after the start.
+    if (p.withdraw !== undefined && !Array.isArray(p.withdraw)) throw new DomainError('bad_payload');
+    for (const id of p.withdraw || []) {
+      progress(s);
+      handlers['player.withdraw'](s, { id });
+    }
   },
 
   'match.result'(s, p) {

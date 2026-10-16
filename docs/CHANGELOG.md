@@ -2,6 +2,14 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-16 — The start withdraws the BYE fillers in the same action
+
+- `tournament.start` takes an optional `withdraw: [player ids]`: those players are withdrawn right after the start, in the
+  same action. The admin page sends the BYE fillers there instead of separate `player.withdraw` actions, so undo and redo
+  can no longer stop between the start and the withdrawals (a BYE left in the groups).
+- The result is the same as the start followed by the withdrawals. Old tournaments replay unchanged: their start has no
+  `withdraw`, their BYE withdrawals are separate actions.
+
 ## 2026-10-16 — The 3rd place match and the final in the queue too
 
 - `upcoming` in the state now lists all four play-off matches: sf1, sf2, then `third` (Loser SF1 vs Loser SF2) and `final`

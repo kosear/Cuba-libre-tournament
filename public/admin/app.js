@@ -447,10 +447,10 @@ async function bulkSetup() {
   toast(skipped.length ? t('bulk.doneSkipped', { names: skipped.join(', ') }) : t('bulk.done'));
 }
 
-/** Start the tournament, then withdraw the BYE fillers (withdrawing is only allowed once the groups are playing). */
+/** Start the tournament and withdraw the BYE fillers in the same action: undo and redo take them together. */
 async function startTournament() {
-  if (!(await step('tournament.start', {}))) return;
-  for (const p of T().players) if (BYE.test(p.name) && !p.withdrawn) await step('player.withdraw', { id: p.id });
+  const withdraw = T().players.filter((p) => BYE.test(p.name) && !p.withdrawn).map((p) => p.id);
+  if (!(await step('tournament.start', withdraw.length ? { withdraw } : {}))) return;
   refresh();
 }
 
@@ -515,7 +515,8 @@ function describe(e) {
     case 'player.replace': return p.withId
       ? t('log.player.swap', { player: playerName(p.id), name: playerName(p.withId) })
       : t('log.player.replace', { player: playerName(p.id), name: p.name });
-    case 'tournament.start': return t('log.tournament.start');
+    case 'tournament.start': return t('log.tournament.start') + (p.withdraw?.length
+      ? `; ${p.withdraw.map((id) => t('log.player.withdraw', { player: playerName(id) })).join(', ')}` : '');
     case 'match.result': {
       if (!m) return t('log.unknown', { type: e.type });
       const w = p.winner === 1 ? m.p1 : m.p2;

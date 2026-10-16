@@ -559,6 +559,15 @@ test('group decider: the last match of a group counts only if some outcome chang
   assert.equal(a.lastMatters, true); // Dan vs Eli decides the 4th place
 });
 
+test('start with BYE fillers withdrawn in the same action: same state as withdrawing them right after', () => {
+  const groups = { A: ['Ann', 'Bob', 'Cat'], B: ['Dan', 'Eva', 'BYE'] };
+  const one = tour().setup(groups).do('tournament.start', { seed: 1, withdraw: ['BYE'] });
+  const two = tour().setup(groups).start().do('player.withdraw', { id: 'BYE' });
+  assert.deepEqual(one.s, two.s);
+  assert.ok(one.s.players.BYE.withdrawn);
+  tour().setup(groups).fails('bad_payload', 'tournament.start', { seed: 1, withdraw: 'BYE' });
+});
+
 test('upcoming play-off in the queue: names only where certain, placeholders elsewhere', () => {
   const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan', 'Eva'] }).start();
   let up = snapshot(t.s).upcoming;

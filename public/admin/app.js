@@ -462,7 +462,7 @@ function bulkFound() {
 }
 
 async function bulkSetup() {
-  const { names, skipped } = bulkNames();
+  const { names } = bulkNames();
   const groups = bulkPick.n === names.length ? bulkPick.groups : 0;
   if (!(groups >= 2 && groups <= 8)) { toast(t('bulk.badGroups'), true); return; }
   if (names.length < groups * 2) { toast(t('bulk.tooFew', { min: groups * 2 }), true); return; }
@@ -486,7 +486,7 @@ async function bulkSetup() {
   if (!(await step('groups.setup', { groups: setup }))) return;
   bulkText = '';
   refresh();
-  toast(skipped.length ? t('bulk.doneSkipped', { names: skipped.join(', ') }) : t('bulk.done'));
+  toast(t('bulk.done')); // what was skipped is already shown under the list
 }
 
 /** Start the tournament and withdraw the BYE fillers in the same action: undo and redo take them together. */

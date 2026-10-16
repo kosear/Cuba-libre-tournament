@@ -548,7 +548,12 @@ async function startTournament() {
   const withdraw = T().players.filter((p) => BYE.test(p.name) && !p.withdrawn).map((p) => p.id);
   const later = T().players.filter((p) => REBUY_PLACE.test(p.name)).map((p) => p.id); // re-buy places: to the end of the queue
   if (!(await step('tournament.start', { ...(withdraw.length && { withdraw }), ...(later.length && { later }) }))) return;
+  // straight to the first match: recording results is what comes next
+  tab = 'game';
+  store('tab', tab);
+  window.scrollTo(0, 0);
   refresh();
+  toast(t('log.tournament.start'));
 }
 
 function nextGroupName() {

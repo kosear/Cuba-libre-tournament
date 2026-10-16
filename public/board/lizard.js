@@ -44,8 +44,8 @@ import { createButterfly, drawButterfly, drawWing } from '/board/butterfly.js';
 
 const W = 1920;
 const H = 1080;
-const PERIOD_MIN = 10.5 * 60 * 1000;
-const PERIOD_MAX = 19.5 * 60 * 1000;
+const PERIOD_MIN = 5.25 * 60 * 1000; // 2026-10-16: twice as often, was 10.5-19.5 min
+const PERIOD_MAX = 9.75 * 60 * 1000;
 const BUTTERFLY_MIN = 4.5 * 60 * 1000; // a butterfly just flying by
 const BUTTERFLY_MAX = 12 * 60 * 1000;
 // Demo for watching on the TV: a gecko every 10 s, every run a hunt, every second hunt a miss,
@@ -137,7 +137,8 @@ export function startLizard(root, { swarm = () => false, calm = () => false, bar
   const catchP = () => (often() > 1 ? 0.7 : 0.15); // share of long sits that end in a catch
   const huntTest = mode === 'hunt';
   const huntAll = huntTest || DEMO;
-  const period = () => (DEMO ? 10000 : test ? 15000 : rand(PERIOD_MIN, PERIOD_MAX) / often()); // random, so it is never expected
+  // random, so it is never expected; the many-geckos and fast modes keep their old pace (from 10.5-19.5 min)
+  const period = () => (DEMO ? 10000 : test ? 15000 : (rand(PERIOD_MIN, PERIOD_MAX) * (often() > 1 ? 2 : 1)) / often());
   const bPeriod = () => (DEMO ? 10000 : test ? 20000 : rand(BUTTERFLY_MIN, BUTTERFLY_MAX) / often());
   // two canvases, one per gecko on screen; made before the butterfly's, so a wing on the table lies above the gecko as before
   const pool = [0, 1].map(() => {

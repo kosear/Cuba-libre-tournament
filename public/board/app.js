@@ -186,6 +186,12 @@ function slideGroup(s) {
   };
 }
 
+/** A play-off box title; a note after « · » goes on a line of its own, smaller («3rd place» / «played before the final»). */
+function boxTitle(title) {
+  const [main, note] = title.split(' · ');
+  return esc(main) + (note ? `<small class="tnote">${esc(note)}</small>` : '');
+}
+
 function slidePlayoff() {
   const po = T.playoff;
   const fallback = { sf1: ['Seed 1', 'Seed 4'], sf2: ['Seed 2', 'Seed 3'], third: ['Loser SF1', 'Loser SF2'], final: ['Winner SF1', 'Winner SF2'] };
@@ -196,7 +202,7 @@ function slidePlayoff() {
       const side = (e) => (e.names
         ? `<div class="p cand${e.qualified ? ' q' : ''}"><div class="cn"><span${e.names.length > 1 ? ' class="two"' : ''}>${esc(e.names.join(' / '))}</span></div><i class="ctag">${e.qualified ? 'Qualified' : 'Contender'}</i></div>`
         : `<div class="p tbd"><span>${esc(e.label)}</span></div>`);
-      return `<div class="bm cand ${extra}" style="${style}"><div class="t"><span>${esc(title)}</span></div>${side(cand[slot][0])}${side(cand[slot][1])}</div>`;
+      return `<div class="bm cand ${extra}" style="${style}"><div class="t"><span>${boxTitle(title)}</span></div>${side(cand[slot][0])}${side(cand[slot][1])}</div>`;
     }
     const live = T.current?.id === slot ? ' live' : '';
     const side = (n) => {
@@ -209,7 +215,7 @@ function slidePlayoff() {
     // (the 3rd place match drops «played before the final» then, to make room for it)
     // the big final: a quiet «VS» on the line between the two names
     const vs = extra.includes('big') ? '<div class="vs"><span>VS</span></div>' : '';
-    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${esc(title)}</span>${live ? LIVE : ''}</div>${side(1)}${vs}${side(2)}</div>`;
+    return `<div class="bm ${extra}${live}" style="${style}"><div class="t"><span>${boxTitle(title)}</span>${live ? LIVE : ''}</div>${side(1)}${vs}${side(2)}</div>`;
   };
   // Play-offs on (no queue panel): the slide spans from the logo's left edge to the clock's right edge; the final grows
   // to fill the right side, as tall as the left column. Before (contenders, the queue still on the right) the final is

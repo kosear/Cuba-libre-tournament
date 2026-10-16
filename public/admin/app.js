@@ -394,7 +394,8 @@ const TITLE = /cuba\s*libre/i; // the list's title line, e.g. «Friday 9th Octob
 
 /**
  * Names from the list: trimmed, the numbering in front dropped (in a mostly numbered list, so «3 Musketeers» in a plain
- * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines with a colon, an @mention or 5+ words,
+ * one stays), notes in brackets dropped («Jazmine (Going away party)» → «Jazmine»), the title line (mentions Cuba Libre), lines that are no name (a colon, an @mention,
+ * 5+ words, no letters, a link, 5+ digits, <Media omitted>),
  * empty lines and repeats (any case, or already in the tournament) skipped.
  */
 let bulkText = ''; // the pasted list: kept here, so a re-render (an update from the server) does not wipe it
@@ -409,8 +410,10 @@ function bulkNames() {
     if (TITLE.test(line)) { skipped.push(line); continue; }
     const name = (numbered ? line.replace(NUMBERED, '') : line).replace(NOTE, ' ').replace(/\s+/g, ' ').trim();
     if (!name) continue;
-    // not a name: a colon after the numbering («Time: 7pm», «Players:»), an @mention, 5 words and more (a sentence)
-    const notName = name.includes(':') || /(^|\s)@\S/.test(name) || name.split(' ').length >= 5;
+    // not a name: a colon after the numbering («Time: 7pm», «Players:»), an @mention, 5 words and more (a sentence),
+    // no letter at all («🎱🎱», «-----»), a link, 5 digits and more (a phone, a price), WhatsApp's «<Media omitted>»
+    const notName = name.includes(':') || /(^|\s)@\S/.test(name) || name.split(' ').length >= 5 || !/\p{L}/u.test(name) ||
+      /https?:|www\.|\.com\b/i.test(name) || /\d{5,}/.test(name.replace(/[\s.,\-]/g, '')) || /[<>]/.test(name);
     if (taken.has(name.toLowerCase()) || name.length > 40 || notName || BYE.test(name.toUpperCase())) { skipped.push(name); continue; }
     taken.add(name.toLowerCase());
     names.push(name);

@@ -286,6 +286,7 @@ aside.queue::after { background: #173a73; } /* dark blue separator under «PLAY 
 #stage.po aside.queue::after, #stage.po .qtitle, #stage.po #qtop, #stage.po .qrest { display: none; }
 #stage.po aside.queue { justify-content: center; padding-top: 0; } /* the clock in the middle of its plate whatever the font */
 #stage.po .qhead { font-size: 48px; line-height: 1; letter-spacing: 3px; } /* the clock big in its plate (2026-10-16) */
+#stage.po #clock { position: relative; top: -2px; } /* by eye on the TV: level with PLAY-OFF, which sits above the header's bottom line */
 /* the big final of the play-offs: fills the right side, two tall rows with huge names */
 .bm.big { display: flex; flex-direction: column; }
 .bm.big .t { font-size: 52px; padding: 20px 32px 14px; }

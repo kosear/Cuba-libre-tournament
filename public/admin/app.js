@@ -210,7 +210,9 @@ function render() {
   deferred = false;
   renderChrome();
   const views = { game: viewGame, queue: viewQueue, groups: viewGroups, playoff: viewPlayoff, journal: viewJournal };
+  const listTop = $('bulk-names')?.scrollTop; // a re-render keeps the place in the pasted list
   $('view').innerHTML = views[tab]();
+  if (listTop && $('bulk-names')) $('bulk-names').scrollTop = listTop;
   if (tab === 'queue') enableDrag();
 }
 
@@ -824,13 +826,10 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
-// Quick setup: after a paste (a whole list from a chat) the keyboard goes away and the group options come into view.
+// Quick setup: after a paste (a whole list from a chat) the keyboard goes away; nothing is scrolled.
 document.addEventListener('paste', (e) => {
   if (e.target.id !== 'bulk-names') return;
-  setTimeout(() => {
-    e.target.blur();
-    $('bulk-groups')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
+  setTimeout(() => e.target.blur(), 100);
 });
 
 // Quick setup: the number of names found in the list (to check by eye against the sign-up) and the group buttons.

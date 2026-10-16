@@ -74,7 +74,7 @@ function fatter(g, part = 1) {
 }
 const NEXT_CATCH = 0.75; // a glutton's next hunt ends in a catch so often
 const AFTER_WING = 0.05; // a gecko that has eaten a wing: its hunt rarely ends in a catch (else wing → catch → wing… never ends)
-const DUO = 1 / 3; // share of runs where two geckos meet (2026-10-16, was 1 in 15)
+const DUO = 0.7; // share of runs where two geckos meet (2026-10-16, was 1 in 15)
 const SMALL_WINS = 0.75; // a standoff of two sizes: the small one wins so often
 
 const STYLES = ['classic', 'gulp', 'escape', 'slam', 'runoff']; // how a catch is eaten

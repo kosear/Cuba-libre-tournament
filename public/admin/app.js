@@ -219,10 +219,13 @@ function render() {
 
 // ---------- tab: game ----------
 
+/** Before the start, the same on every tab but Groups: what to do, and the way there. */
+const notStarted = () => `<div class="card note">${esc(t('game.notStarted'))}</div><button class="btn primary" data-tab="groups">${esc(t('game.toGroups'))}</button>`;
+
 function viewGame() {
   const tr = T();
   if (!tr.started) {
-    return `<div class="card note">${esc(t('game.notStarted'))}</div><button class="btn primary" data-tab="groups">${esc(t('game.toGroups'))}</button>`;
+    return notStarted();
   }
   let html = '';
   if (tr.podium) {
@@ -278,6 +281,7 @@ function qualText(status) {
 
 function viewQueue() {
   const q = T().queue;
+  if (!T().started) return notStarted();
   if (!q.length) return `<div class="card note">${esc(t('queue.empty'))}</div>${skippedList()}`;
   return `<div class="muted">${esc(t('queue.hint'))}</div><div class="list" id="qlist">${q.map((m, i) => {
     const sub = [matchLabel(m), i === 0 ? t('queue.playing') : i === 1 ? t('queue.next') : ''].filter(Boolean).join(' · ');
@@ -560,7 +564,7 @@ function nextGroupName() {
 
 function viewPlayoff() {
   const tr = T();
-  if (!tr.started) return `<div class="card note">${esc(t('game.notStarted'))}</div>`;
+  if (!tr.started) return notStarted();
   let note;
   if (tr.playoff) note = t('playoff.ready');
   else if (tr.qualification) note = qualText(tr.qualification.status);

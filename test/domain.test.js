@@ -616,3 +616,25 @@ test('upcoming play-off: with 4 groups the names are certain once every group is
   const up = snapshot(t.s).upcoming;
   assert.deepEqual([up[0].p1.name, up[0].p2.name, up[1].p1.name, up[1].p2.name], ['Ann', 'Eve', 'Ivy', 'Gus']);
 });
+
+test('upcoming: a finished group\'s tie for a place that goes through shows its tie-breaks before the other groups end', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan'], C: ['Eve', 'Fay'], D: ['Ivy', 'Jon', 'Kim'] }).start();
+  t.win('Ivy', 'Jon', 1).win('Jon', 'Kim', 1).win('Kim', 'Ivy', 1); // D is over: a 3-way tie for 1st, all 1 win and 1 ball
+  const tbs = (list) => list.filter((m) => m.stage === 'tiebreak').map((m) => [m.p1.id, m.p2.id].join('-'));
+  const before = snapshot(t.s);
+  assert.equal(tbs(before.upcoming).length, 3); // every one against every one
+  assert.equal(before.upcoming.findIndex((m) => m.stage !== 'tiebreak'), 3); // before the play-off
+  assert.ok(before.upcoming.every((m) => m.upcoming && m.p1 && m.p2));
+  assert.equal(t.pending('tiebreak').length, 0); // not created yet
+  t.win('Ann', 'Bob', 1).win('Cat', 'Dan', 1).win('Eve', 'Fay', 1);
+  const after = snapshot(t.s);
+  assert.deepEqual(tbs(after.queue), tbs(before.upcoming)); // the same matches, in the same order
+  assert.deepEqual(tbs(after.upcoming), []); // now in the queue, not foreseen twice
+});
+
+test('upcoming: a tie for a place that does not go through foresees nothing', () => {
+  const t = tour().setup({ A: ['Ann', 'Bob'], B: ['Cat', 'Dan'], C: ['Eve', 'Fay'], D: ['Ivy', 'Jon', 'Kim', 'Lou'] }).start();
+  t.win('Ivy', 'Jon', 3).win('Ivy', 'Kim', 3).win('Ivy', 'Lou', 3); // Ivy wins D
+  t.win('Jon', 'Kim', 1).win('Kim', 'Lou', 1).win('Lou', 'Jon', 1); // the rest tied for 2nd: with 4 groups only winners go
+  assert.deepEqual(snapshot(t.s).upcoming.map((m) => m.stage), ['playoff', 'playoff', 'playoff', 'playoff']);
+});

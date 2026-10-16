@@ -2,6 +2,13 @@
 
 Newest on top. What to write and when: section 5 of `CLAUDE.md`.
 
+## 2026-10-16 — Tie-breaks foreseen in the queue panel
+
+- `upcoming` in the state (groups stage) can now start with tie-break matches (`stage: 'tiebreak'`, `label: 'Tie-break'`,
+  `upcoming: true`): a finished group's tie across the places that go through, before the other groups end. The engine
+  still creates the real matches only once every group is over, the same pairs in the same order. Ties between groups
+  are not foreseen. Nothing in the action log changes; old archived states simply have no such entries.
+
 ## 2026-10-16 — Re-buy places play at the end of the group stage
 
 - `tournament.start` takes an optional `later: [player ids]`: the matches of those players go to the very end of the queue

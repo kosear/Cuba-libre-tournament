@@ -1,6 +1,7 @@
 // Snapshot of the tournament for screens: everything already computed, no rules on the client.
 import { PLAYOFF_SLOTS, applyAction } from './engine.js';
-import { groupStats, groupTable, groupMatches, isClosed, isGroupDone, matchBalls, qualification, rank, winnerOf, loserOf } from './standings.js';
+import { groupStats, groupTable, groupMatches, groupTieNeeds, isClosed, isGroupDone, matchBalls, qualification, rank, tbKey, winnerOf, loserOf } from './standings.js';
+import { roundRobinPairs } from './schedule.js';
 
 const MAX_TIED_NAMES = 2; // a contender slot shows at most this many tied names, more -> the placeholder
 
@@ -161,6 +162,19 @@ function contenders(s, raw = false) {
  * the group is settled; the best 2nd place of 3 groups only when every group is settled. A tied place is never certain.
  * With 3 and more groups the pairing follows the current seeding: it can still swap until all the groups are settled.
  */
+/**
+ * Tie-break matches already certain while other groups still play: a finished group's tie across the places that go
+ * through. The engine adds them to the queue once every group is over, in this order (groups in turn, pairs as created).
+ */
+function upcomingTiebreaks(s) {
+  if (s.groups.every((g) => isGroupDone(s, g.id))) return []; // created by now: they are in the queue
+  return s.groups.filter((g) => isGroupDone(s, g.id)).flatMap((g) => groupTieNeeds(s, g.id).flatMap((need) =>
+    roundRobinPairs([...need.ids].sort()).map(([a, b]) => ({
+      id: `next-tb-${tbKey(need.ids)}-${need.round}-${a}-${b}`, stage: 'tiebreak', round: null, groupId: g.id, label: 'Tie-break',
+      p1: playerRef(s, a), p2: playerRef(s, b), upcoming: true,
+    }))));
+}
+
 function upcomingPlayoff(s) {
   const n = s.groups.length;
   const settled = new Map(s.groups.map((g) => [g.id, isGroupDone(s, g.id) || lastMatchMatters(s, g) === false]));
@@ -172,6 +186,7 @@ function upcomingPlayoff(s) {
   const side = (e) => (e.ids && sure(e) ? playerRef(s, e.ids[0]) : ph(e.label));
   const mk = (slot, p1, p2) => ({ id: `next-${slot}`, stage: 'playoff', round: slot, label: ROUND_LABEL[slot], p1, p2, upcoming: true });
   return [
+    ...upcomingTiebreaks(s),
     mk('sf1', side(projected.sf1[0]), side(projected.sf1[1])),
     mk('sf2', side(projected.sf2[0]), side(projected.sf2[1])),
     mk('third', ph('Loser SF1'), ph('Loser SF2')),

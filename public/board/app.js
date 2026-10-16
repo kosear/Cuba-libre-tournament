@@ -276,10 +276,7 @@ function renderQueue() {
   el('qtop').innerHTML = top;
   // Capital letters are wide: a long name on the Next / After next card gets a smaller font instead of being cut.
   // The same for a long label («Next · Semi-final 1»).
-  for (const n of el('qtop').querySelectorAll('.qbig .qp, .qbig .qlabel')) {
-    let size = parseFloat(getComputedStyle(n).fontSize);
-    while (n.clientWidth && n.scrollWidth > n.clientWidth && size > 20) n.style.fontSize = `${(size -= 1)}px`;
-  }
+  fitQueueCards();
   const inner = el('qinner');
   inner.innerHTML = rows;
   qloop = 0;
@@ -292,6 +289,24 @@ function renderQueue() {
   qpos = qloop ? qpos % qloop : 0; // keep the place in the list after an update
   inner.style.transform = `translateY(${-qpos}px)`;
 }
+
+/** Shrinks what does not fit on the Next / After next cards; again every 2 s, in case the first layout was not final. */
+function fitQueueCards() {
+  // The text's exact width (max-content), not scrollWidth: that is rounded, so a text a fraction of a pixel too wide
+  // looked fitting and got «…».
+  const over = (n) => {
+    const box = n.getBoundingClientRect().width;
+    n.style.width = 'max-content';
+    const text = n.getBoundingClientRect().width;
+    n.style.width = '';
+    return box > 0 && text > box;
+  };
+  for (const n of el('qtop').querySelectorAll('.qbig .qp, .qbig .qlabel')) {
+    let size = parseFloat(getComputedStyle(n).fontSize);
+    while (over(n) && size > 20) n.style.fontSize = `${(size -= 1)}px`;
+  }
+}
+setInterval(() => T && fitQueueCards(), 2000);
 
 function scrollQueue(now) {
   const dt = qlast ? Math.min(0.1, (now - qlast) / 1000) : 0;

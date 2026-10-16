@@ -169,6 +169,24 @@ function blockers(segments, cutoffs) {
   return out;
 }
 
+/** A group's players as qualification sees them: withdrawn during the play-off keep their group result. */
+const qualTable = (state, groupId) => groupStats(state, groupId).filter((r) => !r.out || state.players[r.id].withdrawnStage === 'playoff');
+/** Places in a group that go through, as cutoffs for its ties: 1 group: 4, 2 groups: 2, more: the winner. */
+const qualCutoffs = (n) => (n === 1 ? [4] : n === 2 ? [2] : [1]);
+
+/**
+ * Tie-break matches a finished group will need whatever happens in the other groups: its ties across the places that go
+ * through. The engine creates them only once every group is over; the queue panel shows them before that.
+ * Returns [{ids, round}], the same as qualification's needs for this group. Ties between groups are not foreseen.
+ */
+export function groupTieNeeds(state, groupId) {
+  const n = state.groups.length;
+  const table = qualTable(state, groupId);
+  if ((n === 1 && table.length < 4) || (n === 2 && table.length < 2) || !table.length) return [];
+  const cutoffs = qualCutoffs(n);
+  return blockers(rank(state, table, cutoffs).segments, cutoffs).filter((x) => x.need).map((x) => x.need);
+}
+
 /**
  * Who goes to the semi-finals.
  * Returns { status: 'ready', semis: [[a,b],[c,d]] }
@@ -180,7 +198,7 @@ export function qualification(state) {
   const n = groups.length;
   if (!n) return { status: 'impossible', keys: new Set() };
   // Players withdrawn during the play-off keep their group result (they lose by walkover instead).
-  const tables = groups.map((g) => groupStats(state, g.id).filter((r) => !r.out || state.players[r.id].withdrawnStage === 'playoff'));
+  const tables = groups.map((g) => qualTable(state, g.id));
   const ctx = { keys: new Set() }; // tie-break keys that are still relevant
   const R = (rows, cutoffs, cmp = cmpStats) => rank(state, rows, cutoffs, cmp, ctx);
   const issues = [];

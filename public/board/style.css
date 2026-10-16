@@ -157,7 +157,7 @@ aside.queue::after { content: ''; position: absolute; top: 120px; left: 30px; ri
 .qrest { flex: 1; position: relative; overflow: hidden; min-height: 0;
   margin-bottom: -24px; } /* no fade at the edges (2026-10-16); rows come in from the very bottom of the screen */
 .qrest-inner { will-change: transform; } /* scrolled by app.js, keeps its place across updates */
-.qrow { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 34px; }
+.qrow { display: grid; grid-template-columns: 50px 1fr auto; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 38px; }
 .qn { color: var(--muted); font-variant-numeric: tabular-nums; }
 .qm { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; min-width: 0; line-height: 1.2; }
 /* name1 left, vs in the middle, name2 right; a long name wraps to 2 lines at most, then an ellipsis */

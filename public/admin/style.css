@@ -53,13 +53,14 @@ textarea.text { width: 100%; border: 1px solid var(--line); border-radius: 11px;
 .bulk { display: flex; flex-direction: column; gap: 10px; }
 .bulk-row { display: flex; gap: 10px; }
 .bulk-row label, .bulk-row .lbl { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
-.bulk-head { display: flex; justify-content: space-between; }
-#bulk-count { color: var(--ink); font-weight: 600; }
+.bulk-found { font-size: 14px; font-weight: 600; margin-top: -4px; }
+.bulk-found:empty { display: none; }
 /* one option per row: the number of groups, their size, the games of the evening */
 .bulk-g { display: flex; flex-direction: column; gap: 6px; }
-.bulk-g button { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); text-align: left; font-size: 15px; }
-.bulk-g button b { font-size: 20px; line-height: 1; text-align: center; }
-.bulk-g button small { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.bulk-g button { display: grid; gap: 2px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); text-align: left; font-size: 16px; }
+.bulk-g button b { font-weight: 800; }
+.bulk-g button small { font-size: 13px; color: var(--muted); }
+.bulk-g button .tag { margin-left: 4px; vertical-align: 2px; }
 .bulk-g button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
 .bulk-g button.on small { color: rgba(255,255,255,.85); }
 input.text, select.text { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; font-size: 16px; background: #fff; min-width: 0; }

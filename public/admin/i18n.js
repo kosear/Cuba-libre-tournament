@@ -30,8 +30,8 @@ const DICT = {
     'groups.addPlayer': 'Add player', 'groups.playerName': 'Player name', 'groups.addGroup': '+ Add group',
     'groups.start': '▶ Start tournament', 'groups.startConfirm': 'Start the tournament? Groups cannot be changed after that, except adding a late player.',
     'bulk.title': 'Quick setup', 'bulk.hint': 'One name per line. Players are shuffled into the groups; groups that come out short get a BYE player (withdrawn at the start: the opponents win by walkover).',
-    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'Groups', 'bulk.count': '{n} players', 'bulk.go': 'Shuffle into groups',
-    'bulk.badGroups': 'Pick the number of groups.', 'bulk.needNames': 'Add at least 4 names', 'bulk.matches': '{n} games', 'bulk.sizes': 'groups of {sizes}',
+    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'How many groups?', 'bulk.go': 'Shuffle into groups',
+    'bulk.badGroups': 'Pick the number of groups.', 'bulk.needNames': 'Add at least 4 names', 'bulk.found': '{n} names found', 'bulk.skippedLines': 'skipped: {lines}', 'bulk.suggested': 'suggested', 'bulk.total': '{n} in total', 'bulk.nGroups.many': '{n} groups', 'bulk.ofPlayers.many': 'of {sizes} players', 'bulk.each.one': '{games} game each', 'bulk.each.many': '{games} games each',
     'bulk.tooFew': 'Too few players: at least {min}.', 'bulk.done': 'Groups are ready. Check them and start the tournament.',
     'bulk.doneSkipped': 'Groups are ready. Skipped (repeats or too long): {names}.',
     'groups.unassigned': 'Without a group', 'groups.lateHint': 'A late player gets matches with everyone in the group.',
@@ -112,8 +112,8 @@ const DICT = {
     'groups.addPlayer': 'Добавить игрока', 'groups.playerName': 'Имя игрока', 'groups.addGroup': '+ Добавить группу',
     'groups.start': '▶ Начать турнир', 'groups.startConfirm': 'Начать турнир? После этого группы менять нельзя, можно только добавить опоздавшего игрока.',
     'bulk.title': 'Быстрое заполнение', 'bulk.hint': 'По одному имени в строке. Игроки случайно раскидываются по группам; если группа выходит короче, в неё добавляется игрок BYE (на старте снимается: его соперники побеждают автоматически).',
-    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'Групп', 'bulk.count': 'игроков: {n}', 'bulk.go': 'Раскидать по группам',
-    'bulk.badGroups': 'Выберите число групп.', 'bulk.needNames': 'Добавьте хотя бы 4 имени', 'bulk.matches': '{n} игр', 'bulk.sizes': 'группы по {sizes}',
+    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'Сколько групп?', 'bulk.go': 'Раскидать по группам',
+    'bulk.badGroups': 'Выберите число групп.', 'bulk.needNames': 'Добавьте хотя бы 4 имени', 'bulk.found': 'найдено имён: {n}', 'bulk.skippedLines': 'пропущено: {lines}', 'bulk.suggested': 'советуем', 'bulk.total': 'всего {n}', 'bulk.nGroups.few': '{n} группы', 'bulk.nGroups.many': '{n} групп', 'bulk.ofPlayers.few': 'по {sizes} игрока', 'bulk.ofPlayers.many': 'по {sizes} игроков', 'bulk.each.one': 'по {games} игре у каждого', 'bulk.each.few': 'по {games} игры у каждого', 'bulk.each.many': 'по {games} игр у каждого',
     'bulk.tooFew': 'Слишком мало игроков: нужно хотя бы {min}.', 'bulk.done': 'Группы готовы. Проверьте их и начните турнир.',
     'bulk.doneSkipped': 'Группы готовы. Пропущены (повторы или слишком длинные): {names}.',
     'groups.unassigned': 'Без группы', 'groups.lateHint': 'Опоздавший игрок получит матчи со всеми игроками группы.',
@@ -194,8 +194,8 @@ const DICT = {
     'groups.addPlayer': 'Tambah pemain', 'groups.playerName': 'Nama pemain', 'groups.addGroup': '+ Tambah grup',
     'groups.start': '▶ Mulai turnamen', 'groups.startConfirm': 'Mulai turnamen? Setelah itu grup tidak bisa diubah, kecuali menambah pemain yang terlambat.',
     'bulk.title': 'Isi cepat', 'bulk.hint': 'Satu nama per baris. Pemain diacak ke grup; grup yang kurang mendapat pemain BYE (mundur saat mulai: lawannya menang otomatis).',
-    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'Grup', 'bulk.count': '{n} pemain', 'bulk.go': 'Acak ke grup',
-    'bulk.badGroups': 'Pilih jumlah grup.', 'bulk.needNames': 'Tambahkan minimal 4 nama', 'bulk.matches': '{n} laga', 'bulk.sizes': 'grup isi {sizes}',
+    'bulk.names': 'Oli\nKetut\nDima\nGary\nWayan\nVlad…', 'bulk.groups': 'Berapa grup?', 'bulk.go': 'Acak ke grup',
+    'bulk.badGroups': 'Pilih jumlah grup.', 'bulk.needNames': 'Tambahkan minimal 4 nama', 'bulk.found': '{n} nama ditemukan', 'bulk.skippedLines': 'dilewati: {lines}', 'bulk.suggested': 'disarankan', 'bulk.total': 'total {n}', 'bulk.nGroups.many': '{n} grup', 'bulk.ofPlayers.many': 'isi {sizes} pemain', 'bulk.each.many': '{games} laga per pemain',
     'bulk.tooFew': 'Pemain terlalu sedikit: minimal {min}.', 'bulk.done': 'Grup siap. Periksa lalu mulai turnamen.',
     'bulk.doneSkipped': 'Grup siap. Dilewati (ganda atau terlalu panjang): {names}.',
     'groups.unassigned': 'Tanpa grup', 'groups.lateHint': 'Pemain yang terlambat mendapat laga melawan semua pemain di grupnya.',
@@ -268,3 +268,12 @@ export function t(key, params = {}) {
 }
 
 export const has = (key) => key in DICT.en;
+/** t() with a plural form by n: key.one / key.few (Russian 2-4) / key.many, falling back to key.many. */
+export function tn(key, n, params = {}) {
+  const m = n % 100;
+  const form = n === 1 ? 'one' : m % 10 >= 2 && m % 10 <= 4 && (m < 12 || m > 14) ? 'few' : 'many';
+  const dict = DICT[current];
+  const keys = [`${key}.${form}`, `${key}.many`];
+  const k = keys.find((x) => x in dict) ?? keys.find((x) => x in DICT.en);
+  return t(k, params);
+}

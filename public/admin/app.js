@@ -5,7 +5,7 @@
 import { live } from '/shared/live.js';
 import { applyAction, DomainError } from '/domain/engine.js';
 import { snapshot } from '/domain/view.js';
-import { t, lang, setLang, LANGS, has } from './i18n.js';
+import { t, tn, lang, setLang, LANGS, has } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const TABS = [
@@ -372,7 +372,8 @@ function viewGroupsSetup() {
   const bulk = !tr.groups.length && !tr.players.length ? `<div class="card grp bulk"><h3><span class="grow">${esc(t('bulk.title'))}</span></h3>
     <div class="muted">${esc(t('bulk.hint'))}</div>
     <textarea class="text" id="bulk-names" rows="10" placeholder="${esc(t('bulk.names'))}"></textarea>
-    <div class="bulk-row"><div class="lbl"><span class="bulk-head"><span>${esc(t('bulk.groups'))}</span><span id="bulk-count"></span></span> <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
+    <div class="bulk-found" id="bulk-count"></div>
+    <div class="bulk-row"><div class="lbl">${esc(t('bulk.groups'))} <div class="bulk-g" id="bulk-groups">${bulkGroupButtons(0)}</div></div></div>
     <button class="btn primary" data-bulk>${esc(t('bulk.go'))}</button></div>` : '';
   return `<div class="card note">${esc(t('groups.setupHint'))}</div>${bulk}${tr.groups.map(card).join('')}${card(null)}
     <button class="btn dashed" data-add-group>${esc(t('groups.addGroup'))}</button>
@@ -435,13 +436,25 @@ function bulkGroupButtons(n) {
     const keep = bulkPick.manual && bulkPick.groups <= bulkMax(n);
     bulkPick = { n, groups: keep ? bulkPick.groups : bulkSuggest(n), manual: keep };
   }
+  const range = (a, b) => (a === b ? `${a}` : `${a}–${b}`);
   let html = '';
   for (let g = 2; g <= bulkMax(n); g++) {
     const small = Math.floor(n / g);
-    const sizes = n % g ? `${small}–${small + 1}` : `${small}`;
-    html += `<button data-bulk-g="${g}" class="${g === bulkPick.groups ? 'on' : ''}"><b>${g}</b><span>${esc(t('bulk.sizes', { sizes }))}</span><small>${esc(t('bulk.matches', { n: bulkMatches(n, g) }))}</small></button>`;
+    const big = n % g ? small + 1 : small;
+    const head = `<b>${esc(tn('bulk.nGroups', g, { n: g }))}</b> ${esc(tn('bulk.ofPlayers', big, { sizes: range(small, big) }))}`;
+    const tag = g === bulkSuggest(n) ? ` <span class="tag">${esc(t('bulk.suggested'))}</span>` : '';
+    const sub = `${tn('bulk.each', big - 1, { games: range(small - 1, big - 1) })} · ${t('bulk.total', { n: bulkMatches(n, g) })}`;
+    html += `<button data-bulk-g="${g}" class="${g === bulkPick.groups ? 'on' : ''}"><span>${head}${tag}</span><small>${esc(sub)}</small></button>`;
   }
   return html;
+}
+
+/** What bulkNames() found, under the list: to check by eye against the sign-up. */
+function bulkFound() {
+  const { names, skipped } = bulkNames();
+  if (!names.length && !skipped.length) return '';
+  const cut = (s) => (s.length > 24 ? `${s.slice(0, 22)}…` : s);
+  return `✓ ${esc(t('bulk.found', { n: names.length }))}${skipped.length ? ` <span class="muted">· ${esc(t('bulk.skippedLines', { lines: skipped.map(cut).join(', ') }))}</span>` : ''}`;
 }
 
 async function bulkSetup() {
@@ -812,7 +825,7 @@ document.addEventListener('submit', async (e) => {
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'bulk-names') return;
   const n = bulkNames().names.length;
-  $('bulk-count').textContent = n ? t('bulk.count', { n }) : '';
+  $('bulk-count').innerHTML = bulkFound();
   $('bulk-groups').innerHTML = bulkGroupButtons(n);
 });
 

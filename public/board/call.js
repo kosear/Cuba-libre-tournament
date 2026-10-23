@@ -244,7 +244,7 @@ function mascotsFor(players) {
 }
 
 /** The player's mascot, among all the tournament's players (`players` in join order). */
-function mascotFor(p, players = []) {
+export function mascotFor(p, players = []) {
   const own = mascotsFor(players).get(p?.id);
   if (own) return own;
   const [set, k] = mascotPick(p);
@@ -255,7 +255,7 @@ function mascotFor(p, players = []) {
  * A mascot's body, hat and prop as HTML (font-size sets its size); mirrored: the prop on the left (class l); look: the way it
  * should look (1 right, -1 left, 0 as drawn): a side-on body looking the other way is turned round, its hat with it.
  */
-function mascotInner(m, mirrored = false, look = 0) {
+export function mascotInner(m, mirrored = false, look = 0) {
   const [body, hat, item] = m;
   let html = emojify(body);
   if (Array.isArray(hat)) {
@@ -282,10 +282,18 @@ export function mascotHTML(p, players = []) {
   return { html: mascotInner(m, facing(m) === -1), scale: m[4] ?? 1, facing: facing(m) };
 }
 
-export function createCall(root) {
+/** The fight-night styles (.fight …), added to the page once: the call screen and the victory screen share them. */
+let styled = false;
+export function fightStyle() {
+  if (styled) return;
+  styled = true;
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.append(style);
+}
+
+export function createCall(root) {
+  fightStyle();
   root.innerHTML = `<div class="fight">
     <div class="ring">
       <div class="corner red"></div><div class="corner blue"></div><div class="gap"></div><div class="pattern"></div>${rays()}

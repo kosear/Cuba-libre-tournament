@@ -4,12 +4,14 @@ import { live } from '/shared/live.js';
 import { startSplash } from '/board/splash.js';
 import { createCall, emojify } from '/board/call.js';
 import { createPoster } from '/board/podium.js';
+import { createVictory } from '/board/victory.js';
 import { startLizard } from '/board/lizard.js';
 
 const stage = document.getElementById('stage');
 const W = 1920;
 const H = 1080;
 const CALL_MS = 20000; // «Now playing» call screen after a result: who goes to the table
+const VICTORY_MS = 20000; // the victory screen before it: as long as the call screen
 const DURATION = { groups: 120000, group: 15000, playoff: 15000, podium: 60000, splash: 60000 };
 const QUEUE_SPEED = 22; // px per second, scrolling of the rest of the queue
 const GROUPS_PER_SLIDE = 4;
@@ -62,6 +64,7 @@ stage.innerHTML = `<main><header class="top"><img class="bar-logo" src="/assets/
   <div class="splash" id="splash" hidden></div>
   <div class="poster" id="poster" hidden></div>
   <div class="call" id="call" hidden></div>
+  <div class="call" id="victory" hidden></div>
   <div class="glass" id="glass"></div>`;
 const el = (id) => document.getElementById(id);
 const poster = createPoster(el('poster')); // the podium after the final, a full-screen layer like the splash
@@ -494,6 +497,43 @@ function hypeOf(m) {
   return g.played > 0 && top.includes(m.p1?.id) && top.includes(m.p2?.id) ? 'Top of the group' : '';
 }
 
+// ---------- victory screen ----------
+// A new result (not on page load, not a forfeit, not the final: the podium celebrates that) first shows the winner's
+// mascot shoving the loser's away and jumping up the stairs, for VICTORY_MS; the call screen for the next match waits.
+let seenResults = null; // ids of the matches with a result, as of the last state
+let victory = null; // { id, timer }
+let victoryScreen = null; // public/board/victory.js, built on first use
+
+function updateVictory() {
+  const ids = new Set(T.results.map((r) => r.id));
+  const fresh = seenResults ? T.results.filter((r) => !seenResults.has(r.id)) : [];
+  seenResults = ids;
+  if (victory && !ids.has(victory.id)) hideVictory(); // undone
+  const r = fresh[0]; // results come newest first
+  if (!loaded || !r || r.forfeit || r.stage === 'playoff' && r.id === 'final' || !r.p1 || !r.p2) return;
+  clearTimeout(victory?.timer);
+  hideCall();
+  const box = el('victory');
+  box.hidden = false; // visible before show(): it measures the name
+  victoryScreen ??= createVictory(box);
+  victoryScreen.show(r, VICTORY_MS, T.players);
+  victory = { id: r.id, timer: setTimeout(endVictory, VICTORY_MS) };
+}
+
+function hideVictory() {
+  clearTimeout(victory?.timer);
+  victory = null;
+  victoryScreen?.hide();
+  el('victory').hidden = true;
+}
+
+/** The victory screen is over: now the call screen for whoever is at the table. */
+function endVictory() {
+  hideVictory();
+  const cur = T.current;
+  if (cur?.p1 && cur?.p2) showCall(cur);
+}
+
 function showCall(m) {
   clearTimeout(call?.timer);
   const box = el('call');
@@ -513,7 +553,8 @@ function hideCall() {
 function updateCall() {
   const cur = T.current;
   const changed = loaded && (cur?.id ?? null) !== prevCurrentId;
-  if (changed && cur?.p1 && cur?.p2) showCall(cur);
+  if (changed && victory) { /* the call screen comes after the victory screen (endVictory) */ }
+  else if (changed && cur?.p1 && cur?.p2) showCall(cur);
   else if (call && call.id !== cur?.id) hideCall(); // the match left the queue, or the tournament is over
   prevCurrentId = cur?.id ?? null;
   loaded = true;
@@ -525,6 +566,7 @@ function onState(state, cached = false) {
   T = state.tournament;
   SETTINGS = state.settings || {};
   stage.classList.toggle('po', T.phase === 'playoff'); // play-offs: no queue, only a small blue plate with the clock
+  updateVictory();
   updateCall();
   const keepKey = slides[index]?.key ?? shownKey;
   slides = buildSlides(T);
@@ -546,10 +588,19 @@ try {
 live({ onState: (state) => onState(state) });
 // «lots of geckos» is switched in the admin page
 // no geckos or butterflies coming over the call screen (the mascots' brawl), no butterflies over the podium
-startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards, calm: () => !el('call').hidden, bare: () => !el('poster').hidden });
+startLizard(el('glass'), { swarm: () => !!SETTINGS.lizards, calm: () => !el('call').hidden || !el('victory').hidden, bare: () => !el('poster').hidden });
 
 // Debug hook for checking slides from the browser console.
 window.__board = {
   get slides() { return slides; },
   nextSlide() { index = (index + 1) % slides.length; renderSlide(); schedule(); },
+  /** Plays the victory screen for the latest result (or a made-up one), to check it from the console. */
+  victory(r = T.results[0]) {
+    if (!r) return;
+    el('victory').hidden = false;
+    victoryScreen ??= createVictory(el('victory'));
+    victoryScreen.show(r, VICTORY_MS, T.players);
+    clearTimeout(victory?.timer);
+    victory = { id: r.id, timer: setTimeout(endVictory, VICTORY_MS) };
+  },
 };

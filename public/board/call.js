@@ -5,6 +5,8 @@
 // tried: the tapes looked like a police line, the rest was too heavy for the TV.)
 // Light for a TV browser: transforms and opacity only, few and small layers (big or many layers made the TV lag and flicker).
 
+import { breaker } from '/shared/breaker.js';
+
 const PATTERNS = [
   'halftone', 'chevron', 'checker', 'felt', 'sunburst', 'stripes',
   'dots', 'crosshatch', 'zigzag', 'argyle', 'grid', 'plaid', 'triangles',
@@ -182,6 +184,20 @@ const CSS = `
 /* the stars: SVG with round joins (text ★ with a thick stroke came out spiky and broken on the TV) */
 .fight .sub .star { width: .85em; height: .85em; flex: none; overflow: visible; }
 .fight.important .label { top: 272px; }
+/* the toss for the break: a gold-rimmed coin, red with the red corner's mascot on one side, blue with the blue's on the
+   other, over the gap between the title and VS (the ring's middle is x 1020); it spins by squashing, no 3D for the TV */
+.fight .coin { position: absolute; z-index: 6; left: 930px; top: 325px; width: 180px; height: 180px; pointer-events: none; will-change: transform; }
+.fight .coin .spin { position: absolute; inset: 0; will-change: transform; }
+.fight .coin .face, .fight .breaks i { position: absolute; inset: 0; border-radius: 50%; border: 12px solid #ffd400; box-shadow: 0 0 0 5px #4a2a00, 0 10px 0 5px rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center; font-size: 104px; line-height: 1; font-style: normal; }
+.fight .coin .h, .fight .breaks i.h { background: radial-gradient(circle at 35% 30%, #ff5468, #c8102e 55%, #7a0016); }
+.fight .coin .t, .fight .breaks i.t { background: radial-gradient(circle at 35% 30%, #5b8bff, #1d4fbf 55%, #0a1f5c); }
+.fight .coin .t { opacity: 0; }
+/* where the coin lands: «BREAKS» on a yellow plate with the small coin, above the left name, under the right one */
+.fight .breaks { position: absolute; left: 50%; display: flex; align-items: center; height: 64px; padding: 0 26px 0 84px; border-radius: 32px;
+  background: #ffd400; color: #15110e; font-size: 44px; line-height: 1; letter-spacing: 3px; white-space: nowrap; text-shadow: none;
+  box-shadow: 0 6px 0 rgba(0,0,0,.4); transform: translateX(-50%) rotate(-4deg); }
+.fight .breaks i { inset: auto; left: -6px; top: -8px; width: 80px; height: 80px; border-width: 6px; box-shadow: 0 0 0 3px #4a2a00; font-size: 40px; }
 .fight .bar { position: absolute; left: 0; bottom: 0; height: 12px; width: 100%; background: #ffd400; transform-origin: 0 50%; z-index: 9; }
 `;
 
@@ -466,6 +482,74 @@ export function createCall(root) {
     after(ms + 50, () => d.remove());
   }
 
+  /**
+   * Who breaks: at `at` a coin with the two mascots on its sides goes up from the middle spinning, lands on the side of
+   * `who` (1: the red corner, 2: the blue), lies there a moment and flies to the winner's name, where it stays as «BREAKS».
+   */
+  const TOSS_MS = 1800;
+  function toss(who, m1, m2, at) {
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    coin.innerHTML = `<div class="spin"><div class="face h">${emojify(m1[0])}</div><div class="face t">${emojify(m2[0])}</div></div>`;
+    const spin = coin.firstChild;
+    const blue = coin.querySelector('.t');
+    ring.append(coin); // hidden until `at` by the first keyframe
+    // up slowing, down speeding, a small bounce on landing
+    anim(coin, [
+      { transform: 'translateY(220px) scale(.4)', opacity: 0, easing: 'ease-out' },
+      { transform: 'translateY(0) scale(1)', opacity: 1, offset: 0.1, easing: 'cubic-bezier(.2,.6,.4,1)' },
+      { transform: 'translateY(-300px) scale(1.2)', offset: 0.5, easing: 'cubic-bezier(.6,0,.8,.4)' },
+      { transform: 'translateY(0) scale(1)', offset: 0.9, easing: 'ease-out' },
+      { transform: 'translateY(-36px) scale(1)', offset: 0.95, easing: 'ease-in' },
+      { transform: 'translateY(0) scale(1)' },
+    ], { duration: TOSS_MS, delay: at, fill: 'both' });
+    // half-turns while in the air: an even number ends red side up, an odd one blue
+    const halves = who === 1 ? 10 : 11;
+    const squash = [];
+    const sides = [];
+    for (let i = 0; i < halves; i++) {
+      squash.push({ transform: 'scaleY(1)', offset: i / halves }, { transform: 'scaleY(.04)', offset: (i + 0.5) / halves });
+      const up = i % 2 ? 1 : 0; // the side showing before this half-turn's edge, then the other one
+      sides.push({ opacity: up, offset: i / halves }, { opacity: up, offset: (i + 0.5) / halves }, { opacity: 1 - up, offset: (i + 0.5) / halves });
+    }
+    squash.push({ transform: 'scaleY(1)', offset: 1 });
+    sides.push({ opacity: halves % 2, offset: 1 });
+    const air = { duration: TOSS_MS * 0.8, delay: at + TOSS_MS * 0.1, easing: 'linear', fill: 'both' };
+    anim(spin, squash, air);
+    anim(blue, sides, air);
+    const land = at + TOSS_MS * 0.9;
+    after(land, () => dust(1020, 505, 0.6));
+    impact(land, 16);
+
+    // lies there a moment, then flies to its place by the name and shrinks to the plate's small coin
+    after(land + 1300, () => {
+      const name = q(`.n${who}`);
+      const span = name.querySelector('span');
+      const plate = document.createElement('div');
+      plate.className = 'breaks';
+      plate.innerHTML = `<i class="${who === 1 ? 'h' : 't'}">${emojify((who === 1 ? m1 : m2)[0])}</i>Breaks`;
+      plate.style.visibility = 'hidden';
+      name.append(plate);
+      const nick = name.querySelector('.nick');
+      plate.style.top = `${who === 1 ? span.offsetTop - plate.offsetHeight - 14 : nick.offsetTop + nick.offsetHeight + 14}px`;
+      const R = ring.getBoundingClientRect();
+      const k = R.width / ring.offsetWidth;
+      const c = plate.querySelector('i').getBoundingClientRect();
+      const dx = (c.left + c.width / 2 - R.left) / k - 1020;
+      const dy = (c.top + c.height / 2 - R.top) / k - 415;
+      const FLY = 500;
+      anim(coin, [{ transform: 'translate(0, 0) scale(1)' }, { transform: `translate(${dx}px, ${dy - 120}px) scale(.7)`, offset: 0.45 }, { transform: `translate(${dx}px, ${dy}px) scale(${c.width / k / 180})` }],
+        { duration: FLY, easing: 'ease-in', fill: 'forwards' });
+      after(FLY, () => {
+        coin.remove();
+        plate.style.visibility = '';
+        anim(plate, [{ transform: 'translateX(-50%) rotate(-4deg) scale(1.5)', opacity: 0 }, { transform: 'translateX(-50%) rotate(-4deg) scale(.92)', opacity: 1, offset: 0.7 },
+          { transform: 'translateX(-50%) rotate(-4deg) scale(1)', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+        impact(150, 14);
+      });
+    });
+  }
+
   /** A comic hit burst (POW!, BAM!… in a white spiky cloud) at (x, y) of the ring. */
   function pow(x, y) {
     const b = document.createElement('div');
@@ -700,7 +784,7 @@ export function createCall(root) {
       running = [];
       timers.forEach(clearTimeout);
       timers = [];
-      ring.querySelectorAll('.pow, .dust, .dropped').forEach((x) => x.remove());
+      ring.querySelectorAll('.pow, .dust, .dropped, .coin').forEach((x) => x.remove());
       q('.label').textContent = m.label || '';
 
       q('.pattern').className = `pattern p-${pick(PATTERNS)}`;
@@ -722,6 +806,7 @@ export function createCall(root) {
       const T2 = 420; // player 2 answers
       const TV = 820; // VS slams down
       const FLY = 330;
+      const TOSS = 2600; // the coin goes up for the break once the names and VS have settled
       // From beyond the opposite edge, leaning into the move; lands with a hard stop and recoil.
       const punch = (from, dir) => [
         { transform: `translateX(${from}px) skewX(${-dir * 22}deg) scaleX(1.25)`, easing: 'cubic-bezier(.5,0,.9,.4)' },
@@ -753,7 +838,9 @@ export function createCall(root) {
       }
       // a big match: they fight all over the screen as soon as VS has landed; a plain one: once, somewhere in the middle, under VS
       if (hype) after(TV + 500, () => frenzy(bobs, ms - TV - 500));
-      else if (ms > 9000) { const at = rand(5500, Math.min(10000, ms - 7000)); after(at, () => brawl(bobs, bob, ms - at)); }
+      else if (ms > 9000) { const at = rand(7000, Math.min(11000, ms - 7000)); after(at, () => brawl(bobs, bob, ms - at)); } // after the coin toss
+      const who = breaker(m);
+      if (who && ms > TOSS + TOSS_MS + 2500) toss(who, m1, m2, TOSS);
       idle(pick(IDLES), TV + 600, ms - TV - 600);
       anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },

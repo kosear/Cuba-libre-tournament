@@ -83,6 +83,9 @@ export function createVictory(root) {
     return a;
   };
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
+  // `fn` at `ms` on the animations' own clock: they start with the next frame drawn, a setTimeout starts at once, so a
+  // timer ran ahead of them (the dust puffed up before the mascot landed; more on a slow screen). Cancelled with them.
+  const cue = (ms, fn) => { anim(scene, [{}, {}], { duration: Math.max(0, ms) }).onfinish = fn; };
   const rand = (a, b) => a + Math.random() * (b - a);
   const T = (x, y) => `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
 
@@ -194,7 +197,7 @@ export function createVictory(root) {
         { ...opts(520, 80 + k * 90, 'ease-out'), fill: 'both' }));
       // the loser drops in at the foot of the stairs, the winner slides in from the left
       anim(L, [{ transform: T(pos.l[0], -S - 60) }, { transform: T(...pos.l) }], opts(450, 450, 'cubic-bezier(.5,0,1,.6)'));
-      after(900, () => dust(pos.l[0] + S / 2, FLOOR, 0.8));
+      cue(900, () => dust(pos.l[0] + S / 2, FLOOR, 0.8));
       impact(900, 8);
       anim(lb, [{ transform: 'none' }, { transform: 'scale(1.15, .8)', offset: 0.3 }, { transform: 'none' }], opts(300, 900, 'ease-out'));
       const wx = 300;
@@ -214,7 +217,7 @@ export function createVictory(root) {
       const TH = TD + 200; // contact
       pos.w = [hitX - 30, GROUND];
       anim(W, [{ transform: T(hitX, GROUND) }, { transform: T(...pos.w) }], opts(300, TH, 'ease-out'));
-      after(TH - 60, () => pow(pos.l[0] + 40, GROUND + 80, ['SHOVE!', 'BYE!', 'OOF!', 'WHAM!'][Math.floor(Math.random() * 4)]));
+      cue(TH - 60, () => pow(pos.l[0] + 40, GROUND + 80, ['SHOVE!', 'BYE!', 'OOF!', 'WHAM!'][Math.floor(Math.random() * 4)]));
       impact(TH, 22);
       // the loser flies back over the winner's head, spinning, and crashes on the floor at the left, lying on its side, head to the left
       const FLY = 1300;
@@ -225,7 +228,7 @@ export function createVictory(root) {
       opts(FLY, TH));
       anim(lr, [{ transform: 'rotate(0)' }, { transform: 'rotate(-390deg)', offset: 0.85 }, { transform: 'rotate(-435deg)', offset: 0.93 }, { transform: 'rotate(-450deg)' }], opts(FLY, TH, 'ease-out'));
       const TL = TH + FLY * 0.85;
-      after(TL, () => dust(land[0] + S / 2, FLOOR, 1.1));
+      cue(TL, () => dust(land[0] + S / 2, FLOOR, 1.1));
       impact(TL, 14);
       const dz = q('.dizzy');
       const dzAt = [land[0] - 30 + S / 2 - 80, GROUND + S * 0.35 - 70]; // over its head: it lies with the head to the left
@@ -244,7 +247,7 @@ export function createVictory(root) {
           { transform: T(...to) }], opts(ms, at + 200));
         anim(wr, [{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)', offset: 0.3 }, { transform: 'rotate(6deg)', offset: 0.8 }, { transform: 'rotate(0)' }], opts(ms, at + 200));
         const t = at + 200 + ms * 0.95;
-        after(t, () => dust(to[0] + S / 2, to[1] + S - SINK, power > 20 ? 1 : 0.75));
+        cue(t, () => dust(to[0] + S / 2, to[1] + S - SINK, power > 20 ? 1 : 0.75));
         impact(t, power);
         return t;
       };
@@ -282,7 +285,7 @@ export function createVictory(root) {
           { transform: T(...pos.w), offset: 0.92 }, { transform: T(...pos.w) }], { duration: BMS + 160, delay: at, easing: 'cubic-bezier(.2,.7,.5,1)', fill: 'forwards' });
         if (flip) anim(wr, [{ transform: 'rotate(0)', offset: 0.2 }, { transform: 'rotate(-360deg)', offset: 0.85 }, { transform: 'rotate(-360deg)' }], opts(BMS + 160, at, 'ease-in-out'));
         else anim(wr, [{ transform: 'rotate(0)' }, { transform: `rotate(${n % 2 ? 8 : -8}deg)`, offset: 0.5 }, { transform: 'rotate(0)' }], opts(BMS + 160, at, 'ease-in-out'));
-        after(at + (BMS + 160) * 0.92, () => dust(pos.w[0] + S / 2, pos.w[1] + S - SINK, flip ? 0.7 : 0.5));
+        cue(at + (BMS + 160) * 0.92, () => dust(pos.w[0] + S / 2, pos.w[1] + S - SINK, flip ? 0.7 : 0.5));
         bounce(at + BMS + 160 + rand(250, 500), n + 1);
       };
       bounce(top + 900, 0);

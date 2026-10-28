@@ -186,8 +186,8 @@ const CSS = `
 .fight.important .label { top: 272px; }
 /* the toss for the break: a gold-rimmed coin, red with the red corner's mascot on one side, blue with the blue's on the
    other, over the gap between the title and VS (the ring's middle is x 1020); it spins by squashing, no 3D for the TV */
-.fight .coin { position: absolute; z-index: 6; left: 930px; top: 325px; width: 180px; height: 180px; pointer-events: none; will-change: transform; }
-.fight .coin .spin { position: absolute; inset: 0; will-change: transform; }
+.fight .coin { position: absolute; z-index: 6; left: 930px; top: 325px; width: 180px; height: 180px; pointer-events: none; }
+.fight .coin .spin { position: absolute; inset: 0; } /* no will-change: the TV has few layers to spare (see frenzy) */
 .fight .coin .face, .fight .breaks i { position: absolute; inset: 0; border-radius: 50%; border: 12px solid #ffd400; box-shadow: 0 0 0 5px #4a2a00, 0 10px 0 5px rgba(0,0,0,.4);
   display: flex; align-items: center; justify-content: center; font-size: 104px; line-height: 1; font-style: normal; }
 .fight .coin .h, .fight .breaks i.h { background: radial-gradient(circle at 35% 30%, #ff5468, #c8102e 55%, #7a0016); }
@@ -462,6 +462,8 @@ export function createCall(root) {
   }
   const rand = (a, b) => a + Math.random() * (b - a);
   const after = (ms, fn) => timers.push(setTimeout(fn, ms));
+  // `fn` at `ms` on the animations' own clock (they start with the next frame drawn, a setTimeout runs ahead of them)
+  const cue = (ms, fn) => { anim(ring, [{}, {}], { duration: Math.max(0, ms) }).onfinish = fn; };
 
   /** A cartoon dust cloud of a few puffs at (x, y) of the ring that swells, drifts up and fades; k: its size. */
   function dust(x, y, k = 1) {
@@ -487,6 +489,7 @@ export function createCall(root) {
    * `who` (1: the red corner, 2: the blue), lies there a moment and flies to the winner's name, where it stays as «BREAKS».
    */
   const TOSS_MS = 1800;
+  const TOSS_END = TOSS_MS * 0.9 + 1300 + 500 + 300; // from the toss to the plate in place (land, lie, fly), and a breath
   function toss(who, m1, m2, at) {
     const coin = document.createElement('div');
     coin.className = 'coin';
@@ -518,11 +521,11 @@ export function createCall(root) {
     anim(spin, squash, air);
     anim(blue, sides, air);
     const land = at + TOSS_MS * 0.9;
-    after(land, () => dust(1020, 505, 0.6));
+    cue(land, () => dust(1020, 505, 0.6));
     impact(land, 16);
 
     // lies there a moment, then flies to its place by the name and shrinks to the plate's small coin
-    after(land + 1300, () => {
+    cue(land + 1300, () => {
       const name = q(`.n${who}`);
       const span = name.querySelector('span');
       const plate = document.createElement('div');
@@ -639,6 +642,10 @@ export function createCall(root) {
       it.style.visibility = 'hidden';
       const FLY = 1250;
       const HIT = 0.3;
+      // in the air over the names and VS (its way runs right under VS: it was hidden there, only the hit was seen),
+      // under the bursts; back down among the mascots once it lies on the floor
+      d.style.zIndex = '4';
+      after(FLY * 0.75, () => { d.style.zIndex = ''; });
       const bx = fx + 0.12 * (fx - tx); // the little second hop, on the same way
       anim(d, [{ transform: `rotate(${deg}deg)`, easing: 'ease-out' },
         { transform: `translate(${tx / 2}px, ${Math.min(0, ty) / 2 - 120}px) rotate(${(deg + spin) / 2}deg)`, offset: HIT / 2, easing: 'ease-in' },
@@ -836,11 +843,15 @@ export function createCall(root) {
           { duration: 500, delay, easing: 'cubic-bezier(.2,.8,.3,1.4)', fill: 'backwards' });
         bob(n, delay + 500);
       }
-      // a big match: they fight all over the screen as soon as VS has landed; a plain one: once, somewhere in the middle, under VS
-      if (hype) after(TV + 500, () => frenzy(bobs, ms - TV - 500));
-      else if (ms > 9000) { const at = rand(7000, Math.min(11000, ms - 7000)); after(at, () => brawl(bobs, bob, ms - at)); } // after the coin toss
+      // a big match: they fight all over the screen once VS has landed and the coin has settled (they bob till then: a thrown
+      // prop and the flying coin at the same time were too much for the TV, it stopped drawing the prop's flight);
+      // a plain one: once, somewhere in the middle, under VS
       const who = breaker(m);
-      if (who && ms > TOSS + TOSS_MS + 2500) toss(who, m1, m2, TOSS);
+      const tossing = who && ms > TOSS + TOSS_MS + 2500;
+      const fightAt = tossing ? Math.max(TV + 500, TOSS + TOSS_END - 1500) : TV + 500; // its first throw comes 1.5 s in
+      if (hype) after(fightAt, () => frenzy(bobs, ms - fightAt));
+      else if (ms > 9000) { const at = rand(7000, Math.min(11000, ms - 7000)); after(at, () => brawl(bobs, bob, ms - at)); } // after the coin toss
+      if (tossing) toss(who, m1, m2, TOSS);
       idle(pick(IDLES), TV + 600, ms - TV - 600);
       anim(q('.bar'), [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, easing: 'linear', fill: 'forwards' });
     },

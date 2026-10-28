@@ -287,7 +287,8 @@ export function createVictory(root) {
           { transform: T(...pos.w), offset: 0.92 }, { transform: T(...pos.w) }], { duration: BMS + 160, delay: at, easing: 'linear', fill: 'forwards' });
         if (flip) anim(wr, [{ transform: 'rotate(0)', offset: 0.2 }, { transform: 'rotate(-360deg)', offset: 0.85 }, { transform: 'rotate(-360deg)' }], opts(BMS + 160, at, 'ease-in-out'));
         else anim(wr, [{ transform: 'rotate(0)' }, { transform: `rotate(${n % 2 ? 8 : -8}deg)`, offset: 0.5 }, { transform: 'rotate(0)' }], opts(BMS + 160, at, 'ease-in-out'));
-        cue(at + (BMS + 160) * 0.92, () => dust(pos.w[0] + S / 2, pos.w[1] + S - SINK, flip ? 0.7 : 0.5));
+        // a touch before it lands, like on the stairs: the puff takes a moment to swell (at the landing itself it looked late)
+        cue(at + (BMS + 160) * 0.92 - 60, () => dust(pos.w[0] + S / 2, pos.w[1] + S - SINK, flip ? 0.8 : 0.6));
         bounce(at + BMS + 160 + rand(250, 500), n + 1);
       };
       bounce(top + 900, 0);

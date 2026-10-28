@@ -105,12 +105,15 @@ setInterval(tickClock, 1000);
 const label = (m) => (m ? m.label : '');
 const name = (p) => (!p ? 'TBD' : p.placeholder ? `<span class="ph">${esc(p.name)}</span>` : esc(p.name)); // a play-off place not decided yet: grey italic
 
-/** A name with LIVE before it gets smaller, down to 70%, before it is cut with «…». Not on a group's slide: LIVE is above the name there. */
+/**
+ * A name with LIVE before it gets smaller, down to 70% (not on a group's slide: LIVE is above the name there), then it is
+ * cut with «…» letter by letter, so the breaker's coin sits right after the «…» (CSS would leave a gap of up to a letter).
+ */
 function fitLive(root) {
   root.querySelectorAll('.live-tag + .ln').forEach((name) => {
-    if (name.closest('.group-one')) return;
-    const box = name.parentElement;
-    for (let k = 1; k > 0.7 && box.scrollWidth > box.clientWidth + 1; ) name.style.fontSize = `${(k -= 0.03).toFixed(2)}em`;
+    const over = () => name.scrollWidth > name.clientWidth + 1;
+    if (!name.closest('.group-one')) for (let k = 1; k > 0.7 && over(); ) name.style.fontSize = `${(k -= 0.03).toFixed(2)}em`;
+    for (let text = name.textContent; over() && text.length > 1; ) name.textContent = `${(text = text.slice(0, -1)).trimEnd()}…`;
   });
 }
 
@@ -158,11 +161,12 @@ function buildSlides(t) {
 // at the table right now; in the bracket in the header of the match being played.
 const LIVE = '<i class="live-tag"><b></b><span>Live</span></i>';
 const isLive = (id) => !!id && (T.current?.p1?.id === id || T.current?.p2?.id === id);
-// The one who breaks (the call screen's coin toss decided it): a plain gold coin before the name in a group table,
-// «BREAKS» with the coin by the name in a play-off box. No mascots here: they belong to the call screen.
+// The one who breaks (the call screen's coin toss decided it): a plain gold coin after the name, like one more letter,
+// in the group tables and the bracket alike. No mascots here: they belong to the call screen. A long name is cut with «…»
+// before the coin, never the coin itself.
 const COIN = '<i class="brk-coin"></i>';
 const breaks = (id) => { const n = breaker(T.current); return !!n && T.current[`p${n}`].id === id; };
-const liveName = (name, id) => `${LIVE}<span class="ln">${breaks(id) ? COIN : ''}${esc(name)}</span>`;
+const liveName = (name, id) => `<span class="lv">${LIVE}<span class="ln">${esc(name)}</span>${breaks(id) ? COIN : ''}</span>`;
 
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
@@ -238,8 +242,11 @@ function slidePlayoff() {
       const p = m?.[`p${n}`];
       if (!p) return `<div class="p tbd"><span>${esc(fallback[slot][n - 1])}</span></div>`;
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
-      const tag = m.winner === n ? '<i class="win-tag">Winner</i>' : live && breaks(p.id) ? `<i class="brk-tag">${COIN}Breaks</i>` : '';
-      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${tag}</div>`;
+      // the breaker: «BREAKS» with the coin by the name; in the big final only the coin, after the name like a letter
+      // the coin: next to the name in a box (a long name is cut before it), part of the name in the big final (fitFinal fits both)
+      const brk = live && !m.winner && breaks(p.id);
+      const big = extra.includes('big');
+      return `<div class="p ${cls}"><span>${esc(p.name)}${brk && big ? COIN : ''}</span>${brk && !big ? COIN : ''}${m.winner === n ? '<i class="win-tag">Winner</i>' : ''}</div>`;
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
     // (the 3rd place match drops «played before the final» then, to make room for it)

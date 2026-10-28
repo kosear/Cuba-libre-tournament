@@ -158,10 +158,11 @@ function buildSlides(t) {
 // at the table right now; in the bracket in the header of the match being played.
 const LIVE = '<i class="live-tag"><b></b><span>Live</span></i>';
 const isLive = (id) => !!id && (T.current?.p1?.id === id || T.current?.p2?.id === id);
-// 🎱 before the name of the one who breaks (the call screen's coin toss decided it)
-const BREAKS = emojify('🎱').replace('class="emo"', 'class="emo brk"');
+// The one who breaks (the call screen's coin toss decided it): a plain gold coin before the name in a group table,
+// «BREAKS» with the coin by the name in a play-off box. No mascots here: they belong to the call screen.
+const COIN = '<i class="brk-coin"></i>';
 const breaks = (id) => { const n = breaker(T.current); return !!n && T.current[`p${n}`].id === id; };
-const liveName = (name, id) => `${LIVE}<span class="ln">${breaks(id) ? BREAKS : ''}${esc(name)}</span>`;
+const liveName = (name, id) => `${LIVE}<span class="ln">${breaks(id) ? COIN : ''}${esc(name)}</span>`;
 
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
@@ -237,7 +238,7 @@ function slidePlayoff() {
       const p = m?.[`p${n}`];
       if (!p) return `<div class="p tbd"><span>${esc(fallback[slot][n - 1])}</span></div>`;
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
-      const tag = m.winner === n ? '<i class="win-tag">Winner</i>' : live && breaks(p.id) ? `<i class="brk-tag">${BREAKS}Breaks</i>` : '';
+      const tag = m.winner === n ? '<i class="win-tag">Winner</i>' : live && breaks(p.id) ? `<i class="brk-tag">${COIN}Breaks</i>` : '';
       return `<div class="p ${cls}"><span>${esc(p.name)}</span>${tag}</div>`;
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name

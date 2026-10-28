@@ -103,11 +103,15 @@ table.cross td.skip { color: #a8b2c4; font-size: .5em; font-weight: 700; letter-
 .bm .p.tbd { color: #a8b2c4; font-style: italic; }
 .bm .p.tbd span { padding-right: .15em; } /* the italic last letter leans out of its box: room for it, not cut */
 .bm .p.win { color: var(--ink); } /* the winner stays black, only the loser turns grey */
-/* the one who breaks in the match being played: 🎱 before the name in a group table, «🎱 BREAKS» in a play-off box */
-.emo.brk { margin-right: .22em; }
-.bm .p .brk-tag { flex: none; display: inline-flex; align-items: center; background: #ffd400; color: #15110e; border-radius: 4px; padding: 3px 10px 2px 6px;
+/* the one who breaks in the match being played: a plain gold coin (rim, inner ring, a shine) before the name in a group
+   table, on a pale blue «BREAKS» plate in a play-off box */
+.brk-coin { display: inline-block; width: .9em; height: .9em; border-radius: 50%; vertical-align: -.1em; margin-right: .28em; position: relative; flex: none;
+  background: radial-gradient(circle at 35% 30%, #fff3b0 0 12%, #ffd84a 35%, #e0a800 75%, #b07d00);
+  box-shadow: inset 0 0 0 .07em #c98f00, inset 0 0 0 .12em #ffe27a, 0 0 0 .03em #8a6200, 0 .05em .08em rgba(19,33,58,.3); }
+.brk-coin::after { content: ''; position: absolute; inset: .24em; border-radius: 50%; border: .045em solid rgba(138,98,0,.45); }
+.bm .p .brk-tag { flex: none; display: inline-flex; align-items: center; background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 4px 10px 3px 7px;
   font: normal 800 28px/1 Inter, system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
-.bm .p .brk-tag .emo { font-size: 1.15em; margin: -.1em .25em -.1em 0; vertical-align: 0; }
+.bm .p .brk-tag .brk-coin { width: 1.05em; height: 1.05em; margin-right: .3em; vertical-align: 0; }
 .bracket.wide .bcol .bm .p .brk-tag { font-size: 36px; padding: 5px 13px 4px 8px; border-radius: 6px; }
 .bm.big .p .brk-tag { font-size: 40px; padding: 6px 16px 4px 10px; border-radius: 7px; }
 .bm .p .win-tag { flex: none; background: var(--green); color: #fff; border-radius: 4px; padding: 5px 10px 4px; font: normal 800 28px/1 Inter, system-ui, sans-serif;

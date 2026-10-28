@@ -251,11 +251,10 @@ export function createVictory(root) {
       const TJ1 = TL + 500;
       const l1 = jump(onStep(3), TJ1, 820, 230, 12);
       const top = jump(onStep(5), l1 + 450, 700, 200, 30);
-      // on top it turns round to face the room, the middle of the screen (its prop changes paws): a quick squash, no 3D
-      const face = W.querySelector('.mascot');
-      anim(face, [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], opts(110, top + 350, 'ease-in'));
-      after(top + 460, () => setMascot(W, mw, true, -1));
-      anim(face, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], opts(110, top + 460, 'ease-out'));
+      // on top it turns round to face the middle of the screen: the same picture mirrored, squashed through 0, no 3D.
+      // (Not re-rendered: new emoji <img> made the TV show nothing for a second while it decoded them.)
+      anim(W.querySelector('.mascot'), [{ transform: 'scaleX(1)', easing: 'ease-in' }, { transform: 'scaleX(0)', offset: 0.5, easing: 'ease-out' }, { transform: 'scaleX(-1)' }],
+        opts(240, top + 350));
 
       // on top: the title slams in, confetti, and the winner bounces till the end
       const title = q('.title');

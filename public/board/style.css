@@ -103,6 +103,13 @@ table.cross td.skip { color: #a8b2c4; font-size: .5em; font-weight: 700; letter-
 .bm .p.tbd { color: #a8b2c4; font-style: italic; }
 .bm .p.tbd span { padding-right: .15em; } /* the italic last letter leans out of its box: room for it, not cut */
 .bm .p.win { color: var(--ink); } /* the winner stays black, only the loser turns grey */
+/* the one who breaks in the match being played: 🎱 before the name in a group table, «🎱 BREAKS» in a play-off box */
+.emo.brk { margin-right: .22em; }
+.bm .p .brk-tag { flex: none; display: inline-flex; align-items: center; background: #ffd400; color: #15110e; border-radius: 4px; padding: 3px 10px 2px 6px;
+  font: normal 800 28px/1 Inter, system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+.bm .p .brk-tag .emo { font-size: 1.15em; margin: -.1em .25em -.1em 0; vertical-align: 0; }
+.bracket.wide .bcol .bm .p .brk-tag { font-size: 36px; padding: 5px 13px 4px 8px; border-radius: 6px; }
+.bm.big .p .brk-tag { font-size: 40px; padding: 6px 16px 4px 10px; border-radius: 7px; }
 .bm .p .win-tag { flex: none; background: var(--green); color: #fff; border-radius: 4px; padding: 5px 10px 4px; font: normal 800 28px/1 Inter, system-ui, sans-serif;
   letter-spacing: 2px; text-transform: uppercase; }
 .bm .p.lose { color: #a8b2c4; }

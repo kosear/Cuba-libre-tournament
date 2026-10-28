@@ -6,6 +6,7 @@ import { createCall, emojify } from '/board/call.js';
 import { createPoster } from '/board/podium.js';
 import { createVictory } from '/board/victory.js';
 import { startLizard } from '/board/lizard.js';
+import { breaker } from '/shared/breaker.js';
 
 const stage = document.getElementById('stage');
 const W = 1920;
@@ -157,11 +158,14 @@ function buildSlides(t) {
 // at the table right now; in the bracket in the header of the match being played.
 const LIVE = '<i class="live-tag"><b></b><span>Live</span></i>';
 const isLive = (id) => !!id && (T.current?.p1?.id === id || T.current?.p2?.id === id);
-const liveName = (name) => `${LIVE}<span class="ln">${esc(name)}</span>`;
+// 🎱 before the name of the one who breaks (the call screen's coin toss decided it)
+const BREAKS = emojify('🎱').replace('class="emo"', 'class="emo brk"');
+const breaks = (id) => { const n = breaker(T.current); return !!n && T.current[`p${n}`].id === id; };
+const liveName = (name, id) => `${LIVE}<span class="ln">${breaks(id) ? BREAKS : ''}${esc(name)}</span>`;
 
 function groupTable(g) {
   const rows = g.rows.map((r) => `<tr class="${r.leader ? 'leader' : ''} ${r.out ? 'out' : ''}">
-    <td class="name">${isLive(r.id) ? liveName(r.name) : esc(r.name)}</td><td>${r.frames}</td><td>${r.wins}</td><td class="balls">${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
+    <td class="name">${isLive(r.id) ? liveName(r.name, r.id) : esc(r.name)}</td><td>${r.frames}</td><td>${r.wins}</td><td class="balls">${r.approx ? '≈' : ''}${r.balls > 0 ? '+' : ''}${r.balls}</td></tr>`).join(''); // balls with a plus, like in Results; 0 stays 0
   return `<table class="std"><thead><tr><th class="name">Player</th><th>Frames</th><th>Win</th><th>Balls</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
@@ -233,7 +237,8 @@ function slidePlayoff() {
       const p = m?.[`p${n}`];
       if (!p) return `<div class="p tbd"><span>${esc(fallback[slot][n - 1])}</span></div>`;
       const cls = m.winner ? (m.winner === n ? 'win' : 'lose') : '';
-      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${m.winner === n ? '<i class="win-tag">Winner</i>' : ''}</div>`;
+      const tag = m.winner === n ? '<i class="win-tag">Winner</i>' : live && breaks(p.id) ? `<i class="brk-tag">${BREAKS}Breaks</i>` : '';
+      return `<div class="p ${cls}"><span>${esc(p.name)}</span>${tag}</div>`;
     };
     // LIVE on the match being played now: in the box's header, for the match as a whole, not by a name
     // (the 3rd place match drops «played before the final» then, to make room for it)

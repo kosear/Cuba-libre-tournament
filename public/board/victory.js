@@ -29,7 +29,7 @@ const CSS = `
 .vic .loser { z-index: 2; }
 .vic .dizzy { position: absolute; z-index: 4; left: 0; top: 0; width: 160px; height: 60px; font-size: 64px; line-height: 1; opacity: 0; }
 .vic .dizzy span { position: absolute; top: 0; }
-.vic .title { position: absolute; z-index: 5; left: 60px; top: 50px; width: 1540px; text-align: center; opacity: 0; }
+.vic .title { position: absolute; z-index: 5; left: 60px; top: 240px; width: 1540px; text-align: center; opacity: 0; }
 .vic .crown { display: inline-flex; align-items: center; gap: .2em; font-size: 120px; line-height: 1; font-weight: 900; font-style: italic;
   letter-spacing: 6px; text-transform: uppercase; color: #4a2a00; }
 .vic .crown .t { position: relative; -webkit-text-stroke: 16px #4a2a00; text-shadow: 0 10px 0 rgba(0,0,0,.45); }
@@ -251,6 +251,11 @@ export function createVictory(root) {
       const TJ1 = TL + 500;
       const l1 = jump(onStep(3), TJ1, 820, 230, 12);
       const top = jump(onStep(5), l1 + 450, 700, 200, 30);
+      // on top it turns round to face the room, the middle of the screen (its prop changes paws): a quick squash, no 3D
+      const face = W.querySelector('.mascot');
+      anim(face, [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], opts(110, top + 350, 'ease-in'));
+      after(top + 460, () => setMascot(W, mw, true, -1));
+      anim(face, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], opts(110, top + 460, 'ease-out'));
 
       // on top: the title slams in, confetti, and the winner bounces till the end
       const title = q('.title');

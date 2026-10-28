@@ -281,8 +281,10 @@ export function createVictory(root) {
         const BMS = flip ? 800 : 560;
         anim(wb, [{ transform: 'none' }, { transform: 'scale(1.1, .85)', offset: 0.12 }, { transform: 'scale(.92, 1.1)', offset: 0.25 }, { transform: 'none', offset: 0.45 },
           { transform: 'none', offset: 0.85 }, { transform: 'scale(1.12, .86)', offset: 0.93 }, { transform: 'none' }], opts(BMS + 160, at));
-        anim(W, [{ transform: T(...pos.w), offset: 0.12 }, { transform: T(pos.w[0], pos.w[1] - up), offset: 0.52, easing: 'cubic-bezier(.4,0,.7,.4)' },
-          { transform: T(...pos.w), offset: 0.92 }, { transform: T(...pos.w) }], { duration: BMS + 160, delay: at, easing: 'cubic-bezier(.2,.7,.5,1)', fill: 'forwards' });
+        // eased leg by leg, the whole on a linear clock: it touches down at 0.92 of the time, with its squash and the dust
+        // (an easing over the whole animation brought the landing forward and the dust came late)
+        anim(W, [{ transform: T(...pos.w), offset: 0.12, easing: 'cubic-bezier(.3,.7,.6,1)' }, { transform: T(pos.w[0], pos.w[1] - up), offset: 0.52, easing: 'cubic-bezier(.4,0,.7,.4)' },
+          { transform: T(...pos.w), offset: 0.92 }, { transform: T(...pos.w) }], { duration: BMS + 160, delay: at, easing: 'linear', fill: 'forwards' });
         if (flip) anim(wr, [{ transform: 'rotate(0)', offset: 0.2 }, { transform: 'rotate(-360deg)', offset: 0.85 }, { transform: 'rotate(-360deg)' }], opts(BMS + 160, at, 'ease-in-out'));
         else anim(wr, [{ transform: 'rotate(0)' }, { transform: `rotate(${n % 2 ? 8 : -8}deg)`, offset: 0.5 }, { transform: 'rotate(0)' }], opts(BMS + 160, at, 'ease-in-out'));
         cue(at + (BMS + 160) * 0.92, () => dust(pos.w[0] + S / 2, pos.w[1] + S - SINK, flip ? 0.7 : 0.5));

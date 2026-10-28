@@ -6,6 +6,7 @@ import { live } from '/shared/live.js';
 import { applyAction, DomainError } from '/domain/engine.js';
 import { snapshot } from '/domain/view.js';
 import { t, tn, lang, setLang, LANGS, has } from './i18n.js';
+import { breaker } from '/shared/breaker.js';
 
 const $ = (id) => document.getElementById(id);
 const TABS = [
@@ -252,7 +253,12 @@ function viewGame() {
 function resultCard(m) {
   const pick = ui.pick?.matchId === m.id ? ui.pick.winner : null;
   const statsLine = (st) => (st ? `<small>${esc(t('stats.short', { frames: st.frames, wins: st.wins }))}</small>` : '');
-  const side = (n) => `<button class="${pick === n ? 'sel' : ''}" data-pick="${n}" data-id="${m.id}">${esc((n === 1 ? m.p1 : m.p2)?.name)}${statsLine(n === 1 ? m.p1Stats : m.p2Stats)}</button>`;
+  // a gold coin after the name of the one who breaks: the TV's coin toss (public/shared/breaker.js), same player;
+  // glued to the last word, so a name on two lines never leaves the coin alone on a third
+  const brk = breaker(m);
+  const coined = (name) => { const i = name.lastIndexOf(' ') + 1; return `${esc(name.slice(0, i))}<span class="nw">${esc(name.slice(i))}<i class="brk-coin"></i></span>`; };
+  const name = (n) => { const p = n === 1 ? m.p1 : m.p2; return brk === n ? coined(p.name) : esc(p?.name); };
+  const side = (n) => `<button class="${pick === n ? 'sel' : ''}" data-pick="${n}" data-id="${m.id}">${name(n)}${statsLine(n === 1 ? m.p1Stats : m.p2Stats)}</button>`;
   const group = m.stage === 'group';
   let tail = '';
   if (pick) {
